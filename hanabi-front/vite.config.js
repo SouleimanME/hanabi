@@ -13,8 +13,8 @@ export default defineConfig({
   //
   // En production, l'hebergeur doit faire la meme chose, sinon un lien partage
   // vers une fiche produit repondra 404 : redirection de toutes les routes vers
-  // /index.html (regle « rewrite » chez Netlify et Vercel, `try_files $uri
-  // /index.html` chez nginx).
+  // /index.html (fichier `public/_redirects` chez Cloudflare Pages, `try_files
+  // $uri /index.html` chez nginx).
   //
   // L'option `historyApiFallback` qui figurait ici n'existe pas dans Vite -
   // elle appartient a webpack-dev-server et etait silencieusement ignoree.

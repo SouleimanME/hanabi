@@ -1,4 +1,4 @@
-# Repli SPA, indispensable hors Netlify.
+# Repli SPA.
 #
 # La boutique resout ses chemins dans le navigateur (voir src/lib/routes.js).
 # Sans cette regle, ouvrir directement /produit/5 - un lien partage, un favori,
@@ -7,11 +7,10 @@
 #
 # 200 et non 301 : l'URL doit rester celle demandee, pas etre redirigee.
 #
-# Ce fichier fait doublon avec la regle equivalente de `netlify.toml`, a dessein.
-# Netlify lit sa configuration ; Cloudflare Pages, GitHub Pages et la plupart des
-# autres hebergeurs statiques ne connaissent que ce fichier-ci. Le garder rend le
-# site deployable ailleurs sans rien reconfigurer - ce qui, apres une panne de
-# quota, n'est pas une precaution theorique.
+# Ce format est celui que lisent Cloudflare Pages, GitHub Pages et la plupart
+# des hebergeurs statiques. Le site reste ainsi deployable ailleurs sans rien
+# reconfigurer - ce qui, apres avoir du quitter un hebergeur en urgence pour
+# cause de quota epuise, n'est pas une precaution theorique.
 #
 # Depose dans `public/`, il est recopie tel quel a la racine de `dist/` par Vite.
 /*    /index.html   200

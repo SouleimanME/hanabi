@@ -117,7 +117,7 @@ dans la foulée.
 
    | Variable | Valeur |
    | --- | --- |
-   | `DATABASE_URL` | la chaîne *pooled* copiée à l'étape 2 |
+   | `DATABASE_URL` | la chaîne de connexion **directe** copiée à l'étape 2 |
    | `CORS_ORIGINS` | laisser vide pour l'instant (étape 5) |
    | `ADMIN_EMAIL` | l'adresse qui aura accès au back-office |
    | `ADMIN_PASSWORD` | au moins 10 caractères, ni courant ni répétitif, sans suite de touches |
