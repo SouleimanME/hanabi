@@ -1,0 +1,11 @@
+# Dependances de developpement et de test.
+# Installation : pip install -r requirements.txt -r requirements-dev.txt
+#
+# Separees des dependances d'execution : l'image deployee n'a pas besoin du
+# lanceur de tests, et l'y installer alourdirait le demarrage pour rien.
+
+-r requirements.txt
+
+pytest==8.*
+# Requis par le TestClient de Starlette pour jouer les requetes HTTP en memoire.
+httpx==0.27.*

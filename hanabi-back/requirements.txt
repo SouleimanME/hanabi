@@ -1,0 +1,18 @@
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+sqlalchemy==2.0.*
+# Pilote PostgreSQL. La variante `binary` embarque libpq : sans elle,
+# l'installation exige une chaine de compilation C et les en-tetes PostgreSQL,
+# que l'image de build de l'hebergeur n'a pas.
+psycopg[binary]==3.2.*
+# Migrations de schema. Indispensable depuis le passage a une base persistante :
+# `create_all` cree les tables manquantes mais ne modifie jamais une colonne
+# existante, et il n'est plus question de supprimer la base pour repartir.
+alembic==1.14.*
+pydantic==2.9.*
+pydantic-settings==2.6.*
+PyJWT==2.9.*
+bcrypt==4.2.*
+python-multipart==0.0.*
+email-validator==2.2.*
+slowapi==0.1.*
