@@ -1,0 +1,132 @@
+version: 2
+
+models:
+  - name: gold_kpi_mensuel
+    description: >
+      Serie mensuelle continue : chiffre d'affaires, marge, commandes, audience,
+      inscriptions, conversion. Une ligne par mois couvert par l'activite, trous
+      compris.
+    columns:
+      - name: mois
+        tests: [unique, not_null]
+      - name: ca_cents
+        tests: [not_null]
+      - name: commandes
+        tests: [not_null]
+
+  - name: gold_performance_produit
+    description: >
+      Une ligne par reference : audience, ventes, marge, conversion, couverture
+      de stock, note moyenne et classe ABC.
+    columns:
+      - name: produit_id
+        tests: [unique, not_null]
+      - name: code
+        tests: [unique, not_null]
+      - name: classe_abc
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["A", "B", "C"]
+      # Un taux de marge superieur a 1 signifierait une marge plus grande que le
+      # chiffre d'affaires : impossible, donc symptome. Le plancher est large
+      # parce qu'une reference vendue a perte est concevable ; le plafond, lui,
+      # ne l'est pas, et c'est lui qui attrapera une jointure qui duplique des
+      # lignes.
+      - name: taux_marge
+        tests:
+          - intervalle:
+              arguments:
+                mini: -10
+                maxi: 1
+
+  - name: gold_performance_categorie
+    columns:
+      - name: categorie
+        tests: [unique, not_null]
+
+  - name: gold_clients_rfm
+    description: Segmentation Recence / Frequence / Montant, une ligne par client acheteur.
+    columns:
+      - name: client_id
+        tests: [unique, not_null]
+      - name: segment
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  ["Champions", "Fideles", "Prometteurs", "Nouveaux",
+                   "A risque", "A reactiver", "Endormis"]
+      - name: r
+        tests:
+          - intervalle:
+              arguments:
+                mini: 1
+                maxi: 5
+      - name: f
+        tests:
+          - intervalle:
+              arguments:
+                mini: 1
+                maxi: 5
+      - name: m
+        tests:
+          - intervalle:
+              arguments:
+                mini: 1
+                maxi: 5
+
+  - name: gold_segments_rfm
+    columns:
+      - name: segment
+        tests: [unique, not_null]
+      - name: clients
+        tests: [not_null]
+
+  - name: gold_cohortes_retention
+    description: Retention par cohorte d'inscription, sous forme longue (une ligne par cohorte et decalage).
+    columns:
+      - name: taille_cohorte
+        tests: [not_null]
+      - name: taux_retention
+        tests: [not_null]
+    tests:
+      - combinaison_unique:
+          arguments:
+            colonnes: [cohorte, decalage_mois]
+
+  - name: gold_affinites_produits
+    description: Paires de produits achetes ensemble, classees par lift.
+    columns:
+      - name: lift
+        tests: [not_null]
+    tests:
+      - combinaison_unique:
+          arguments:
+            colonnes: [produit_a_id, produit_b_id]
+
+  - name: gold_promotions
+    columns:
+      - name: code
+        tests: [unique, not_null]
+
+  - name: gold_demographie_clients
+    description: Croisement ville x tranche d'age x civilite, avec le comportement d'achat associe.
+    columns:
+      - name: clients
+        tests: [not_null]
+    tests:
+      - combinaison_unique:
+          arguments:
+            colonnes: [ville, tranche_age, civilite]
+
+  - name: gold_execution
+    description: >
+      Horodatage de la derniere construction. Le back-office s'en sert pour
+      afficher la fraicheur des agregats : un entrepot construit par lots est
+      toujours en retard sur la base, l'important est de savoir de combien.
+    columns:
+      - name: construit_le
+        tests: [not_null]

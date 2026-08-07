@@ -1,0 +1,61 @@
+version: 2
+
+sources:
+  - name: hanabi_oltp
+    description: >
+      Tables de l'application, dans le schema `public`. C'est l'API FastAPI qui
+      les ecrit ; l'entrepot ne fait que les lire, et aucun modele ne doit
+      jamais y ecrire. La source de verite du schema reste
+      `hanabi-back/app/models.py`, que les migrations Alembic appliquent.
+    schema: public
+    # Une commande qui date de plus d'une semaine n'est pas une panne sur une
+    # boutique de demonstration dont le jeu de donnees est genere une fois.
+    # Le seuil sert a reperer une base videe ou une ingestion arretee, pas a
+    # surveiller un flux temps reel.
+    freshness:
+      warn_after: { count: 7, period: day }
+    loaded_at_field: created_at
+
+    tables:
+      - name: users
+        description: Comptes clients. Le condensat du mot de passe n'entre jamais dans l'entrepot.
+        columns:
+          - name: id
+            tests: [unique, not_null]
+      - name: products
+        description: Catalogue. `price_cents` et `cost_cents` sont les valeurs courantes, pas celles d'une commande passee.
+        freshness: null
+        loaded_at_field: null
+        columns:
+          - name: id
+            tests: [unique, not_null]
+      - name: orders
+        columns:
+          - name: id
+            tests: [unique, not_null]
+      - name: order_items
+        description: >
+          Une ligne par article commande. `unit_price_cents` et
+          `unit_cost_cents` y sont figes au moment de la commande : c'est ce qui
+          permet de calculer la marge reellement degagee, et non celle que le
+          tarif du jour laisserait croire.
+        freshness: null
+        loaded_at_field: null
+        columns:
+          - name: id
+            tests: [unique, not_null]
+      - name: product_views
+        description: Une ligne par ouverture de fiche produit. Table la plus volumineuse du schema.
+        columns:
+          - name: id
+            tests: [unique, not_null]
+      - name: reviews
+        columns:
+          - name: id
+            tests: [unique, not_null]
+      - name: promos
+        freshness: null
+        loaded_at_field: null
+        columns:
+          - name: id
+            tests: [unique, not_null]

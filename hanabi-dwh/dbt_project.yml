@@ -1,0 +1,67 @@
+# Projet dbt de l'entrepot Hanabi.
+#
+# Trois couches, trois schemas PostgreSQL dans la meme base Neon que
+# l'application. Le decoupage suit l'architecture dite « en medaillon » :
+#
+#   bronze  vues sur les tables de l'application, sans transformation. Le
+#           schema `public` ou ecrit l'API tient lieu de zone d'atterrissage :
+#           rien n'est recopie, on se contente de nommer la source sous une
+#           forme stable pour que le reste du projet n'ait jamais a citer
+#           `public` directement.
+#   silver  donnees nettoyees, typees, conformees. Une ligne de commande y
+#           porte deja sa marge, son mois et sa categorie : les regles de
+#           calcul sont ecrites une fois, ici, et non redites dans chaque
+#           tableau de bord.
+#   gold    tables d'agregats, une par question metier. C'est la seule couche
+#           que le back-office interroge.
+#
+# Materialisations : vues en bronze et en silver (aucune donnee dupliquee,
+# aucun cout de stockage), tables en gold. C'est tout l'interet de la demarche
+# cote lecture - le tableau de bord lit un agregat deja calcule au lieu de
+# refaire la jointure a chaque affichage.
+name: hanabi_dwh
+version: "1.0.0"
+config-version: 2
+
+profile: hanabi_dwh
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# Les noms de modeles portent deja leur prefixe de couche (brz_, slv_, gold_).
+# Le prefixe rend la couche lisible dans un plan d'execution ou un message
+# d'erreur, la ou le seul nom de schema oblige a aller le chercher.
+# Les droits de lecture sont reposes apres chaque construction, et non une fois
+# pour toutes a la main : `dbt run` recree les tables gold, et une table recreee
+# perd les droits accordes a la precedente. Un GRANT joue une seule fois se
+# serait donc defait a la construction suivante, silencieusement.
+on-run-end:
+  - "{{ accorde_lecture() }}"
+
+models:
+  hanabi_dwh:
+    bronze:
+      +schema: bronze
+      +materialized: view
+    silver:
+      +schema: silver
+      +materialized: view
+    gold:
+      +schema: gold
+      +materialized: table
+
+# Delai au-dela duquel une source est declaree perimee. Sert a `dbt source
+# freshness` : sur une boutique de demonstration ou les commandes sont
+# generees une fois, l'avertissement est attendu et ne signale pas une panne.
+vars:
+  # Statuts qui comptent comme du chiffre d'affaires realise. Doit rester
+  # identique a REVENUE_STATUSES dans hanabi-back/app/analytics.py : deux
+  # definitions divergentes donneraient deux chiffres d'affaires.
+  statuts_ca: ["paid", "shipped", "delivered"]
+  # Fenetre de mesure de la vitesse d'ecoulement, en jours. Meme valeur que
+  # `catalogue()` cote API, pour que la couverture de stock soit la meme des
+  # deux cotes.
+  fenetre_velocite_jours: 90

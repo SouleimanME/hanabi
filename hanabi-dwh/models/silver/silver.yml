@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: slv_clients
+    description: >
+      Clients conformes : civilite normalisee, age et tranche d'age deduits de
+      l'annee de naissance, cohorte d'inscription.
+    columns:
+      - name: client_id
+        tests: [unique, not_null]
+      - name: tranche_age
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["<18", "18-24", "25-34", "35-44", "45-54", "55+", "?"]
+      - name: civilite
+        tests: [not_null]
+      - name: mois_inscription
+        tests: [not_null]
+
+  - name: slv_commandes
+    description: Commandes conformes, avec le drapeau `est_ca` qui porte la regle de chiffre d'affaires.
+    columns:
+      - name: commande_id
+        tests: [unique, not_null]
+      - name: est_ca
+        tests: [not_null]
+      - name: mois
+        tests: [not_null]
+      - name: total_cents
+        tests: [not_null]
+
+  - name: slv_lignes_commande
+    description: >
+      Table de faits centrale. Une ligne par article commande, avec sa marge
+      calculee sur le prix et le cout figes a l'achat.
+    columns:
+      - name: ligne_id
+        tests: [unique, not_null]
+      - name: commande_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('slv_commandes')
+                field: commande_id
+      - name: quantite
+        tests: [not_null]
+      - name: ca_cents
+        tests: [not_null]
+      - name: marge_cents
+        tests: [not_null]
+
+  - name: slv_vues_produit
+    columns:
+      - name: vue_id
+        tests: [unique, not_null]
+      - name: produit_id
+        tests: [not_null]
+
+  - name: slv_avis
+    columns:
+      - name: avis_id
+        tests: [unique, not_null]
+      - name: note
+        tests: [not_null]
+
+  - name: slv_calendrier_mensuel
+    description: >
+      Suite continue des mois couverts par l'activite. Garantit qu'un mois sans
+      commande apparait a zero dans les series plutot que de disparaitre.
+    columns:
+      - name: mois_date
+        tests: [unique, not_null]
+      - name: mois
+        tests: [unique, not_null]
+      - name: rang
+        tests: [unique, not_null]

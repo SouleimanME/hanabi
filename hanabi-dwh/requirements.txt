@@ -1,0 +1,8 @@
+# Dependances de l'entrepot, volontairement separees de celles de l'API.
+#
+# dbt embarque tout un environnement (Jinja, agate, un client PostgreSQL) qui
+# n'a rien a faire dans l'image du service web : il ne tourne qu'au moment de
+# construire l'entrepot, jamais pendant qu'une page se charge. Un venv distinct
+# dans `hanabi-dwh/.venv` garde l'API aussi legere qu'avant.
+dbt-core==1.12.*
+dbt-postgres==1.11.*
