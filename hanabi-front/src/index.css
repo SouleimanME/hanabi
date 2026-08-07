@@ -9,28 +9,44 @@
 :root {
   /* --- Typographie ---
    *
-   * Trois familles, trois roles. Passer par des jetons plutot que de nommer la
-   * police dans chaque regle : changer la typographie du site devient une
+   * Quatre roles, une seule famille. Passer par des jetons plutot que de nommer
+   * la police dans chaque regle : changer la typographie du site devient une
    * modification d'une ligne, au lieu d'une soixantaine.
    *
-   * Shippori Mincho B1 : un mincho (serif japonais) dessine pour les gros
-   * corps. En 800 il porte les titres, en 400 il habille les noms de produits.
-   * Zen Kaku Gothic New : sans-serif tres lisible aux petites tailles.
-   * DM Mono : chiffres a largeur fixe, pour que les prix et les codes ne
-   * dansent pas d'une ligne a l'autre.
+   * La hierarchie ne tient donc plus au dessin mais a la taille, a la graisse
+   * et a l'approche. C'est plus exigeant a regler et plus solide dans le temps :
+   * deux familles qui se disputent une page vieillissent moins bien qu'une
+   * seule bien echelonnee.
    *
-   * Le choix du monospace n'est pas neutre : JetBrains Mono, dessine pour les
-   * editeurs de code, donnait un air de terminal a une boutique d'artisanat.
-   * DM Mono garde l'alignement des chiffres avec un dessin plus chaud.
+   * Inter n'est pas une police a chasse fixe comme l'etait DM Mono : chaque
+   * regle qui pose `font-family: var(--font-mono)` doit donc s'accompagner de
+   * `font-variant-numeric: tabular-nums`, qui fige la largeur des chiffres via
+   * la feature OpenType correspondante. Sans elle, les colonnes de prix ne
+   * s'alignent plus d'une ligne a l'autre.
    *
-   * Le monospace est reserve aux DONNEES qui gagnent a etre alignees : prix,
-   * references, numeros de commande. Il n'a rien a faire sur du texte
-   * d'interface comme un nom de langue.
+   * Reserve aux DONNEES qui gagnent a etre alignees : prix, references,
+   * numeros de commande. N'a rien a faire sur du texte d'interface comme un
+   * nom de langue.
    */
-  --font-display: "Shippori Mincho B1", Georgia, serif;
-  --font-serif: "Shippori Mincho B1", Georgia, serif;
-  --font-body: "Zen Kaku Gothic New", system-ui, sans-serif;
-  --font-mono: "DM Mono", ui-monospace, monospace;
+  /* Une seule famille pour toute la boutique et tout le back-office : Inter.
+   *
+   * Les quatre jetons restent distincts parce qu'ils portent des roles, pas
+   * des polices : le jour ou l'un d'eux doit changer, il change seul. Les
+   * faire pointer sur la meme valeur est un choix, pas un oubli.
+   *
+   * Zen Kaku Gothic New reste en second rang partout. Inter ne couvre pas les
+   * ideogrammes : sans ce repli, 花火 et 限定 tomberaient sur la police par
+   * defaut du systeme, differente d'une machine a l'autre. */
+  /* Le titre d'accueil, et lui seul. Un mincho est un serif japonais : ses
+   * pleins et deliees viennent du pinceau, pas du burin latin. C'est ce que
+   * lit un visiteur avant tout le reste, et c'est la seule ligne du site ou
+   * une police d'identite vaut son telechargement. */
+  --font-hero: "Shippori Mincho B1", "Zen Kaku Gothic New", Georgia, serif;
+
+  --font-display: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-serif: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-body: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-mono: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
 }
 
 /* Fond porte par <html>, et pas seulement par le conteneur de l'application.

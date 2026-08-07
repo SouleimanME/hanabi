@@ -98,6 +98,7 @@ select {
 }
 .mono {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 .small {
   font-size: 12px;

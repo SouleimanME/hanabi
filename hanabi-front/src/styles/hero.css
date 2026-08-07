@@ -65,7 +65,7 @@
   color: var(--accent);
 }
 .hero-h {
-  font-family: var(--font-display);
+  font-family: var(--font-hero);
   /* Le mincho a des deliees fines : il lui faut la graisse maximale pour tenir
      le poids d'un titre de cette taille. */
   font-weight: 800;

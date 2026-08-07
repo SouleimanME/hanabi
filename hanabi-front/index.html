@@ -19,12 +19,12 @@
       content="Une sélection resserrée d'objets japonais, renouvelée par petites séries."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://hanabi-boutique.netlify.app/" />
+    <meta property="og:url" content="https://hanabi-6x9.pages.dev/" />
     <!-- L'apercu partage exige une URL absolue : les reseaux sociaux recuperent
          l'image depuis leurs propres serveurs, sans contexte de page, et un
          chemin relatif ne mene alors nulle part. Le favicon qui tenait ce role
          etait de surcroit un SVG, format qu'aucune plateforme ne rend. -->
-    <meta property="og:image" content="https://hanabi-boutique.netlify.app/og-image.jpg" />
+    <meta property="og:image" content="https://hanabi-6x9.pages.dev/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Page d'accueil de la boutique Hanabi" />
@@ -37,13 +37,27 @@
          une requete en cascade (CSS -> CSS -> police) au premier rendu.
 
          Les familles reelles sont declarees une seule fois, dans les jetons
-         --font-* de src/index.css. Seuls les graisses effectivement utilisees
-         sont demandees : chaque graisse d'une police japonaise pese lourd. -->
+         --font-* de src/index.css. Seules les graisses effectivement utilisees
+         sont demandees : chaque graisse d'une police japonaise pese lourd.
+
+         Inter porte toute l'interface, boutique et back-office compris. Les
+         graisses vont de 300 a 700 : la hierarchie ne reposant plus sur deux
+         familles, elle a besoin de cette amplitude.
+
+         Zen Kaku Gothic New n'est conservee qu'en 400, pour un seul service :
+         couvrir les ideogrammes, qu'Inter ne dessine pas. Sans elle, 花火
+         tomberait sur la police par defaut du systeme.
+
+         Shippori Mincho B1 ne sert qu'a une seule ligne, le titre d'accueil.
+         Une graisse unique, la 800 : un mincho a des deliees tres fines, et
+         rien en dessous ne tient a soixante-dix pixels. Une police pour un
+         seul element se justifie quand cet element est le premier que voit
+         un visiteur. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Shippori+Mincho+B1:wght@800&family=Zen+Kaku+Gothic+New:wght@400&display=swap"
     />
   </head>
   <body>

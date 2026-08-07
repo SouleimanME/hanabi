@@ -6,15 +6,16 @@
  * de la boutique.
  */
 
-/* Manrope pour l'interface : une grotesque geometrique aux terminaisons
- * arrondies, dessinee pour les petits corps. Elle evite la raideur d'Inter sans
- * tomber dans le rond bavard, et ses chiffres restent lisibles en colonne.
- * Chargee ici plutot que dans l'index : le back-office est un lot separe, un
- * visiteur de la boutique n'a pas a payer cette police.
+/* Aucune police n'est chargee ici.
  *
- * JetBrains Mono pour les chiffres : ses zeros barres et ses ecarts francs
- * entre 1, l et I comptent dans un tableau de donnees. */
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+ * Le back-office tirait Manrope et JetBrains Mono par un `@import`, pour se
+ * distinguer de la boutique. Il utilise desormais la meme Inter, deja demandee
+ * par `index.html` : l'ecart typographique entre les deux interfaces ne valait
+ * pas deux familles supplementaires a telecharger.
+ *
+ * A retenir si l'on ajoute une police ici : un `@import` en tete de feuille
+ * bloque le rendu le temps de resoudre la requete, la ou un `<link>` dans le
+ * document part en parallele du reste. */
 
 * {
   box-sizing: border-box;
@@ -30,8 +31,16 @@
    sur du noir se dissout sur du papier. Seul l'ordre des emplacements est
    commun, pour qu'une serie garde sa famille de teinte en changeant de mode. */
 .adm {
-  --adm-font: "Manrope", var(--font-body), system-ui, sans-serif;
-  --adm-mono: "JetBrains Mono", var(--font-mono), monospace;
+  /* Inter, comme la boutique. Le back-office demandait Manrope et JetBrains
+     Mono, deux familles que `index.html` ne telecharge plus : sur une machine
+     ou elles ne sont pas installees, le rendu retombait sans bruit sur la
+     police de corps. Une famille citee ici doit etre demandee la-bas. */
+  --adm-font: "Inter", system-ui, sans-serif;
+
+  /* Le projet n'embarque plus de police a chasse fixe. Les identifiants
+     gardent leur classe `.code`, qui s'appuie desormais sur la pile monospace
+     du systeme : elle est toujours disponible et ne coute aucun octet. */
+  --adm-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
 
   /* Sombre, par defaut. */
   --adm-bg: #0f0d0b;
@@ -105,6 +114,40 @@
   --ch-bad: #c33a25;
 }
 
+/* Jetons de finition, communs aux deux themes.
+ *
+ * Les couleurs sont definies plus haut, theme par theme. Ce qui suit ne varie
+ * pas : une echelle d'elevation, une courbe d'animation et un anneau de focus.
+ * Les figer ici evite qu'une ombre soit inventee au cas par cas, ce qui est la
+ * facon la plus sure de faire flotter les surfaces les unes par rapport aux
+ * autres. */
+.adm {
+  /* Trois niveaux seulement. Une carte posee, un element survole, un calque
+     flottant. Chaque ombre combine un contact serre et une diffusion large :
+     l'ombre unique donne un halo decolle du support. */
+  --e1: 0 1px 2px rgba(0, 0, 0, 0.16), 0 2px 8px -2px rgba(0, 0, 0, 0.12);
+  --e2: 0 2px 4px rgba(0, 0, 0, 0.18), 0 8px 24px -6px rgba(0, 0, 0, 0.22);
+  --e3: 0 4px 8px rgba(0, 0, 0, 0.22), 0 24px 56px -12px rgba(0, 0, 0, 0.4);
+
+  /* Decelere franchement en fin de course : le mouvement se lit comme un objet
+     qui se pose, pas comme une valeur qui s'interpole. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Un seul anneau de focus pour tout le back-office. Il double le contour au
+     lieu de le remplacer, pour rester visible sur un fond de la meme teinte. */
+  --focus:
+    0 0 0 2px var(--adm-bg), 0 0 0 4px color-mix(in srgb, var(--adm-accent) 70%, transparent);
+}
+
+/* Le clavier a droit au meme soin que la souris. `:focus-visible` et non
+   `:focus` : un clic ne doit pas laisser d'anneau derriere lui. */
+.adm :focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: 8px;
+}
+
 .adm {
   display: flex;
   min-height: 100vh;
@@ -134,17 +177,18 @@ textarea {
 }
 /* Chiffres de gestion : montants, quantites, pourcentages.
  *
- * Manrope avec ses chiffres tabulaires, et non la police a chasse fixe. Un
+ * La police d'interface avec ses chiffres tabulaires, et non la chasse fixe. Un
  * montant n'est pas du code : la chasse fixe l'espace comme un identifiant et
  * jure au milieu d'une phrase. Les chiffres tabulaires suffisent a aligner une
  * colonne, qui est le seul service qu'on demandait au monospace.
  *
- * `font-feature-settings: "ss01"` active l'alternative a un etage du chiffre 1
- * dans Manrope, plus lisible qu'un simple trait vertical dans une colonne. */
+ * Le `font-feature-settings: "ss01"` qui figurait ici visait l'alternative a un
+ * etage du chiffre 1 dans Manrope. Le meme jeu stylistique ne designe pas la
+ * meme chose d'une police a l'autre : le garder sous Inter appliquerait une
+ * substitution non voulue. Un reglage de fonderie se retire avec sa fonderie. */
 .mono {
   font-family: var(--adm-font);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "ss01";
   letter-spacing: -0.01em;
 }
 

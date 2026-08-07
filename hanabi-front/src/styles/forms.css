@@ -253,6 +253,7 @@
   color: var(--muted);
   font-size: 13px;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 .pw-wrap {
   position: relative;
@@ -311,6 +312,7 @@
   font-weight: 700;
   white-space: nowrap;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   min-width: 52px;
 }
 .pw-checklist {

@@ -212,6 +212,7 @@
   min-width: 30px;
   text-align: center;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
 }
 .stepper.big button {
@@ -245,6 +246,7 @@
 .rev-head h2 .mono {
   font-size: 14px;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 .rev-form {
   background: var(--card);

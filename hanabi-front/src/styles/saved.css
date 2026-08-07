@@ -78,4 +78,5 @@
 .cart-saved .cart-saved-n {
   margin-left: auto;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }

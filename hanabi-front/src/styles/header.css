@@ -49,8 +49,14 @@
   align-items: center;
   gap: 16px;
 }
+/* Le mot HANABI est pose en mincho, la meme que le titre d'accueil. Un serif
+   japonais dessine des lettres latines avec ses propres pleins et deliees,
+   herites du pinceau : c'est ce qui donne au nom son accent sans passer par une
+   fausse police « asiatique » aux traits imites.
+   La graisse 800 est la seule chargee, et c'est justement celle qu'utilise ce
+   bloc : aucune requete supplementaire. */
 .logo {
-  font-family: var(--font-display);
+  font-family: var(--font-hero);
   font-weight: 800;
   font-size: 21px;
   letter-spacing: 0.06em;
@@ -141,6 +147,7 @@ button.logo:active {
   justify-content: center;
   padding: 0 4px;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   box-shadow: 0 0 0 2px var(--paper);
   /* Rejoue a chaque changement de valeur (la cle React remonte l'element). */
   animation: badge-pop 0.4s var(--ease-spring);
@@ -314,6 +321,7 @@ button.logo:active {
   background: var(--accent);
   color: #fff;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-style: normal;
   font-size: 11px;
   min-width: 19px;
