@@ -1,0 +1,121 @@
+# Reconstruction planifiee de l'entrepot decisionnel.
+#
+# Un entrepot construit a la main est un entrepot perime : le schema `gold`
+# reste fige sur la derniere execution, et l'ecart avec la base transactionnelle
+# grandit sans que rien ne le signale. C'est ce que cet ordonnanceur corrige.
+#
+# ------------------------------------------------------------------------
+# CE FICHIER NE FAIT RIEN TANT QUE LE SECRET N'EST PAS RENSEIGNE.
+#
+# La tache est conditionnee a la presence du secret `DWH_DATABASE_URL`. Sans
+# lui, elle s'arrete avec un message d'explication plutot que d'echouer en
+# rouge - un depot clone ou un fork ne doit pas afficher une CI cassee pour une
+# base a laquelle il n'a pas acces.
+#
+# Pour l'activer : Settings > Secrets and variables > Actions > New repository
+# secret, nomme `DWH_DATABASE_URL`, avec la chaine de connexion DIRECTE de Neon
+# (pas la variante « pooler »).
+#
+# A savoir avant de le faire : c'est confier une chaine de connexion en ecriture
+# a GitHub Actions. Les secrets ne sont pas exposes dans les journaux, mais tout
+# compte pouvant modifier un workflow de ce depot peut les lire. Sur une base de
+# demonstration c'est acceptable ; sur une base portant des donnees reelles, on
+# creerait un role PostgreSQL dedie, limite a la lecture de `public` et a
+# l'ecriture dans les trois schemas de l'entrepot.
+# ------------------------------------------------------------------------
+
+name: Entrepot
+
+on:
+  schedule:
+    # 05h00 UTC chaque jour, soit avant l'ouverture des bureaux en France. La
+    # construction prend une minute et lit la base : la jouer aux heures creuses
+    # evite de la solliciter pendant que quelqu'un consulte le back-office.
+    - cron: "0 5 * * *"
+  # Permet de reconstruire a la demande depuis l'onglet Actions, sans attendre
+  # l'heure - indispensable apres une modification de modele.
+  workflow_dispatch:
+
+# Deux constructions simultanees ecriraient dans les memes tables. La seconde
+# attend, et une execution planifiee declenchee pendant une execution manuelle
+# est simplement abandonnee : reconstruire deux fois de suite les memes donnees
+# n'apporte rien.
+concurrency:
+  group: entrepot
+  cancel-in-progress: false
+
+jobs:
+  construire:
+    name: dbt build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hanabi-dwh
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verifier que la base est configuree
+        id: garde
+        env:
+          DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
+        run: |
+          if [ -z "$DWH_DATABASE_URL" ]; then
+            echo "configure=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secret DWH_DATABASE_URL absent : reconstruction ignoree." \
+                 "Voir l'en-tete de .github/workflows/entrepot.yml pour l'activer."
+          else
+            echo "configure=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.garde.outputs.configure == 'true'
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: hanabi-dwh/requirements.txt
+
+      - name: Installer les dependances
+        if: steps.garde.outputs.configure == 'true'
+        run: pip install -r requirements.txt
+
+      # `source freshness` avant la construction, et volontairement non bloquant.
+      # Il repond a « la base recoit-elle encore des ecritures ? ». Une source
+      # perimee n'empeche pas de reconstruire - les agregats resteront justes,
+      # simplement inchanges - mais c'est le premier signe d'une ingestion
+      # arretee, et on veut le voir dans le journal plutot que le decouvrir un
+      # mois plus tard.
+      - name: Fraicheur des sources
+        if: steps.garde.outputs.configure == 'true'
+        continue-on-error: true
+        env:
+          DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
+        run: python dwh.py source freshness
+
+      # `build` et non `run` : les modeles sont construits ET testes, dans
+      # l'ordre du graphe. Un modele dont un test echoue bloque ce qui en
+      # depend, au lieu de propager une donnee fausse jusqu'au tableau de bord.
+      - name: Construire et tester
+        if: steps.garde.outputs.configure == 'true'
+        env:
+          DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
+        run: python dwh.py build
+
+      # Les artefacts de `target/` portent le resultat de chaque noeud et le
+      # graphe complet. Conserves, ils permettent de repondre a « depuis quand
+      # ce test echoue-t-il ? » sans rejouer la construction - et `manifest.json`
+      # est ce que consomment les outils de lignage.
+      #
+      # `always()` : c'est justement quand la construction echoue qu'on veut
+      # pouvoir lire ces fichiers.
+      - name: Conserver les artefacts dbt
+        if: always() && steps.garde.outputs.configure == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-target-${{ github.run_number }}
+          path: |
+            hanabi-dwh/target/manifest.json
+            hanabi-dwh/target/run_results.json
+            hanabi-dwh/target/sources.json
+          retention-days: 30
+          if-no-files-found: warn

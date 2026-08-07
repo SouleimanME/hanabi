@@ -1,0 +1,67 @@
+﻿# Blueprint Render pour l'API Hanabi.
+#
+# Render lit ce fichier et cree le service sans configuration manuelle :
+# « New » puis « Blueprint », on pointe le depot, et tout ce qui figure ici est
+# applique. Voir DEPLOY.md pour la marche a suivre complete.
+#
+# Le front n'est pas declare ici : il est heberge sur Cloudflare Pages, dont le
+# reseau de diffusion sert un build statique plus vite et sans mise en veille.
+
+services:
+  - type: web
+    name: hanabi-api
+    runtime: python
+    plan: free
+    rootDir: hanabi-back
+
+    buildCommand: pip install -r requirements.txt
+    # $PORT est impose par Render ; 0.0.0.0 est indispensable, sinon le service
+    # n'ecoute que sur la boucle locale du conteneur et reste injoignable.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    # Route legere : Render l'appelle pour savoir si le service repond.
+    healthCheckPath: /health
+
+    envVars:
+      # Rend SECRET_KEY obligatoire : sans elle, l'API refuse de demarrer
+      # plutot que d'accepter des jetons signes avec une cle connue.
+      - key: ENV
+        value: prod
+
+      # Render tire une valeur aleatoire et la garde secrete. Rien a saisir, et
+      # aucune cle ne transite par le depot.
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: PYTHON_VERSION
+        value: "3.13"
+
+      # `sync: false` : a renseigner dans le tableau de bord Render, jamais ici.
+      #
+      # CORS_ORIGINS doit contenir l'URL exacte du front Cloudflare Pages,
+      # protocole inclus (ex. https://hanabi-6x9.pages.dev). Sans cela le
+      # navigateur bloquera tous les appels a l'API.
+      - key: CORS_ORIGINS
+        sync: false
+
+      # Chaine de connexion PostgreSQL, fournie par Neon.
+      #
+      # Sans elle, l'API retombe sur un fichier SQLite pose dans le conteneur,
+      # que l'hebergeur reconstruit a chaque redeploiement : les commandes
+      # passees, les comptes crees et les avis deposes disparaissent. C'est
+      # tenable pour une vitrine, pas pour une boutique.
+      #
+      # Prendre la chaine de connexion DIRECTE du tableau de bord Neon, pas la
+      # variante « pooled ». Le pooler travaille en mode transaction et ne
+      # conserve pas l'etat de session, or l'API fixe le fuseau de la sienne a
+      # UTC pour que les regroupements mensuels tombent juste. Voir DEPLOY.md.
+      - key: DATABASE_URL
+        sync: false
+
+      # Sans ces deux variables, aucun administrateur n'est cree et le
+      # back-office reste inaccessible - c'est le defaut voulu. Le compte de
+      # demonstration affiche dans l'interface est un client sans privileges.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
