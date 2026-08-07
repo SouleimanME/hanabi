@@ -1,0 +1,402 @@
+/* En-tete fixe : logo, actions, barre de categories, bandeau de drop. */
+.hd {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  /* Fond opaque, sans flou d'arriere-plan, en permanence.
+   *
+   * `backdrop-filter` sur une bande fixe pleine largeur refloute ce qui defile
+   * derriere a chaque image - un cout compositeur proportionnel a la largeur
+   * de la fenetre. Et ne le retirer qu'une fois la page defilee, comme le
+   * faisait la version precedente, etait pire pour le geste qui accroche : un
+   * va-et-vient rapide a la molette franchissait le seuil dans les deux sens
+   * plusieurs fois par seconde, et chaque franchissement obligeait le
+   * compositeur a reconstruire ses couches. Un en-tete plein ne coute rien,
+   * dans les deux sens, et le verre depoli ne portait que sur les 14 % de
+   * transparence du fond. */
+  background: var(--header-bg-plein);
+  border-bottom: 1px solid var(--line);
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hd.hidden {
+  transform: translateY(-110%);
+}
+/* Fil de progression du defilement (voir layout/ScrollProgress.jsx).
+   `--p` va de 0 a 1 ; scaleX evite de recalculer la mise en page. */
+.scrollbar-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--grad-accent);
+  transform: scaleX(var(--p, 0));
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+.root {
+  padding-top: 64px;
+}
+.hd-in {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Le logo de l'en-tete ramene a l'accueil : on lui donne la meme reponse au
+   survol qu'aux autres commandes, sinon rien n'indique qu'il se clique.
+   Cible `button` pour laisser tranquille le logo du pied de page, qui n'est
+   qu'un ornement. */
+button.logo {
+  transition:
+    opacity var(--dur) var(--ease-out),
+    transform 0.18s var(--ease-spring);
+}
+button.logo:hover {
+  opacity: 0.72;
+}
+button.logo:active {
+  transform: scale(0.97);
+}
+.logo-jp {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--accent);
+  /* Le japonais se coupe entre deux idéogrammes sans avoir besoin d'espace :
+     faute de place, 花火 se scindait en 花 au-dessus de 火. Un nom de marque ne
+     se coupe pas. */
+  white-space: nowrap;
+}
+.hd-r {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 99px;
+  color: var(--ink);
+  position: relative;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+}
+.icon-btn:hover {
+  background: var(--card);
+}
+/* Pendant de `.hide-sm` : n'apparait qu'en dessous de 640 px (responsive.css). */
+.only-sm {
+  display: none;
+}
+.account {
+  width: auto;
+  padding: 0 14px;
+  gap: 8px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-name {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  box-shadow: 0 0 0 2px var(--paper);
+  /* Rejoue a chaque changement de valeur (la cle React remonte l'element). */
+  animation: badge-pop 0.4s var(--ease-spring);
+}
+@keyframes badge-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.badge.alt {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.catbar {
+  border-top: 1px solid var(--line);
+  background: var(--header-bg);
+}
+.catbar-in {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 11px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 8px 14px;
+  color: var(--muted);
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+  flex-shrink: 0;
+}
+.search:focus-within {
+  border-color: var(--accent);
+}
+.search input {
+  border: none;
+  outline: none;
+  background: none;
+  width: 150px;
+  color: var(--ink);
+}
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+.chip {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 7px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+  white-space: nowrap;
+}
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--line2);
+}
+.chip.on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* --- Menu burger (layout/MenuSheet.jsx) ---
+   Meme mecanique que le panier lateral : glissement, et `visibility` retardee
+   pour sortir les commandes du parcours de tabulation une fois refermees.
+   Il vient de la gauche, ou se trouve le burger, et non de la droite comme le
+   panier : deux panneaux sortant du meme bord seraient pris l'un pour l'autre. */
+.msheet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: min(330px, 86vw);
+  background: var(--paper);
+  z-index: 60;
+  transform: translateX(-100%);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.18);
+  visibility: hidden;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.3s;
+}
+.msheet.open {
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0s;
+}
+.msheet-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.msheet-logo {
+  font-size: 17px;
+}
+.msheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
+}
+.msheet-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.msheet-nav button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: var(--r-sm);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+}
+.msheet-nav button:hover {
+  background: var(--card);
+}
+.msheet-nav button.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.msheet-count {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 11px;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+.msheet-sec {
+  margin-top: 22px;
+}
+.msheet-sec h4 {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-left: 12px;
+}
+.msheet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.msheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+}
+.msheet-row > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.msheet-legal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.msheet-legal button {
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+}
+.msheet-legal button:hover {
+  color: var(--accent);
+}
+
+.dropbar {
+  max-width: 1180px;
+  margin: 14px auto 0;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--accent-soft);
+  border: 1px dashed var(--accent);
+  border-radius: 12px;
+  width: calc(100% - 48px);
+}
+.dropbar-l {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--accent);
+}
+.dropbar-t {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}

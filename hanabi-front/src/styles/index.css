@@ -1,0 +1,44 @@
+/* Point d'entree des styles de la boutique.
+ *
+ * L'ordre compte : les jetons de design definissent les variables CSS
+ * consommees par tout le reste, et les regles responsive doivent passer
+ * en dernier pour pouvoir surcharger les regles de bureau.
+ *
+ * Les polices sont chargees dans index.html via <link rel="preconnect">
+ * plutot qu'avec @import : cela evite une requete en cascade et gagne
+ * quelques centaines de millisecondes au premier rendu.
+ */
+
+/* --- Fondations --- */
+@import "./tokens.css";
+@import "./base.css";
+
+/* --- Briques d'interface reutilisables --- */
+@import "./buttons.css";
+@import "./dropdown.css";
+@import "./rating.css";
+@import "./forms.css";
+@import "./modal.css";
+
+/* --- Structure de page --- */
+@import "./header.css";
+@import "./footer.css";
+
+/* --- Ecrans --- */
+@import "./hero.css";
+@import "./carousel.css";
+@import "./catalog.css";
+@import "./product.css";
+@import "./account.css";
+@import "./cart.css";
+@import "./saved.css";
+@import "./checkout.css";
+@import "./legal.css";
+
+/* --- Retours utilisateur --- */
+@import "./welcome.css";
+@import "./feedback.css";
+@import "./animations.css";
+
+/* --- Adaptations petits ecrans (toujours en dernier) --- */
+@import "./responsive.css";

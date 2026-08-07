@@ -1,0 +1,369 @@
+/* Champs de formulaire : label, erreur, date, telephone, mot de passe. */
+/* --- Saisie de carte bancaire (voir lib/card.js) --- */
+.card-input {
+  position: relative;
+}
+/* Reseau detecte, affiche dans le champ : confirme que la saisie est bien lue. */
+.card-brand {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: var(--paper);
+  padding: 2px 7px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+  animation: pop 0.25s var(--ease-spring);
+}
+/* Erreur rattachee a un champ, plutot qu'un seul message en bas du formulaire :
+   l'utilisateur voit lequel corriger. */
+.field-err {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+/* Le contour rouge suit `aria-invalid`, donc l'information est portee une seule
+   fois : ce que voit l'oeil et ce qu'annonce un lecteur d'ecran ne peuvent pas
+   diverger par oubli. */
+.field input[aria-invalid="true"],
+.pw-wrap input[aria-invalid="true"] {
+  border-color: var(--accent);
+}
+
+/* Champ piege anti-robots (voir hooks/useAntiBot.js).
+ *
+ * Sorti de l'ecran plutot que `display: none` : les robots un peu evolues
+ * ignorent les champs masques de cette facon, alors qu'ils remplissent ceux qui
+ * existent dans le document. Inaccessible au clavier (tabIndex -1) et masque
+ * aux lecteurs d'ecran (aria-hidden), donc invisible pour une personne. */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.field {
+  display: block;
+  margin-bottom: 18px;
+}
+.field span {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.field input {
+  width: 100%;
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  outline: none;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+  color: var(--ink);
+  font-size: 15px;
+}
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.form-err {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 13px;
+  border-radius: 9px;
+  margin-top: 6px;
+}
+.modal-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.datepick {
+  margin-bottom: 18px;
+}
+.field-lbl {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.datepick {
+  margin-bottom: 18px;
+}
+.datepick-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.datepick-col .dd {
+  width: 100%;
+  position: relative;
+}
+.datepick-col .dd-trigger {
+  width: 100%;
+  justify-content: space-between;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  min-width: 0;
+  background: var(--card);
+  border: 1px solid var(--line2);
+}
+.datepick-col .dd-trigger:hover {
+  border-color: var(--accent);
+}
+.datepick-col .dd-label {
+  flex: 1;
+  text-align: left;
+  color: var(--ink);
+}
+.datepick-col .dd-menu {
+  min-width: 100%;
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  left: 0;
+  right: auto;
+}
+.datepick-col .dd-item {
+  padding: 14px 16px;
+  font-size: 16px;
+}
+.phone-wrap {
+  position: relative;
+  display: flex;
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  overflow: visible;
+  background: var(--card);
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+}
+.phone-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.phone-dial {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-right: 1px solid var(--line2);
+  background: none;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 12px 0 0 12px;
+  min-width: 90px;
+}
+.phone-dial:hover {
+  background: var(--paper);
+}
+.phone-flag-img {
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: block;
+}
+.phone-code {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 34px;
+}
+.phone-num {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  padding: 14px 14px;
+  font-size: 15px;
+  color: var(--ink);
+}
+.phone-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 280px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  z-index: 300;
+  max-height: 280px;
+  overflow-y: auto;
+  list-style: none;
+  animation: pop 0.15s;
+  scrollbar-width: thin;
+}
+.phone-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition:
+    color 0.12s,
+    background-color 0.12s,
+    border-color 0.12s,
+    opacity 0.12s,
+    transform 0.12s;
+}
+.phone-item:hover {
+  background: var(--paper);
+  color: var(--accent);
+}
+.phone-item.on {
+  color: var(--accent);
+  font-weight: 700;
+  background: var(--accent-soft);
+}
+.phone-item-label {
+  flex: 1;
+}
+.phone-item-dial {
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+.pw-wrap {
+  position: relative;
+  display: flex;
+}
+.pw-wrap input {
+  flex: 1;
+  padding-right: 44px;
+}
+.pw-eye {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  border-radius: 8px;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+}
+.pw-eye:hover {
+  color: var(--ink);
+}
+.pw-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+.pw-bars {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.pw-bar {
+  height: 4px;
+  flex: 1;
+  border-radius: 99px;
+  transition:
+    color 0.3s,
+    background-color 0.3s,
+    border-color 0.3s,
+    opacity 0.3s,
+    transform 0.3s;
+}
+.pw-label {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  min-width: 52px;
+}
+.pw-checklist {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+  margin-bottom: 12px;
+}
+.pw-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  transition:
+    color 0.2s,
+    background-color 0.2s,
+    border-color 0.2s,
+    opacity 0.2s,
+    transform 0.2s;
+}
+.pw-checklist li.ok {
+  color: var(--ok);
+}
+.pw-check-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pw-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line2);
+  display: block;
+}
+.pw-match {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+.pw-match.ok {
+  color: var(--ok);
+  background: rgba(62, 122, 91, 0.1);
+}

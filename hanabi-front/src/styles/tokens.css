@@ -1,0 +1,87 @@
+/* Jetons de design : palette, ombres, theme clair et sombre. */
+.root {
+  /* Indique au navigateur quel theme est actif, pour qu'il accorde ce qu'il
+     dessine lui-meme : barres de defilement, menus deroulants natifs, champs de
+     saisie. Sans cela, un formulaire clair pouvait apparaitre sur fond sombre. */
+  color-scheme: light;
+  --paper: #f4f0e6;
+  --card: #fbf8f0;
+  --ink: #16140f;
+  --muted: #6e665a;
+  --line: #e2dbcb;
+  --line2: #cfc6b2;
+  --accent: #e0382a;
+  --accent-soft: rgba(224, 56, 42, 0.1);
+  --indigo: #1b3a5b;
+  --gold: #b98a2e;
+  --ok: #3e7a5b;
+  --on-accent: #fbf8f0;
+  --header-bg: rgba(244, 240, 230, 0.86);
+  /* Meme teinte que --header-bg, sans transparence : fond permanent de
+     l'en-tete, qui n'a plus de flou d'arriere-plan. La variante translucide
+     reste utilisee par la barre basse mobile. */
+  --header-bg-plein: #f4f0e6;
+  --footer-bg: #16140f;
+  --footer-tx: #b6ad9c;
+  --shadow: 0 1px 2px rgba(22, 20, 15, 0.05), 0 10px 34px rgba(22, 20, 15, 0.07);
+
+  /* Elevation : trois paliers pour hierarchiser survol et fenetres. */
+  --shadow-sm: 0 1px 2px rgba(22, 20, 15, 0.05), 0 3px 10px rgba(22, 20, 15, 0.05);
+  --shadow-lg: 0 2px 6px rgba(22, 20, 15, 0.06), 0 24px 60px rgba(22, 20, 15, 0.14);
+  --glow: 0 10px 40px rgba(224, 56, 42, 0.28);
+
+  /* Degrades signature : la "fleur de feu" et le liseré vermillon → or. */
+  --grad-accent: linear-gradient(120deg, var(--accent) 0%, var(--gold) 100%);
+  --grad-hanabi: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(224, 56, 42, 0.16) 0%,
+    rgba(185, 138, 46, 0.08) 40%,
+    transparent 72%
+  );
+}
+:root {
+  /* Les jetons de typographie (--font-*) vivent dans `src/index.css` : c'est la
+     seule feuille que la boutique et le back-office chargent tous les deux. */
+
+  /* Courbes de mouvement communes : un rebond doux pour les entrees, une sortie
+     franche pour le tactile. Regroupees ici pour un langage d'animation unique. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Rayons de bordure. */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+
+  --dur: 0.28s;
+}
+.root.dark {
+  color-scheme: dark;
+  --paper: #15130f;
+  --card: #211e18;
+  --ink: #ece6d8;
+  --muted: #9a9080;
+  --line: #312c24;
+  --line2: #3e382e;
+  --accent: #ff5340;
+  --accent-soft: rgba(255, 83, 64, 0.15);
+  --indigo: #7fa8ce;
+  --gold: #d7ae5b;
+  --ok: #5fa37e;
+  --on-accent: #15130f;
+  --header-bg: rgba(21, 19, 15, 0.86);
+  --header-bg-plein: #15130f;
+  --footer-bg: #0f0d0a;
+  --footer-tx: #9a9080;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 44px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.5), 0 28px 70px rgba(0, 0, 0, 0.66);
+  --glow: 0 10px 44px rgba(255, 83, 64, 0.4);
+  --grad-accent: linear-gradient(120deg, var(--accent) 0%, var(--gold) 100%);
+  --grad-hanabi: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(255, 83, 64, 0.2) 0%,
+    rgba(215, 174, 91, 0.1) 40%,
+    transparent 72%
+  );
+}

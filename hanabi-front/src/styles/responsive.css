@@ -1,0 +1,193 @@
+/* Adaptations mobiles et tablette. A charger en dernier. */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-top: 40px;
+  }
+  .hero-card {
+    max-width: 360px;
+  }
+  .pp-in,
+  .co-in {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .gallery,
+  .co-sum {
+    position: static;
+  }
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .rev-list {
+    grid-template-columns: 1fr;
+  }
+  .ft-in {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .vlabel {
+    display: none;
+  }
+}
+/* Le menu burger n'existe que sur petit ecran : au-dela, l'en-tete affiche
+   toutes ses actions et le tiroir n'a plus de declencheur. On le neutralise
+   quand meme, pour le cas ou la fenetre s'elargit alors qu'il est ouvert. */
+@media (min-width: 641px) {
+  .msheet,
+  .menu-scrim {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .hide-sm {
+    display: none;
+  }
+  .only-sm {
+    display: flex;
+  }
+  .hd-in {
+    gap: 8px;
+    padding: 0 14px;
+    height: 58px;
+  }
+  .catbar-in {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 11px 16px;
+  }
+  .search {
+    justify-content: flex-start;
+  }
+  .search input {
+    width: 100%;
+    flex: 1;
+  }
+  .dropbar {
+    width: calc(100% - 32px);
+    margin-top: 12px;
+  }
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .grid-sec,
+  .hero,
+  .pp,
+  .co,
+  .done {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .hero {
+    padding-top: 30px;
+    padding-bottom: 28px;
+  }
+  .card-foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .btn-add {
+    width: 100%;
+  }
+  .root {
+    padding-bottom: 64px;
+    padding-top: 58px;
+  }
+  .drawer {
+    width: 100vw;
+  }
+  .mnav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 55;
+    background: var(--header-bg);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    justify-content: space-around;
+  }
+  .mnav button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    border-radius: 12px;
+  }
+  .mnav button.on {
+    color: var(--accent);
+  }
+  .mnav-ic {
+    position: relative;
+    display: flex;
+  }
+  .mnav-ic i {
+    position: absolute;
+    top: -6px;
+    right: -9px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    font-family: var(--font-mono);
+    font-style: normal;
+  }
+  .toast {
+    bottom: 80px;
+  }
+  /* Offre de bienvenue : la barre du bas passe au-dessus d'elle (z-index 55
+     contre 45) et lui coupait ses deux dernieres lignes, dont la mention de
+     desinscription. Sur petit ecran elle devient donc un bandeau pleine
+     largeur, pose au-dessus de la barre plutot que dessous. */
+  .welcome {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .welcome-note {
+    font-size: 11px;
+  }
+  /* Articles enregistres : prix et actions passent sous la description, sinon
+     le bouton « Remettre au panier » ecrasait le nom du produit. */
+  .saved-line {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .saved-act {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+@media (max-width: 430px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

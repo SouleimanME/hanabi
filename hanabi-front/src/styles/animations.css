@@ -1,0 +1,55 @@
+/* Animations partagees. */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Apparition au defilement, pilotee par le hook useReveal : l'element part
+   legerement plus bas et remonte quand il entre dans le champ de vision. */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.6s var(--ease-out),
+    transform 0.6s var(--ease-out);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Transition d'ecran. La cle React `view` remonte le conteneur, ce qui rejoue
+   l'animation a chaque changement de page : la navigation se lit comme celle
+   d'une application, sans routeur ni bibliotheque d'animation. */
+.view {
+  animation: view-in 0.42s var(--ease-out) both;
+  /* Relaie l'etirement vertical : sans cela, `main` n'est plus un enfant direct
+     du conteneur flex `.root` et le pied de page remonterait sur les pages
+     courtes. */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

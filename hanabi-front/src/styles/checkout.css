@@ -1,0 +1,145 @@
+/* Tunnel de paiement et page de confirmation. */
+.co-in {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 46px;
+  align-items: start;
+}
+.co-h {
+  font-family: var(--font-display);
+  font-size: 30px;
+  margin-bottom: 24px;
+}
+.co-block {
+  border: none;
+  margin-bottom: 24px;
+}
+.co-block legend {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+/* Reassurance sous le bouton de paiement : centree, discrete, non cliquable. */
+.co-rea {
+  justify-content: center;
+  margin-top: 14px;
+}
+.co-sum {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  position: sticky;
+  top: 90px;
+  box-shadow: var(--shadow-sm);
+}
+.co-sum h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+.co-lines {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.co-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+}
+.co-line-mid {
+  flex: 1;
+  min-width: 0;
+}
+.co-qty {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  border: 2px solid var(--card);
+}
+.co-empty {
+  text-align: center;
+  padding: 80px 0;
+}
+.co-empty h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.done {
+  display: flex;
+  justify-content: center;
+}
+.done-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 48px;
+  text-align: center;
+  max-width: 460px;
+  box-shadow: var(--shadow);
+  margin-top: 30px;
+}
+.done-tick {
+  width: 64px;
+  height: 64px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 22px;
+  animation: pop 0.4s;
+}
+.done-card h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+.done-card p {
+  color: var(--muted);
+  margin-bottom: 26px;
+}
+.done-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 28px;
+}
+.done-grid div div {
+  font-size: 15px;
+  margin-top: 3px;
+}
+.done-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

@@ -1,0 +1,267 @@
+/* Panier lateral, lignes du panier et champ code promo. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 7, 5, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  /* Meme raison que le voile des fenetres modales (voir modal.css) : ni flou
+     d'arriere-plan sur un element plein ecran, ni transition `all`. Seule
+     l'opacite change ici, et c'est la seule a animer. */
+  transition: opacity 0.25s;
+  z-index: 50;
+}
+.scrim.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(420px, 92vw);
+  background: var(--paper);
+  z-index: 60;
+  transform: translateX(100%);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.18);
+  /* `visibility: hidden` retire le panier ferme du parcours de tabulation.
+     `aria-hidden` seul ne suffit pas : il le masque aux lecteurs d'ecran mais
+     laisse ses boutons focusables, si bien qu'au clavier on se retrouvait a
+     parcourir un panier sorti de l'ecran.
+     Le changement de visibilite est retarde de la duree du glissement, sinon le
+     tiroir disparaitrait d'un coup au lieu de sortir par la droite. */
+  visibility: hidden;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.3s;
+}
+.drawer.open {
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0s;
+}
+.drawer-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.drawer-hd h3 {
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 22px;
+}
+.cart-line {
+  display: flex;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cart-thumb,
+.co-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+  position: relative;
+}
+.cart-l-info {
+  flex: 1;
+  min-width: 0;
+}
+.cart-l-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.cart-l-name {
+  font-family: var(--font-serif);
+  font-size: 16px;
+}
+.cart-l-acts {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.link-del {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.link-del:hover {
+  color: var(--accent);
+}
+.cart-l-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+.drawer-ft {
+  border-top: 1px solid var(--line);
+  padding: 18px 22px 22px;
+  background: var(--card);
+}
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.sum-row.disc {
+  color: var(--accent);
+  font-weight: 700;
+}
+.sum-row.total {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 12px;
+  font-family: var(--font-display);
+}
+/* Jauge de livraison offerte : voir components/cart/ShippingGauge.jsx. */
+.gauge {
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  transition:
+    color 0.3s var(--ease-out),
+    background-color 0.3s var(--ease-out),
+    border-color 0.3s var(--ease-out),
+    opacity 0.3s var(--ease-out),
+    transform 0.3s var(--ease-out);
+}
+.gauge.done {
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+.gauge-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.gauge-track {
+  height: 6px;
+  border-radius: 99px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  overflow: hidden;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--grad-accent);
+  transition: width 0.6s var(--ease-out);
+}
+.gauge.done .gauge-fill {
+  background: var(--ok);
+}
+/* Reflet qui balaye la barre : signale que la progression est vivante. */
+.gauge:not(.done) .gauge-fill {
+  position: relative;
+  overflow: hidden;
+}
+.gauge:not(.done) .gauge-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 80%
+  );
+  animation: gauge-sweep 2.4s var(--ease-out) infinite;
+}
+@keyframes gauge-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.drawer-ft .btn-primary {
+  margin: 12px 0 9px;
+}
+.cart-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+  padding: 40px;
+}
+
+.promo {
+  margin-bottom: 14px;
+}
+.promo-row {
+  display: flex;
+  gap: 8px;
+}
+.promo-row input {
+  flex: 1;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: var(--paper);
+  outline: none;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.promo-row input:focus {
+  border-color: var(--accent);
+}
+.promo-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.promo-err {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.promo-on {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--accent-soft);
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.promo-on span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent);
+}

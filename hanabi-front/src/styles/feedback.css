@@ -1,0 +1,35 @@
+/* Toast de confirmation et navigation mobile fixe. */
+.toast {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  transform: translate(-50%, 24px) scale(0.94);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 20px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+  /* Rebond a l'entree : le message "atterrit" au lieu de glisser. */
+  transition:
+    opacity 0.25s var(--ease-out),
+    transform 0.42s var(--ease-spring);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid color-mix(in srgb, var(--paper) 14%, transparent);
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+.toast svg {
+  color: var(--ok);
+}
+.mnav {
+  display: none;
+}

@@ -1,0 +1,65 @@
+/* Feuille commune aux deux interfaces (boutique et back-office).
+ *
+ * Seule feuille chargee par `main.jsx` avant l'aiguillage de route : c'est donc
+ * ici, et pas dans `styles/tokens.css`, que vivent les jetons dont les deux
+ * interfaces ont besoin. Le back-office ne charge que `admin/admin.css` et
+ * n'aurait pas acces a des variables definies cote boutique.
+ */
+
+:root {
+  /* --- Typographie ---
+   *
+   * Trois familles, trois roles. Passer par des jetons plutot que de nommer la
+   * police dans chaque regle : changer la typographie du site devient une
+   * modification d'une ligne, au lieu d'une soixantaine.
+   *
+   * Shippori Mincho B1 : un mincho (serif japonais) dessine pour les gros
+   * corps. En 800 il porte les titres, en 400 il habille les noms de produits.
+   * Zen Kaku Gothic New : sans-serif tres lisible aux petites tailles.
+   * DM Mono : chiffres a largeur fixe, pour que les prix et les codes ne
+   * dansent pas d'une ligne a l'autre.
+   *
+   * Le choix du monospace n'est pas neutre : JetBrains Mono, dessine pour les
+   * editeurs de code, donnait un air de terminal a une boutique d'artisanat.
+   * DM Mono garde l'alignement des chiffres avec un dessin plus chaud.
+   *
+   * Le monospace est reserve aux DONNEES qui gagnent a etre alignees : prix,
+   * references, numeros de commande. Il n'a rien a faire sur du texte
+   * d'interface comme un nom de langue.
+   */
+  --font-display: "Shippori Mincho B1", Georgia, serif;
+  --font-serif: "Shippori Mincho B1", Georgia, serif;
+  --font-body: "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+}
+
+/* Fond porte par <html>, et pas seulement par le conteneur de l'application.
+ *
+ * Le theme etait applique a un <div> interieur : <html> et <body> restaient
+ * sans couleur, donc blancs. Sur telephone, tout ce que le navigateur peint
+ * au-dela du contenu prenait cette couleur - barre d'adresse, zones de rebond,
+ * pourtour de l'encoche - et cernait de blanc un site sombre.
+ *
+ * `color-scheme` accompagne le fond : il indique au navigateur quelle famille
+ * de couleurs employer pour ce qu'il dessine lui-meme. L'attribut data-theme
+ * est pose sur <html> par le hook useTheme.
+ */
+html {
+  background: #f4f0e6;
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  background: #15130f;
+  color-scheme: dark;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: inherit;
+}
+#root {
+  min-height: 100vh;
+}

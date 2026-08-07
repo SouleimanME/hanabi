@@ -1,0 +1,339 @@
+/* Fiche produit : galerie, achat, avis, produits associes. */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 22px;
+}
+.back:hover {
+  color: var(--ink);
+}
+.pp-in {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 54px;
+  align-items: start;
+}
+.gallery {
+  position: sticky;
+  top: 90px;
+}
+.pp-art {
+  position: relative;
+  aspect-ratio: 1/1;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+/* Zoom-loupe : le visuel grossit en gardant sous le curseur le point vise.
+   `transform-origin` suit --mx/--my, ecrites par useTilt au survol. */
+.pp-art.zoomable > .art,
+.pp-art.zoomable > img {
+  transition: transform 0.4s var(--ease-out);
+  transform-origin: var(--mx, 50%) var(--my, 50%);
+}
+/* Le zoom est desormais pilote par un CLIC, pas par le survol.
+ *
+ * En survol, on ne pouvait pas revenir a la vue d'ensemble sans sortir du
+ * visuel : le geste naturel - regarder un detail, puis reculer - etait
+ * impossible. Un clic entre dans le zoom, un second en sort, et la touche
+ * Echap aussi. Le curseur annonce l'action disponible dans chaque etat. */
+.pp-art.zoomable[data-zoom] > .art,
+.pp-art.zoomable[data-zoom] > img {
+  transform: scale(1.7);
+}
+.pp-art.zoomable {
+  cursor: zoom-in;
+}
+.pp-art.zoomable[data-zoom] {
+  cursor: zoom-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-art.zoomable[data-zoom] > .art,
+  .pp-art.zoomable[data-zoom] > img {
+    transform: none;
+  }
+  .pp-art.zoomable {
+    cursor: default;
+  }
+}
+.pp-wish {
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+}
+.thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+  flex-shrink: 0;
+}
+.thumb:hover {
+  border-color: var(--line2);
+}
+.thumb.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.pp-name {
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.12;
+  margin: 10px 0 10px;
+}
+.pp-rate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pp-price {
+  font-size: 24px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.pp-stock {
+  margin-bottom: 18px;
+}
+.pp-desc {
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+.pp-specs {
+  list-style: none;
+  border-top: 1px solid var(--line);
+  margin-bottom: 26px;
+}
+.pp-specs li {
+  display: flex;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.pp-specs span {
+  color: var(--muted);
+}
+.pp-buy {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.pp-rea {
+  display: flex;
+  gap: 22px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.pp-rea span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.notify {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.notify-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.notify-row {
+  display: flex;
+  gap: 8px;
+}
+.notify-row input {
+  flex: 1;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 11px 13px;
+  background: var(--paper);
+  outline: none;
+  color: var(--ink);
+}
+.notify-row input:focus {
+  border-color: var(--accent);
+}
+.notify-ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ok);
+  font-weight: 700;
+  font-size: 14px;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.stepper button {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+.stepper button:hover:not(:disabled) {
+  background: var(--paper);
+}
+.stepper span {
+  min-width: 30px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+.stepper.big button {
+  width: 46px;
+  height: 46px;
+}
+.stepper.big span {
+  font-size: 16px;
+}
+
+.reviews {
+  margin-top: 60px;
+  border-top: 1px solid var(--line);
+  padding-top: 34px;
+}
+.rev-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.rev-head h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.rev-head h2 .mono {
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+.rev-form {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.rev-form textarea {
+  width: 100%;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 11px 13px;
+  background: var(--paper);
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.rev-form textarea:focus {
+  border-color: var(--accent);
+}
+.rev-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rev {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.rev-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rev-name {
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rev-mine {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--ok);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+.rev p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.rev-empty {
+  padding: 14px 0 4px;
+}
+.related {
+  margin-top: 60px;
+  border-top: 1px solid var(--line);
+  padding-top: 34px;
+}
+.related h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+/* Suggestions issues des paniers reels (voir /products/{id}/affinites).
+ *
+ * Meme presentation que les produits associes, une note explicative en plus :
+ * une recommandation dont on comprend l'origine se lit autrement qu'une
+ * rubrique anonyme, et celle-ci a une origine qui merite d'etre dite. */
+.ensemble-note {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 62ch;
+  margin: -14px 0 22px;
+  line-height: 1.6;
+}

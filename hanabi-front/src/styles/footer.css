@@ -1,0 +1,110 @@
+/* Pied de page : colonnes, liens et bandeau legal. */
+.ft {
+  background: var(--footer-bg);
+  color: var(--footer-tx);
+  /* Reference de positionnement du Fuji, pose en absolu au fond. */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+/* Frise seigaiha : renversee pour que les vagues pointent vers le haut, en
+   crete de separation avec le contenu de la page. */
+.ft-crest {
+  line-height: 0;
+  transform: rotate(180deg);
+}
+.ft-in {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 54px 24px 36px;
+  display: grid;
+  grid-template-columns: 1.2fr 1.5fr;
+  gap: 40px;
+}
+.ft-logo {
+  color: #fbf8f0;
+  font-size: 23px;
+}
+.ft-logo .logo-jp {
+  color: var(--accent);
+}
+.ft-tag {
+  color: var(--footer-tx);
+  font-size: 14px;
+  max-width: 320px;
+  margin-top: 12px;
+}
+.ft-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.ft-cols h4 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  color: #fbf8f0;
+}
+/* Les <span> sont des intitules inertes dans cette demo ; seuls les .ft-link
+   mènent quelque part et portent donc le curseur main. */
+.ft-cols span,
+.ft-cols .ft-link {
+  display: block;
+  font-size: 14px;
+  color: var(--footer-tx);
+  padding: 5px 0;
+  text-align: left;
+}
+.ft-cols .ft-link {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.ft-cols .ft-link:hover {
+  color: #fbf8f0;
+}
+.ft-legal {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.ft-legal-in {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--footer-tx);
+}
+.ft-legal-links {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ft-legal-link {
+  font-size: 12px;
+  color: var(--footer-tx);
+  padding: 4px 10px;
+  border-radius: 99px;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ft-legal-link:hover {
+  color: #fbf8f0;
+  background: rgba(255, 255, 255, 0.08);
+}

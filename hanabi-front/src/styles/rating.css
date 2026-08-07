@@ -1,0 +1,53 @@
+/* Etoiles de notation et pastille de stock. */
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: var(--gold);
+}
+.stars-c {
+  color: var(--muted);
+  margin-left: 5px;
+  font-size: 11px;
+}
+.star-input {
+  display: inline-flex;
+  gap: 3px;
+  color: var(--gold);
+}
+.star-input button {
+  padding: 2px;
+  line-height: 0;
+}
+.stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.stock.ok {
+  color: var(--ok);
+}
+.stock.low {
+  color: var(--accent);
+}
+/* Stock faible : l'icone pulse doucement. L'urgence est reelle (elle vient du
+   stock renvoye par l'API), jamais fabriquee. */
+.stock.low svg {
+  animation: stock-pulse 1.9s var(--ease-out) infinite;
+}
+@keyframes stock-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.16);
+  }
+}
+.stock.out {
+  color: var(--muted);
+}

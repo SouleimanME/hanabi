@@ -1,0 +1,211 @@
+/* Banniere d'accueil et carte produit mise en avant. */
+.hero {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 54px 24px 46px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 48px;
+  align-items: center;
+  overflow: hidden;
+}
+.hero-maru {
+  position: absolute;
+  top: -40px;
+  left: -60px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.1;
+  z-index: 0;
+  animation: hero-breathe 9s var(--ease-out) infinite;
+  /* Promotion sur sa propre couche. `transform` et `opacity` sont composables,
+     mais seulement si l'element est isole : sans cela le navigateur repeint le
+     hero entier a chaque image pour un halo de 340 px. */
+  will-change: transform, opacity;
+}
+@keyframes hero-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.1;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.16;
+  }
+}
+/* Halo signature "fleur de feu" derriere tout le hero. */
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--grad-hanabi);
+  pointer-events: none;
+}
+/* Toile des feux d'artifice ambiants. */
+.fireworks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero-l {
+  position: relative;
+  z-index: 1;
+}
+.eyebrow {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.hero-h {
+  font-family: var(--font-display);
+  /* Le mincho a des deliees fines : il lui faut la graisse maximale pour tenir
+     le poids d'un titre de cette taille. */
+  font-weight: 800;
+  font-size: clamp(38px, 6vw, 70px);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin: 18px 0 22px;
+}
+/* Dernier mot du titre, en degrade fige.
+ *
+ * Le degrade balayait sa position en boucle (`hero-shine`, infinie). Or
+ * `background-position` n'est pas compose : chaque image de ce balayage
+ * repeignait le mot, en continu, tant que le hero restait a l'ecran - c'est-a-
+ * dire tout le temps qu'on passe en haut de page, la ou le profilage montrait
+ * du rouge. Le gain visuel d'un reflet perpetuel ne valait pas une repeinture
+ * qui ne s'arrete jamais.
+ *
+ * Le mot garde exactement le meme degrade, simplement immobile. Pour retrouver
+ * le reflet sans le cout permanent, on pourrait le jouer une ou deux fois au
+ * chargement (`animation: hero-shine 6s var(--ease-out) 2`) plutot qu'a
+ * l'infini - le reflet redevient alors un accueil, pas une depense continue. */
+.hero-h em {
+  font-family: inherit;
+  background: linear-gradient(100deg, var(--accent), var(--gold), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.hero-p {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 430px;
+  margin-bottom: 26px;
+}
+.hero-meta {
+  display: flex;
+  gap: 22px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.hero-meta span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.hero-card {
+  position: relative;
+  z-index: 1;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  text-align: left;
+  box-shadow: var(--shadow);
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+    scale(var(--card-scale, 1));
+  /* Transformation seule animee ; l'ombre bascule instantanement. Meme raison
+   * que pour les cartes du catalogue, detaillee dans `catalog.css` : `box-shadow`
+   * n'est pas compose et le transitionner repeint a chaque image. */
+  transition: transform 0.25s var(--ease-out);
+}
+.hero-card:hover {
+  /* `will-change` au survol seulement, et pas de `transform-style` : meme
+   * raison que pour les cartes du catalogue, expliquee en detail dans
+   * `catalog.css`. Cette carte-ci ne pesait qu'une couche sur treize, mais il
+   * n'y a pas de raison de la traiter autrement. */
+  will-change: transform;
+  --card-scale: 1.03;
+  box-shadow: var(--shadow-lg);
+}
+.hero-card:hover .card-sheen {
+  opacity: 1;
+}
+.hero-art {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: var(--paper);
+}
+.hero-art .art {
+  transition: transform 0.55s var(--ease-out);
+}
+.hero-card:hover .hero-art .art {
+  transform: scale(1.05);
+}
+.hero-card-ft {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.hero-card-name {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  margin: 4px 0;
+}
+.hero-tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 99px;
+}
+.vlabel {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  opacity: 0.5;
+  z-index: 0;
+}
+.price {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* Repos hors ecran.
+ *
+ * `Fireworks` coupe deja sa boucle de dessin quand le hero sort du champ ;
+ * les animations CSS, elles, tournaient en permanence - plusieurs ecrans plus
+ * haut, sur un titre que personne ne regardait. L'attribut est pose par
+ * `usePauseHorsEcran`.
+ *
+ * `paused` gele la progression sans la reinitialiser : l'animation reprend ou
+ * elle en etait, sans saut visible au retour. */
+.hero[data-fige],
+.hero[data-fige] * {
+  animation-play-state: paused;
+}

@@ -1,0 +1,58 @@
+/* Contenu des pages legales affichees en modale. */
+.legal-modal {
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.legal-body {
+  overflow-y: auto;
+  padding-top: 8px;
+  flex: 1;
+  scrollbar-width: thin;
+}
+.legal-h3 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  margin: 18px 0 6px;
+  color: var(--ink);
+}
+.legal-p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.legal-bullet {
+  font-size: 14px;
+  color: var(--muted);
+  padding-left: 14px;
+  line-height: 1.65;
+}
+.legal-gap {
+  height: 8px;
+}
+/* Rappel que les textes sont une base a completer, pose au-dessus du contenu. */
+.legal-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 4px 0 2px;
+  padding: 10px 13px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  font-size: 12.5px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.legal-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.legal-updated {
+  flex-shrink: 0;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+}
