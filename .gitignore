@@ -30,10 +30,15 @@ dist-ssr/
 .vscode/*
 !.vscode/extensions.json
 .idea/
-.claude/
 .DS_Store
 Thumbs.db
 *.swp
+
+# --- Orchestration ---
+# Sans DAGSTER_HOME, `dagster dev` cree son stockage a cote du repertoire
+# courant - qui n'est pas toujours hanabi-dwh. Le motif est donc repete ici.
+.dagster/
+.tmp_dagster_home_*/
 
 # --- Logs ---
 *.log

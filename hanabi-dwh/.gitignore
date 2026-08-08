@@ -4,3 +4,8 @@ dbt_packages/
 logs/
 # Etat de la derniere construction, propre a une machine.
 .user.yml
+# Journal des executions Dagster. Sans DAGSTER_HOME, `dagster dev` se rabat sur
+# un dossier temporaire cree ici ; avec, c'est generalement `.dagster/` qu'on
+# lui donne. Dans les deux cas c'est un etat local, pas du code.
+.dagster/
+.tmp_dagster_home_*/

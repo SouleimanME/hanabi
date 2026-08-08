@@ -4,10 +4,28 @@
 # n'a rien a faire dans l'image du service web : il ne tourne qu'au moment de
 # construire l'entrepot, jamais pendant qu'une page se charge. Un venv distinct
 # dans `hanabi-dwh/.venv` garde l'API aussi legere qu'avant.
-dbt-core==1.12.*
+#
+# `dbt-core` est en 1.11 et non en 1.12 : c'est la borne haute de dagster-dbt,
+# qui verifie la version du manifeste qu'il lit. Le pas en arriere est sans
+# consequence ici - aucun modele n'emploie de nouveaute de la 1.12 - et il
+# aligne enfin le coeur sur l'adaptateur, reste en 1.11 pendant ce temps.
+dbt-core==1.11.*
 dbt-postgres==1.11.*
 
 # Pilote PostgreSQL pour l extraction des sources externes (ingestion/).
 # dbt-postgres embarque psycopg2 ; ce module utilise psycopg 3, qui gere
 # nativement les fuseaux et les types date sans adaptateur supplementaire.
 psycopg[binary]==3.2.*
+
+# Orchestration (orchestration/). dagster-dbt epingle sa version de dagster au
+# correctif pres : les trois lignes se remontent ensemble ou pas du tout.
+dagster==1.13.*
+dagster-dbt==0.29.*
+
+# L'interface web. Elle ne sert a aucune execution - ni le travail planifie ni
+# l'integration continue ne la chargent - mais c'est par elle qu'on lit le
+# graphe, qu'on relance une partition manquante et qu'on voit quel test a
+# lache. La laisser dans un fichier a part economiserait une quinzaine de
+# paquets sur une tache qui tourne une fois par jour, contre une commande
+# d'installation de plus a connaitre. Le mauvais cote de l'arbitrage.
+dagster-webserver==1.13.*

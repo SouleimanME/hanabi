@@ -1,0 +1,10 @@
+# Ce fichier ne declare pas un paquet Python : il ne sert qu'a dire a Dagster ou
+# trouver ses definitions. Sans lui, chaque commande devrait porter
+# `-m orchestration` ; avec lui, `dagster dev` suffit depuis ce dossier.
+#
+# Le projet n'est volontairement pas empaquete. Il n'est ni publie ni importe
+# de l'exterieur, et `requirements.txt` reste le seul endroit ou lire ses
+# dependances - un `[project]` complet ferait une seconde liste a tenir a jour.
+[tool.dagster]
+module_name = "orchestration"
+code_location_name = "hanabi_dwh"

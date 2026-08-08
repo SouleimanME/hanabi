@@ -45,6 +45,14 @@ naturelle. Rejouer la meme fenetre ne cree pas de doublon et ne change rien
 d'autre que `charge_le`. C'est ce qui rend le rattrapage sur, y compris apres
 un echec au milieu d'une plage.
 
+DEUX APPELANTS
+
+Ce module reste utilisable seul, en ligne de commande - c'est le chemin le plus
+court pour charger une plage precise. Il est par ailleurs enveloppe par les
+actifs Dagster de `orchestration/actifs_externes.py`, qui appellent les memes
+fonctions plutot que de refaire le travail : c'est de la que vient
+l'ordonnancement, bronze declarant ces deux tables en dependance.
+
 Usage :
     python -m ingestion.sources taux --depuis 2024-08-01
     python -m ingestion.sources feries --de 2024 --a 2027
@@ -74,6 +82,15 @@ API_FERIES = "https://date.nager.at/api/v3/PublicHolidays"
 
 DEVISE = "JPY"
 PAYS = ("FR", "JP")
+
+# Fenetres chargees par defaut. Ce sont des constantes et non des valeurs
+# posees dans `argparse` parce qu'elles ont desormais deux lecteurs : la ligne
+# de commande ci-dessous, et les actifs Dagster de `orchestration/`, qui
+# decoupe la serie de taux en partitions mensuelles a partir de la meme date.
+# Deux fenetres qui derivent l'une de l'autre finiraient par differer, et un
+# trou dans la serie ne se voit pas : il se lit comme un jour non cote.
+DEBUT_TAUX = "2024-08-01"
+PREMIERE_ANNEE_FERIES = 2024
 
 # La BCE ne cote pas le week-end ni ses propres feries : une plage de sept
 # jours ramene cinq taux. Ce n'est pas une anomalie, et le comblement des
@@ -127,6 +144,22 @@ def url_base() -> str:
 # minimale envers un service gratuit : l'exploitant sait qui l'appelle et peut
 # joindre quelqu'un avant de bloquer.
 AGENT = "hanabi-dwh/1.0 (+https://github.com/SouleimanME/hanabi)"
+
+
+def ouvre_base():
+    """Connexion en autocommit, schema et tables assures.
+
+    Deux appelants : la ligne de commande de ce module, et les actifs Dagster
+    qui chargent les memes sources. Le DDL est rejoue a chaque ouverture - il
+    est entierement en `if not exists`, donc sans effet une fois le schema en
+    place, et c'est ce qui rend le premier chargement autonome sur une base
+    neuve. Aucune migration Alembic ne cree `externe` : ce schema appartient a
+    la chaine de donnees, pas a l'application.
+    """
+    cx = psycopg.connect(url_base(), autocommit=True)
+    with cx.cursor() as c:
+        c.execute(DDL)
+    return cx
 
 
 def lire_json(url: str, essais: int = 3):
@@ -243,27 +276,24 @@ def main() -> None:
     sous = p.add_subparsers(dest="quoi", required=True)
 
     t = sous.add_parser("taux", help="taux EUR vers JPY")
-    t.add_argument("--depuis", default="2024-08-01")
+    t.add_argument("--depuis", default=DEBUT_TAUX)
     t.add_argument("--jusqua", default=str(dt.date.today()))
 
     f = sous.add_parser("feries", help="jours feries FR et JP")
-    f.add_argument("--de", type=int, default=2024)
+    f.add_argument("--de", type=int, default=PREMIERE_ANNEE_FERIES)
     f.add_argument("--a", type=int, default=dt.date.today().year + 1)
 
     sous.add_parser("tout", help="les deux, sur la fenetre par defaut")
 
     args = p.parse_args()
-    with psycopg.connect(url_base(), autocommit=True) as cx:
-        with cx.cursor() as c:
-            c.execute(DDL)
-
+    with ouvre_base() as cx:
         if args.quoi in ("taux", "tout"):
-            debut = dt.date.fromisoformat(getattr(args, "depuis", "2024-08-01"))
+            debut = dt.date.fromisoformat(getattr(args, "depuis", DEBUT_TAUX))
             fin = dt.date.fromisoformat(getattr(args, "jusqua", str(dt.date.today())))
             print(f"[taux]   {charge_taux(cx, debut, fin)} cotations, {debut} a {fin}")
 
         if args.quoi in ("feries", "tout"):
-            de = getattr(args, "de", 2024)
+            de = getattr(args, "de", PREMIERE_ANNEE_FERIES)
             a = getattr(args, "a", dt.date.today().year + 1)
             print(f"[feries] {charge_feries(cx, de, a)} jours, {de} a {a}, {'/'.join(PAYS)}")
 

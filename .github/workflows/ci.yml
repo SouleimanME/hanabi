@@ -40,7 +40,7 @@ jobs:
         run: python -m pytest tests/ -q
 
   entrepot:
-    name: Entrepot (dbt parse)
+    name: Entrepot (dbt parse + graphe Dagster)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -65,6 +65,16 @@ jobs:
       # qu'on ne met pas dans l'integration continue de chaque branche.
       - name: Verification du projet dbt
         run: dbt parse --profiles-dir . --project-dir .
+
+      # Meme idee un cran plus haut : charge les definitions Dagster et resout
+      # le graphe, sans base ni execution. `dbt parse` ne voit rien de ce qui
+      # vit dans `orchestration/` - un import casse, un traducteur qui produit
+      # deux fois la meme clef d'actif, un calendrier qui vise un travail
+      # renomme, une ressource `dbt` absente. Autant de pannes qui
+      # n'apparaitraient qu'a 5 h du matin, dans la seule tache que personne ne
+      # regarde. L'etape suit `dbt parse`, dont elle reprend le manifeste.
+      - name: Verification du graphe Dagster
+        run: dagster definitions validate
 
   front:
     name: Interface (lint + build)

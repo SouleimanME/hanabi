@@ -124,11 +124,12 @@ cd hanabi-dwh && .venv/Scripts/python dwh.py run-operation accorde_lecture
 
 ## Les trois couches
 
-### bronze - 7 vues
+### bronze - 9 vues
 
-Les tables de l'application, nommées sous une forme stable. Aucune
-transformation, aucune donnée recopiée : le schéma `public` où écrit l'API tient
-lieu de zone d'atterrissage.
+Les tables de l'application, nommées sous une forme stable, plus les deux
+sources externes chargées dans `externe`. Aucune transformation, aucune donnée
+recopiée : le schéma `public` où écrit l'API tient lieu de zone
+d'atterrissage.
 
 Deux choses en sortent volontairement :
 
@@ -141,7 +142,7 @@ Les colonnes sont énumérées plutôt que reprises par `select *`. Une colonne
 ajoutée à `users` ne se propage donc pas silencieusement : il faut passer par
 bronze, donc décider si elle a sa place ici.
 
-### silver - 6 modèles
+### silver - 7 modèles
 
 Données nettoyées, typées, conformées. C'est ici que vivent les règles métier,
 écrites **une seule fois** :
@@ -156,12 +157,16 @@ Données nettoyées, typées, conformées. C'est ici que vivent les règles mét
   dessein : deux découpages différents pour la même population donneraient deux
   histogrammes contradictoires ;
 - `slv_calendrier_mensuel` garantit qu'un mois sans commande apparaît à zéro
-  plutôt que de disparaître d'une série.
+  plutôt que de disparaître d'une série ;
+- `slv_calendrier_quotidien` fait de même au jour près, et porte les trois
+  décisions liées aux sources externes : le taux de change est reporté sur les
+  jours non cotés, les fériés français et japonais restent deux colonnes
+  distinctes, et seuls les fériés nationaux comptent.
 
 Tout est en vues, sauf `slv_lignes_commande`, matérialisée en table : sept
 modèles gold s'appuient dessus, et en vue la jointure serait rejouée sept fois.
 
-### gold - 10 tables
+### gold - 11 tables
 
 Une par question métier. C'est la seule couche que l'API interroge.
 
@@ -176,6 +181,7 @@ Une par question métier. C'est la seule couche que l'API interroge.
 | `gold_demographie_clients` | Ville, âge, civilité : quels profils achètent, et pour combien ? |
 | `gold_promotions` | Quels codes font entrer du chiffre, lesquels n'ont jamais servi ? |
 | `gold_affinites_produits` | Quels articles s'achètent ensemble plus souvent que le hasard ne le voudrait ? |
+| `gold_ca_quotidien` | Cette journée est-elle mauvaise, ou simplement fériée ? Et la marge bouge-t-elle à cause des prix ou du yen ? |
 | `gold_execution` | De quand datent ces chiffres ? |
 
 ### La notation RFM, et pourquoi elle a changé
@@ -262,12 +268,86 @@ qu'un visiteur vient voir.
 
 ## Orchestration
 
-`.github/workflows/entrepot.yml` reconstruit l'entrepôt **chaque jour à 5 h UTC**,
-et à la demande depuis l'onglet Actions. Il joue `dbt source freshness` (non
-bloquant), puis `dbt build` - construction *et* tests, dans l'ordre du graphe, si
-bien qu'un modèle dont un test échoue bloque ce qui en dépend au lieu de propager
-une donnée fausse jusqu'au tableau de bord. Les artefacts `manifest.json` et
-`run_results.json` sont conservés 30 jours, y compris en cas d'échec.
+La chaîne est déclarée comme un **graphe d'actifs Dagster**, dans
+`orchestration/`. Deux extractions Python et 27 modèles dbt y forment un seul
+graphe, de la table écrite par l'API jusqu'à l'agrégat lu par le back-office.
+
+```bash
+cd hanabi-dwh && .venv/Scripts/dagster dev
+```
+
+L'interface s'ouvre sur `http://localhost:3000`.
+
+### Le défaut que ça corrige
+
+Avant, les étapes étaient énumérées à la main dans le workflow GitHub. Et
+`ingestion/sources.py` n'y figurait pas : `externe.taux_change` et
+`externe.jours_feries` n'étaient rechargées que lorsque quelqu'un y pensait,
+alors que `sources.yml` déclare une source périmée au bout de dix jours. Bronze
+lisait deux tables que rien n'alimentait.
+
+Une étape manquante dans une liste écrite à la main ne se voit pas. Une
+dépendance manquante dans un graphe, si : `brz_taux_change` **déclare** dépendre
+de l'extraction, et l'ordre d'exécution se déduit de cette déclaration au lieu
+d'être retranscrit ailleurs. Ajouter une source demain ne demandera pas de se
+souvenir qu'il fallait la placer avant `dbt build`.
+
+### Ce que le graphe apporte en plus
+
+**Un échec cesse d'être binaire.** Si Frankfurter ne répond pas, seuls
+`brz_taux_change` et son aval s'arrêtent ; les autres modèles se construisent.
+Le cron, lui, échouait en entier.
+
+**La série de taux se rattrape.** Elle est découpée en partitions mensuelles.
+Dagster sait quels mois sont chargés, et relancer un mois manquant est une
+action dans l'interface, pas un script à retrouver. L'`INSERT … ON CONFLICT`
+d'`ingestion/sources.py` était déjà idempotent - c'est lui qui rend le
+rattrapage sûr, le partitionnement ne fait que le rendre accessible.
+
+Le mois est la bonne maille et non le jour : la source accepte une plage, et un
+mois coûte un appel là où trente jours en coûteraient trente, sur un service
+public et gratuit.
+
+**Les tests se lisent sur le modèle qu'ils vérifient.** Sur les 112 assertions
+dbt, 96 deviennent des contrôles d'actifs, avec leur historique - « depuis quand
+ce test échoue-t-il ? » se lit au lieu de se chercher. Les 16 autres (14 portant
+sur une source, 2 tests singuliers, qui ne se rattachent à aucun modèle unique)
+continuent de tourner dans `dbt build` sans apparaître comme contrôles.
+
+**Le lignage traverse les outils.** `dbt docs` s'arrête au bord du projet dbt.
+Le graphe Dagster part des sept tables de `public`, montre qu'elles sont écrites
+par l'API et non par la chaîne, et va jusqu'à `gold_execution`.
+
+### Ce que Dagster n'apporte pas ici
+
+**Rien côté planification.** Un calendrier Dagster suppose un daemon qui tourne
+en permanence, et rien n'en héberge un : celui déclaré dans
+`orchestration/planification.py` ne s'exécute que quand `dagster dev` est
+ouvert. En ligne, **c'est toujours `.github/workflows/entrepot.yml` qui donne
+l'heure** - à 5 h UTC, la même que le calendrier Dagster - mais il appelle
+désormais le graphe au lieu de redire les étapes. La planification vit à deux
+endroits, l'enchaînement à un seul, et c'est l'enchaînement qui se serait
+désynchronisé.
+
+**Aucun gain de vitesse.** 27 modèles, une base, une minute de construction. Le
+parallélisme et les reprises de Dagster sont dimensionnés pour bien plus gros.
+
+**Un coût réel.** Une soixantaine de paquets sur un projet qui revendique des
+listes courtes, et `dbt-core` redescendu de 1.12 à 1.11, borne haute de
+`dagster-dbt`. Aucun modèle n'emploie de nouveauté de la 1.12, et le pas en
+arrière aligne enfin le cœur sur l'adaptateur, resté en 1.11.
+
+À cette échelle, seul le premier point - l'extraction orpheline - justifierait
+l'outil à lui seul. Le reste est réel mais modeste, et c'est dit ici plutôt que
+maquillé.
+
+### Le déclenchement
+
+`.github/workflows/entrepot.yml` s'exécute **chaque jour à 5 h UTC** et à la
+demande depuis l'onglet Actions. Il compile le projet dbt, joue
+`dbt source freshness` (non bloquant), puis matérialise les 29 actifs sur la
+partition du mois en cours. Les artefacts `manifest.json` et `run_results.json`
+sont conservés 30 jours, y compris en cas d'échec.
 
 **Le workflow est inerte tant que le secret `DWH_DATABASE_URL` n'est pas
 renseigné** dans les paramètres du dépôt. Sans lui, la tâche s'arrête avec une
@@ -277,8 +357,20 @@ CI cassée pour une base à laquelle il n'a pas accès.
 Avant de le renseigner, mesurer ce que ça implique : c'est confier une chaîne de
 connexion en écriture à GitHub Actions. Sur une base de démonstration c'est
 acceptable ; sur des données réelles, on créerait un rôle PostgreSQL dédié,
-limité à la lecture de `public` et à l'écriture dans les trois schémas de
-l'entrepôt.
+limité à la lecture de `public` et à l'écriture dans les schémas de l'entrepôt.
+
+### Construire sans Dagster
+
+Rien n'a été retiré. `dwh.py` et `ingestion/sources.py` restent utilisables
+seuls, et c'est toujours le chemin le plus court sur un poste :
+
+```bash
+cd hanabi-dwh && .venv/Scripts/python -m ingestion.sources tout && .venv/Scripts/python dwh.py build
+```
+
+Dagster ne réimplémente pas dbt : il lance `dbt build` et lit son flux
+d'événements pour savoir quel modèle vient d'être construit et quels tests ont
+porté dessus.
 
 ---
 

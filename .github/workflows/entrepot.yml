@@ -4,6 +4,24 @@
 # reste fige sur la derniere execution, et l'ecart avec la base transactionnelle
 # grandit sans que rien ne le signale. C'est ce que cet ordonnanceur corrige.
 #
+# CE QUE CE FICHIER DECLENCHE, ET CE QU'IL NE DECIDE PLUS
+#
+# Il ne connait plus les etapes de la chaine. Il ne sait pas qu'il faut charger
+# les taux avant de construire bronze, ni que gold vient apres silver : il
+# demande a Dagster de materialiser le graphe, et l'ordre se deduit des
+# dependances declarees par les actifs (voir hanabi-dwh/orchestration/).
+#
+# La difference n'est pas cosmetique. Tant que les etapes etaient enumerees ici,
+# l'extraction des sources externes n'y figurait pas - `externe.taux_change`
+# n'etait donc rechargee que lorsque quelqu'un y pensait, alors meme que
+# `sources.yml` declare une source perimee au bout de dix jours. Une etape
+# oubliee dans une liste ecrite a la main ne se voit pas ; une dependance
+# manquante dans un graphe, si.
+#
+# Le calendrier, lui, reste ici. Dagster en declare un identique, mais il
+# suppose un daemon qui tourne en permanence et rien n'en heberge un : c'est
+# GitHub qui donne l'heure, Dagster qui donne l'ordre.
+#
 # ------------------------------------------------------------------------
 # CE FICHIER NE FAIT RIEN TANT QUE LE SECRET N'EST PAS RENSEIGNE.
 #
@@ -21,7 +39,7 @@
 # compte pouvant modifier un workflow de ce depot peut les lire. Sur une base de
 # demonstration c'est acceptable ; sur une base portant des donnees reelles, on
 # creerait un role PostgreSQL dedie, limite a la lecture de `public` et a
-# l'ecriture dans les trois schemas de l'entrepot.
+# l'ecriture dans les schemas de l'entrepot.
 # ------------------------------------------------------------------------
 
 name: Entrepot
@@ -31,6 +49,7 @@ on:
     # 05h00 UTC chaque jour, soit avant l'ouverture des bureaux en France. La
     # construction prend une minute et lit la base : la jouer aux heures creuses
     # evite de la solliciter pendant que quelqu'un consulte le back-office.
+    # Meme heure que le calendrier declare dans `orchestration/planification.py`.
     - cron: "0 5 * * *"
   # Permet de reconstruire a la demande depuis l'onglet Actions, sans attendre
   # l'heure - indispensable apres une modification de modele.
@@ -46,7 +65,7 @@ concurrency:
 
 jobs:
   construire:
-    name: dbt build
+    name: Materialiser le graphe
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -79,12 +98,22 @@ jobs:
         if: steps.garde.outputs.configure == 'true'
         run: pip install -r requirements.txt
 
+      # Dagster construit son graphe a partir de `target/manifest.json`. En
+      # developpement il le regenere tout seul a chaque rechargement ; ici
+      # l'etape est explicite, parce qu'un `parse` implicite au demarrage d'une
+      # execution planifiee ferait dependre le graphe d'un effet de bord.
+      - name: Compiler le projet dbt
+        if: steps.garde.outputs.configure == 'true'
+        env:
+          DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
+        run: python dwh.py parse
+
       # `source freshness` avant la construction, et volontairement non bloquant.
-      # Il repond a « la base recoit-elle encore des ecritures ? ». Une source
-      # perimee n'empeche pas de reconstruire - les agregats resteront justes,
-      # simplement inchanges - mais c'est le premier signe d'une ingestion
-      # arretee, et on veut le voir dans le journal plutot que le decouvrir un
-      # mois plus tard.
+      # Il repond a « la base recoit-elle encore des ecritures ? », et il le
+      # demande a l'etat laisse par l'execution precedente - c'est bien ce qu'on
+      # veut savoir. Une source perimee n'empeche pas de reconstruire, mais
+      # c'est le premier signe d'une ingestion arretee, et on veut le voir dans
+      # le journal plutot que le decouvrir un mois plus tard.
       - name: Fraicheur des sources
         if: steps.garde.outputs.configure == 'true'
         continue-on-error: true
@@ -92,19 +121,37 @@ jobs:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
         run: python dwh.py source freshness
 
-      # `build` et non `run` : les modeles sont construits ET testes, dans
-      # l'ordre du graphe. Un modele dont un test echoue bloque ce qui en
-      # depend, au lieu de propager une donnee fausse jusqu'au tableau de bord.
-      - name: Construire et tester
+      # Materialise les 29 actifs : les deux extractions, puis les 27 modeles
+      # dbt construits ET testes par `dbt build`, dans l'ordre du graphe. Un
+      # modele dont un test echoue bloque ce qui en depend, au lieu de propager
+      # une donnee fausse jusqu'au tableau de bord.
+      #
+      # `--partition` vise le mois en cours de la serie de taux, seul actif
+      # partitionne. Le rejouer chaque jour rattrape les cotations publiees
+      # depuis la veille et celles qu'une execution manquee aurait laissees ;
+      # l'upsert rend l'operation sans effet sur ce qui est deja charge.
+      #
+      # Les tables de `public` ne sont pas concernees : le graphe les declare en
+      # amont, mais elles appartiennent a l'API, et `*` ne selectionne que ce que
+      # la chaine sait produire.
+      #
+      # Pas de DAGSTER_HOME : l'historique des executions ne survivrait pas au
+      # conteneur. Dagster se rabat sur une instance ephemere, ce qui est la
+      # description exacte de la situation.
+      - name: Materialiser le graphe
         if: steps.garde.outputs.configure == 'true'
         env:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
-        run: python dwh.py build
+        run: |
+          dagster asset materialize \
+            --module-name orchestration \
+            --select '*' \
+            --partition "$(date -u +%Y-%m-01)"
 
       # Les artefacts de `target/` portent le resultat de chaque noeud et le
       # graphe complet. Conserves, ils permettent de repondre a « depuis quand
       # ce test echoue-t-il ? » sans rejouer la construction - et `manifest.json`
-      # est ce que consomment les outils de lignage.
+      # est ce que consomment les outils de lignage, Dagster le premier.
       #
       # `always()` : c'est justement quand la construction echoue qu'on veut
       # pouvoir lire ces fichiers.

@@ -1,9 +1,8 @@
 # AGENTS.md
 
-Contexte destiné aux agents IA qui interviennent sur ce dépôt (Claude Code, Cursor,
-Copilot, Codex, Aider…). Il décrit ce que le code fait, comment le lancer, et les
-conventions à respecter pour qu'une contribution automatisée reste cohérente avec
-l'existant.
+Contexte destiné aux agents IA qui interviennent sur ce dépôt. Il décrit ce que le
+code fait, comment le lancer, et les conventions à respecter pour qu'une
+contribution automatisée reste cohérente avec l'existant.
 
 Les humains ont le [README.md](README.md) pour la présentation et
 [DEPLOY.md](DEPLOY.md) pour la mise en ligne. Ce fichier-ci ne les remplace pas, il
@@ -56,10 +55,16 @@ hanabi-front/         Interface React (Vite), sans framework de routage
     admin/            Back-office, application dans l'application
     styles/           CSS par domaine, jetons de design dans tokens.css
 hanabi-dwh/           Entrepôt décisionnel (dbt), voir son propre README
-  models/bronze/      Vues sur les tables de l'application, sans transformation
+  models/bronze/      Vues sur les tables de l'application et sur les sources externes
   models/silver/      Données nettoyées et conformées ; les règles métier vivent ici
   models/gold/        Une table d'agrégats par question métier
   macros/             Nommage des schémas, deux tests génériques maison
+  ingestion/          Extraction des sources publiques (taux BCE, jours fériés)
+  orchestration/      Graphe d'actifs Dagster : ingestion + modèles dbt
+    ressources.py     Projet dbt et connexion, reprises de dwh.py
+    actifs_dbt.py     Traducteur de clés et de groupes, puis les 27 modèles
+    actifs_externes.py  Les deux extractions, dont une partitionnée par mois
+    planification.py  Le travail et son calendrier quotidien
   dwh.py              Lanceur : reprend DATABASE_URL et appelle dbt
 docs/                 Captures utilisées par le README
 render.yaml           Blueprint de déploiement de l'API
@@ -99,9 +104,16 @@ cd hanabi-back && .venv/Scripts/python -m pytest
 cd hanabi-front && npm run lint && npm run format:check && npm run build
 ```
 
+```bash
+cd hanabi-dwh && .venv/Scripts/dbt parse --profiles-dir . --project-dir . && .venv/Scripts/dagster definitions validate
+```
+
 Un changement backend doit passer `pytest`. Un changement frontend doit passer les
 trois commandes ci-dessus - `format:check` échoue si Prettier n'est pas passé, ce qui
 est la cause la plus fréquente d'un échec d'intégration continue sur ce dépôt.
+Un changement dans l'entrepôt doit passer les deux vérifications de la troisième
+commande, qui sont celles de l'intégration continue : elles ne demandent aucune
+base, `parse` compilant le Jinja et `validate` chargeant le graphe Dagster.
 
 La suite tourne sur SQLite en mémoire, ce qui la rend rapide mais aveugle aux
 écarts entre moteurs. Pour rejouer la même suite sur PostgreSQL :
@@ -247,10 +259,45 @@ modèles ; trois points concernent directement un agent :
   comportement, elle ne vérifie pas le contenu des agrégats - ce sont les tests
   dbt qui s'en chargent, sur PostgreSQL.
 
+### Orchestration
+
+`hanabi-dwh/orchestration/` déclare la chaîne comme un graphe d'actifs Dagster :
+les deux extractions de `ingestion/` en amont, les 27 modèles dbt en aval. Cinq
+points concernent un agent :
+
+- **L'ordre ne s'écrit plus nulle part.** `brz_taux_change` dépend de
+  `externe/taux_change` parce que la source dbt et l'actif Python portent la
+  **même clé**, produite par `TraducteurHanabi.get_asset_key` à partir du schéma
+  PostgreSQL. Renommer un schéma de source dans `models/sources.yml` sans
+  renommer la clé de l'actif correspondant coupe le graphe en deux moitiés qui
+  s'exécutent quand même, sans erreur - le lignage est alors faux et rien ne le
+  dit. C'est la seule couture fragile de l'ensemble.
+- **Dagster ne réimplémente pas dbt**, il lance `dbt build` et lit son flux
+  d'événements. Un changement de modèle ne demande aucune modification côté
+  Dagster ; le graphe se régénère depuis `target/manifest.json`.
+- **`from __future__ import annotations` est absent de `actifs_dbt.py` et
+  `actifs_externes.py`, et doit le rester.** Dagster compare l'annotation du
+  paramètre `context` au type réel pour décider quoi passer à la fonction ; des
+  annotations différées ne sont plus que des chaînes, et l'erreur obtenue
+  affirme qu'`AssetExecutionContext` n'est pas `AssetExecutionContext`.
+- **`dbt-core` est plafonné à 1.11 par `dagster-dbt`**, qui vérifie la version
+  du manifeste qu'il lit. Remonter dbt casse le chargement des définitions ; les
+  deux se remontent ensemble.
+- **Le calendrier Dagster ne s'exécute que sous `dagster dev`.** Aucun daemon
+  n'est déployé : en ligne, c'est toujours `.github/workflows/entrepot.yml` qui
+  déclenche, à la même heure. Modifier l'une des deux plages horaires impose de
+  vérifier l'autre.
+
 Après avoir modifié un modèle :
 
 ```bash
 cd hanabi-dwh && .venv/Scripts/python dwh.py build
+```
+
+Pour lire le graphe, rattraper une partition ou relancer un seul nœud :
+
+```bash
+cd hanabi-dwh && .venv/Scripts/dagster dev
 ```
 
 Une construction ne touche jamais au schéma `public` : elle le lit et n'écrit

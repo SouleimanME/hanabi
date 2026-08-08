@@ -44,17 +44,18 @@ principales rejoignent la barre du bas.
 ## La chaîne de données
 
 ```
-public                  bronze              silver              gold
-tables applicatives  →  7 vues          →  6 modèles       →  10 tables
-écrites par l'API       aucune             règles métier      une par question
-                        transformation     écrites une fois   métier
-                                                                    ↓
-                                                        back-office + boutique
+public                 ┐
+tables applicatives    │   bronze            silver             gold
+écrites par l'API      ├→  9 vues        →   7 modèles      →   11 tables
+                       │   aucune            règles métier      une par
+externe                │   transformation    écrites une fois   question
+2 sources publiques    ┘                                            ↓
+BCE et jours fériés                                     back-office + boutique
 ```
 
-23 modèles dbt en trois couches, 112 tests de transformation, reconstruction
-planifiée. Le détail vit dans [hanabi-dwh/README.md](hanabi-dwh/README.md) ;
-voici les décisions qui comptent.
+27 modèles dbt en trois couches, 112 tests de transformation, le tout déclaré
+comme un graphe d'actifs Dagster et reconstruit chaque jour. Le détail vit dans
+[hanabi-dwh/README.md](hanabi-dwh/README.md) ; voici les décisions qui comptent.
 
 **Bronze en vues, colonnes énumérées.** Aucune donnée dupliquée. Une colonne
 ajoutée à `users` ne se propage pas en silence : il faut passer par bronze,
@@ -129,6 +130,33 @@ fait sur le lift plutôt que sur la confiance, laquelle se laisse tromper par
 les best-sellers, et seules les paires au-dessus de 1 apparaissent : en
 dessous, les articles se substituent au lieu de se compléter.
 
+### L'orchestration, et le défaut qu'elle a révélé
+
+La chaîne est déclarée comme un graphe d'actifs Dagster : deux extractions
+Python et 27 modèles dbt, de la table écrite par l'API jusqu'à l'agrégat lu par
+le back-office.
+
+Ce n'est pas venu d'une envie d'outil. Les étapes étaient énumérées à la main
+dans le workflow GitHub, et l'extraction des sources externes n'y figurait
+pas : `externe.taux_change` n'était rechargée que lorsque quelqu'un y pensait,
+alors même que le projet déclare une source périmée au bout de dix jours. Bronze
+lisait une table que rien n'alimentait.
+
+Une étape manquante dans une liste écrite à la main ne se voit pas. Une
+dépendance manquante dans un graphe, si : `brz_taux_change` déclare dépendre de
+l'extraction, et l'ordre se déduit de cette déclaration au lieu d'être
+retranscrit ailleurs. Trois conséquences suivent — un échec cesse d'être binaire
+et n'arrête que l'aval du nœud tombé, la série de taux se découpe en partitions
+mensuelles qu'on rejoue une par une, et 96 des 112 assertions dbt deviennent des
+contrôles attachés au modèle qu'elles vérifient.
+
+Ce que Dagster n'apporte pas, en revanche : rien côté planification. Un
+calendrier Dagster suppose un daemon permanent et rien n'en héberge un, donc
+c'est toujours GitHub Actions qui donne l'heure — il appelle simplement le
+graphe au lieu de redire les étapes. À 27 modèles et une minute de
+construction, seul le défaut ci-dessus justifiait l'outil ; le reste est réel
+mais modeste, et le README de l'entrepôt le dit dans ces termes.
+
 ### Ce que cette architecture ne résout pas
 
 PostgreSQL est un moteur en lignes. Sur des volumes analytiques réels, un
@@ -143,7 +171,7 @@ qu'elle accélère. C'est un choix assumé, pas une méconnaissance de la limite
 
 | Domaine | Réalisations |
 | --- | --- |
-| Données | Entrepôt médaillon (dbt sur PostgreSQL), 23 modèles, 112 tests, console SQL bridée, reconstruction planifiée |
+| Données | Entrepôt médaillon (dbt sur PostgreSQL), 27 modèles, 112 tests, orchestration Dagster avec lignage bout en bout et rattrapage par partitions, console SQL bridée, reconstruction planifiée |
 | Interface | Thème clair/sombre suivant le système, 3 langues, menu en tiroir, cartes en 3D au survol, feux d'artifice en canvas, le tout coupé si le système demande de réduire les animations |
 | Parcours d'achat | Panier persistant, articles gardés pour plus tard, favoris, codes promo, livraison estimée, historique de commandes |
 | Sécurité | Anti-robots maison (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, politique de mot de passe côté serveur, en-têtes durcis |
@@ -162,7 +190,9 @@ seule dépendance d'exécution en dehors de React, `lucide-react` pour les icôn
 FastAPI, SQLAlchemy 2, Pydantic v2 côté API, avec SQLite en développement et
 PostgreSQL (Neon) en production. JWT et bcrypt pour l'authentification.
 
-dbt sur PostgreSQL pour l'entrepôt, trois schémas en architecture médaillon.
+dbt sur PostgreSQL pour l'entrepôt, trois schémas en architecture médaillon,
+orchestrés par Dagster - les modèles dbt et les extractions Python y forment un
+seul graphe d'actifs.
 
 Le parti pris est assumé : pas de framework CSS, pas de routeur, pas de
 bibliothèque d'animation. Chaque brique est écrite à la main pour montrer la
@@ -239,6 +269,14 @@ L'onglet Entrepôt du back-office affiche alors les tables construites, la
 requête qui les lit et la date de la dernière construction. Sans entrepôt, il
 affiche la marche à suivre plutôt qu'une erreur.
 
+Pour voir la chaîne comme un graphe - lignage, dernière matérialisation de
+chaque modèle, tests en échec, partitions manquantes - et la relancer nœud par
+nœud, l'interface Dagster s'ouvre sur `http://localhost:3000` :
+
+```bash
+cd hanabi-dwh && .venv/Scripts/dagster dev
+```
+
 Côté comptes, un client d'essai est créé au démarrage : `demo@hanabi.fr` /
 `demo1234`. Le back-office n'est accessible qu'à un compte désigné par
 `ADMIN_EMAIL` et `ADMIN_PASSWORD`. Sans ces variables, aucun administrateur
@@ -293,9 +331,11 @@ hanabi-front/         Interface React
     admin/            back-office, lot séparé chargé à la demande
 
 hanabi-dwh/           Entrepôt décisionnel (dbt)
-  models/bronze/      vues sur les tables de l'application
+  models/bronze/      vues sur les tables de l'application et sur les sources externes
   models/silver/      données conformées, règles métier
   models/gold/        une table d'agrégats par question métier
+  ingestion/          extraction des sources publiques (BCE, jours fériés)
+  orchestration/      graphe d'actifs Dagster, du chargement jusqu'à gold
   dwh.py              lanceur, reprend la connexion de l'API
 ```
 

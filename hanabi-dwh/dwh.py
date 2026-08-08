@@ -60,15 +60,27 @@ def charge_env_api() -> None:
             os.environ.setdefault(cle.strip(), valeur.strip().strip('"').strip("'"))
 
 
-def pose_variables_dbt() -> str:
-    """Traduit l'URL de connexion en variables `DWH_*`, et rend l'hote vise."""
+def pose_variables_dbt(obligatoire: bool = True) -> str | None:
+    """Traduit l'URL de connexion en variables `DWH_*`, et rend l'hote vise.
+
+    `obligatoire=False` rend None au lieu de s'arreter, et sert a l'unique
+    appelant qui n'a pas le droit de mourir : le paquet `orchestration/`, dont
+    Dagster charge les definitions au demarrage du serveur de code. Un
+    `sys.exit` a l'import rendrait l'interface inaccessible sur une machine sans
+    base, la ou l'on veut au contraire pouvoir lire le graphe hors ligne - c'est
+    aussi ce que fait la CI, qui joue `dbt parse` sans identifiants.
+    """
     url = os.environ.get("DWH_DATABASE_URL") or os.environ.get("DATABASE_URL", "")
     if not url:
+        if not obligatoire:
+            return None
         sys.exit(
             "Aucune base indiquee. Renseigne DATABASE_URL dans hanabi-back/.env,\n"
             "ou exporte DWH_DATABASE_URL pour viser une autre base."
         )
     if not url.startswith(("postgres://", "postgresql://")):
+        if not obligatoire:
+            return None
         moteur = url.split("://")[0] or "inconnu"
         sys.exit(
             f"L'entrepot ne se construit que sur PostgreSQL (base visee : {moteur}).\n"
@@ -97,6 +109,21 @@ def pose_variables_dbt() -> str:
     return os.environ["DWH_HOST"]
 
 
+def executable_dbt() -> str:
+    """Chemin de l'executable `dbt` installe a cote de l'interpreteur.
+
+    Deduit de `sys.executable` plutot que cherche dans le PATH : le venv n'est
+    pas toujours active. Dagster lance ses serveurs de code par un chemin
+    absolu, sans passer par un shell ou `.venv/Scripts` figurerait, et un
+    `dbt introuvable` a cet endroit est aussi opaque qu'evitable.
+
+    Un executable plutot que `python -m dbt.cli.main` : ce dernier reimporte un
+    paquet deja charge et fait bruire un avertissement a chaque appel.
+    """
+    dbt = Path(sys.executable).with_name("dbt.exe" if os.name == "nt" else "dbt")
+    return str(dbt) if dbt.exists() else "dbt"
+
+
 def main() -> int:
     charge_env_api()
     hote = pose_variables_dbt()
@@ -106,12 +133,8 @@ def main() -> int:
     # l'erreur que ce rappel evite.
     print(f"[dwh] base visee : {hote}", file=sys.stderr)
 
-    # L'executable `dbt` installe a cote de l'interpreteur, plutot que
-    # `python -m dbt.cli.main` : ce dernier reimporte un paquet deja charge et
-    # fait bruire un avertissement a chaque appel.
-    dbt = Path(sys.executable).with_name("dbt.exe" if os.name == "nt" else "dbt")
     return subprocess.call([
-        str(dbt) if dbt.exists() else "dbt",
+        executable_dbt(),
         *(sys.argv[1:] or ["build"]),
         "--profiles-dir", str(RACINE),
         "--project-dir", str(RACINE),
