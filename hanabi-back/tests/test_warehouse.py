@@ -240,6 +240,18 @@ def test_la_console_sans_entrepot_renvoie_409(client, auth_header):
 
 def test_les_schemas_ouverts_excluent_public():
     """`public` porte les condensats de mots de passe. Il ne doit jamais entrer
-    dans la liste des schemas lisibles, quelle qu'en soit la raison."""
+    dans la liste des schemas lisibles, quelle qu'en soit la raison.
+
+    La liste est epinglee en entier, et pas seulement l'absence de `public` :
+    l'elargir doit demander de modifier ce test, donc de justifier l'ajout au
+    lieu de le glisser.
+
+    `externe` en fait partie depuis qu'il accueille les sources publiques
+    chargees par l'entrepot, taux de change de la BCE et jours feries. Ces
+    tables ne contiennent aucune donnee personnelle : elles viennent d'API
+    ouvertes et sont deja publiques a la source.
+    """
     assert "public" not in warehouse.SCHEMAS_AUTORISES
-    assert warehouse.SCHEMAS_AUTORISES == frozenset({"bronze", "silver", "gold"})
+    assert warehouse.SCHEMAS_AUTORISES == frozenset(
+        {"bronze", "silver", "gold", "externe"}
+    )

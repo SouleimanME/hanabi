@@ -78,6 +78,16 @@ class Mart:
 # d'association en dernier, parce qu'on y va en connaissance de cause.
 MARTS: tuple[Mart, ...] = (
     Mart(
+        cle="ca_quotidien",
+        table="gold_ca_quotidien",
+        titre="Chiffre d'affaires quotidien",
+        question=(
+            "Une journee faible est-elle un incident ou un jour ferie, et la marge "
+            "bouge-t-elle a cause des prix ou du yen ?"
+        ),
+        tri="jour desc",
+    ),
+    Mart(
         cle="kpi_mensuel",
         table="gold_kpi_mensuel",
         titre="Indicateurs mensuels",
@@ -468,7 +478,7 @@ def interroger(
 # Schemas ouverts a la lecture. `public` en est absent : c'est la que vivent les
 # condensats de mots de passe, et l'entrepot expose deja tout ce qui a un usage
 # analytique.
-SCHEMAS_AUTORISES = frozenset({"bronze", "silver", "gold"})
+SCHEMAS_AUTORISES = frozenset({"bronze", "silver", "gold", "externe"})
 
 # Delai au-dela duquel PostgreSQL interrompt la requete. Cinq secondes suffisent
 # tres largement a l'entrepot ; au-dela, c'est que la requete part en vrille.
