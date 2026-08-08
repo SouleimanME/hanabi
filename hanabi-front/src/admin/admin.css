@@ -42,26 +42,38 @@
      du systeme : elle est toujours disponible et ne coute aucun octet. */
   --adm-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
 
-  /* Sombre, par defaut. */
-  --adm-bg: #0f0d0b;
-  --adm-panel: #16140f;
-  --adm-panel-2: #1c1913;
-  --adm-line: #2a2520;
-  --adm-line-2: #1c1915;
-  --adm-ink: #ece6d8;
-  --adm-ink-2: #9a9080;
-  --adm-ink-3: #6e665a;
-  --adm-accent: #e0382a;
-  --adm-track: #211e18;
-  --adm-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --adm-hover: #1a1713;
+  /* 漆 urushi, la laque. Un noir qui garde une trace de brun : le noir absolu
+     creuse un trou dans l'ecran et fait ressortir ses bords. Sept pour cent
+     d'ecart de clarte entre deux plans voisins, ce qui donne une matiere
+     plutot qu'un empilement d'aplats. */
+  --adm-bg: #0a0908;
+  --adm-panel: #100f0d;
+  --adm-panel-2: #16140f;
+  --adm-line: #201d18;
+  --adm-line-2: #191612;
+  --adm-ink: #ebe5d8;
+  --adm-ink-2: #8d8676;
+  --adm-ink-3: #5b564c;
+
+  /* 金 or eteint, desature et legerement verdi. Un or plus jaune bascule
+     immediatement dans le dore de pacotille. C'est l'accent de marque du
+     back-office ; le vermillon ne sert plus qu'aux alertes. */
+  --adm-accent: #c2a15c;
+  --adm-accent-clair: #dcc48b;
+  --adm-accent-sourd: #6d5c36;
+  --adm-accent-voile: rgba(194, 161, 92, 0.08);
+  --adm-alerte: #b8402c;
+
+  --adm-track: #16140f;
+  --adm-shadow: none;
+  --adm-hover: #16140f;
 
   --ch-surface: #16140f;
   --ch-grid: #241f1a;
   --ch-crosshair: #4a4540;
 
-  --ch-serie-1: #e0382a;
-  --ch-serie-2: #0599ef;
+  --ch-serie-1: #d4ac5f;
+  --ch-serie-2: #89b4d1;
   --ch-serie-3: #11ae5b;
   --ch-serie-4: #c867c6;
   --ch-serie-5: #bd8708;
@@ -79,25 +91,33 @@
 }
 
 .adm[data-theme="light"] {
-  --adm-bg: #f2eee6;
-  --adm-panel: #faf7f1;
-  --adm-panel-2: #fffdf9;
-  --adm-line: #e2dbcd;
-  --adm-line-2: #ece6da;
-  --adm-ink: #2a2520;
-  --adm-ink-2: #5f574c;
-  --adm-ink-3: #8a8175;
-  --adm-accent: #c72d21;
-  --adm-track: #e9e3d6;
-  --adm-shadow: 0 8px 24px rgba(60, 48, 30, 0.14);
-  --adm-hover: #f3eee4;
+  /* 白磁 hakuji, la porcelaine. Un blanc qui garde un fond chaud, jamais le
+     blanc pur d'un ecran. */
+  --adm-bg: #f6f3ec;
+  --adm-panel: #f1ede4;
+  --adm-panel-2: #eae5d9;
+  --adm-line: #ddd7c8;
+  --adm-line-2: #e7e1d4;
+  --adm-ink: #191612;
+  --adm-ink-2: #565045;
+  --adm-ink-3: #8b8474;
+
+  --adm-accent: #94743a;
+  --adm-accent-clair: #b08f4f;
+  --adm-accent-sourd: #c9b489;
+  --adm-accent-voile: rgba(148, 116, 58, 0.07);
+  --adm-alerte: #a43520;
+
+  --adm-track: #eae5d9;
+  --adm-shadow: none;
+  --adm-hover: #efeae0;
 
   --ch-surface: #faf7f1;
   --ch-grid: #e6e0d3;
   --ch-crosshair: #b6ac9c;
 
-  --ch-serie-1: #e0382a;
-  --ch-serie-2: #0486d3;
+  --ch-serie-1: #96742e;
+  --ch-serie-2: #3f6d90;
   --ch-serie-3: #0c994f;
   --ch-serie-4: #b94db8;
   --ch-serie-5: #a77600;
@@ -117,23 +137,14 @@
 /* Jetons de finition, communs aux deux themes.
  *
  * Les couleurs sont definies plus haut, theme par theme. Ce qui suit ne varie
- * pas : une echelle d'elevation, une courbe d'animation et un anneau de focus.
- * Les figer ici evite qu'une ombre soit inventee au cas par cas, ce qui est la
- * facon la plus sure de faire flotter les surfaces les unes par rapport aux
- * autres. */
+ * pas d'un theme a l'autre.
+ *
+ * Une echelle d'elevation figurait ici, trois niveaux d'ombre poses en
+ * prevision d'une refonte. Elle n'a jamais servi : le back-office ne construit
+ * plus sa profondeur avec des ombres mais avec des filets et du vide, comme un
+ * imprime. Des jetons declares et jamais employes ne sont pas une reserve,
+ * c'est du code mort. */
 .adm {
-  /* Trois niveaux seulement. Une carte posee, un element survole, un calque
-     flottant. Chaque ombre combine un contact serre et une diffusion large :
-     l'ombre unique donne un halo decolle du support. */
-  --e1: 0 1px 2px rgba(0, 0, 0, 0.16), 0 2px 8px -2px rgba(0, 0, 0, 0.12);
-  --e2: 0 2px 4px rgba(0, 0, 0, 0.18), 0 8px 24px -6px rgba(0, 0, 0, 0.22);
-  --e3: 0 4px 8px rgba(0, 0, 0, 0.22), 0 24px 56px -12px rgba(0, 0, 0, 0.4);
-
-  /* Decelere franchement en fin de course : le mouvement se lit comme un objet
-     qui se pose, pas comme une valeur qui s'interpole. */
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
-
   /* Un seul anneau de focus pour tout le back-office. Il double le contour au
      lieu de le remplacer, pour rester visible sur un fond de la meme teinte. */
   --focus:
@@ -146,6 +157,40 @@
   outline: none;
   box-shadow: var(--focus);
   border-radius: 8px;
+}
+
+/* Aucun angle arrondi dans tout le back-office.
+ *
+ * Une regle unique plutot qu'une soixantaine de `border-radius: 0` : le parti
+ * pris se lit d'un coup et ne peut pas etre oublie sur une regle ajoutee plus
+ * tard. La carte arrondie posee sur une ombre douce est le tic visuel de
+ * toutes les interfaces generees depuis trois ans ; la profondeur vient ici des
+ * filets et du vide, comme dans un imprime.
+ *
+ * Les pastilles rondes sont exemptees : un point d'etat cesse d'etre un point
+ * s'il devient carre. */
+.adm *:not(.adm-rond):not(circle) {
+  border-radius: 0;
+}
+
+/* Grain de surface, rendu une seule fois en image plutot qu'en filtre vivant
+   qui se recalculerait a chaque redimensionnement. Desature : feTurbulence
+   produit du bruit en couleurs, et des points bleus sur une laque noire
+   feraient l'effet inverse de celui cherche. On ne le voit jamais
+   consciemment, on voit seulement que la surface n'est pas plate. */
+.adm::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.adm-nav,
+.adm-main {
+  position: relative;
+  z-index: 1;
 }
 
 .adm {
@@ -311,11 +356,7 @@ textarea {
    qu'un gris neutre, plus le filet lateral. Deux signaux faibles valent mieux
    qu'un aplat sature, qui volait la vedette au contenu. */
 .adm-nav-btn.on {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--adm-accent) 16%, transparent),
-    transparent 88%
-  );
+  background: var(--adm-accent-voile);
   color: var(--adm-ink);
   font-weight: 700;
 }
@@ -432,8 +473,8 @@ textarea {
 }
 .adm-err {
   background: rgba(224, 56, 42, 0.15);
-  border: 1px solid var(--adm-accent);
-  color: var(--adm-accent);
+  border: 1px solid var(--adm-alerte);
+  color: var(--adm-alerte);
   padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 18px;
@@ -566,8 +607,8 @@ textarea {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--carte-teinte, var(--adm-accent)), transparent 85%);
+  height: 2px;
+  background: var(--carte-teinte, var(--adm-accent));
 }
 .adm-card::after {
   content: "";
@@ -579,7 +620,6 @@ textarea {
   border-radius: 50%;
   background: var(--carte-teinte, var(--adm-accent));
   opacity: 0;
-  filter: blur(48px);
   transition: opacity 0.28s ease;
   pointer-events: none;
 }
@@ -597,17 +637,14 @@ textarea {
   --carte-teinte: var(--adm-ink-3);
 }
 .adm-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--adm-ink-3);
-}
-.adm-card:hover::after {
-  opacity: 0.16;
+  background: var(--adm-panel-2);
+  border-color: var(--adm-accent-sourd);
 }
 .adm-card-val {
   font-family: var(--adm-font);
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: -0.02em;
+  font-weight: 300;
+  font-size: 34px;
+  letter-spacing: -0.035em;
   margin-bottom: 4px;
   /* Chiffres proportionnels : en grand corps, des chiffres de largeur fixe
      donnent un nombre qui flotte. */
@@ -622,8 +659,8 @@ textarea {
   align-items: center;
   gap: 8px;
   background: rgba(224, 56, 42, 0.12);
-  border: 1px solid rgba(224, 56, 42, 0.3);
-  color: var(--adm-accent);
+  border: 1px solid color-mix(in srgb, var(--adm-alerte) 35%, transparent);
+  color: var(--adm-alerte);
   padding: 10px 14px;
   border-radius: 8px;
   margin-bottom: 12px;
@@ -645,7 +682,11 @@ textarea {
   overflow: hidden;
 }
 .adm-table th {
-  padding: 11px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--adm-bg);
+  padding: 12px 16px;
   text-align: left;
   font-size: 12px;
   font-weight: 700;
@@ -655,7 +696,7 @@ textarea {
   border-bottom: 1px solid var(--adm-line);
 }
 .adm-table td {
-  padding: 11px 14px;
+  padding: 15px 16px;
   border-bottom: 1px solid var(--adm-line-2);
   vertical-align: middle;
 }
@@ -714,19 +755,22 @@ textarea {
 }
 .adm-btn:hover {
   border-color: var(--adm-ink-3);
-  color: #fff;
+  background: var(--adm-hover);
+  color: var(--adm-ink);
 }
 .adm-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .adm-btn.primary {
-  background: var(--adm-accent);
-  color: #fff;
-  border-color: var(--adm-accent);
+  background: var(--adm-accent-voile);
+  color: var(--adm-accent-clair);
+  border-color: var(--adm-accent-sourd);
 }
 .adm-btn.primary:hover {
   background: var(--adm-accent);
+  border-color: var(--adm-accent);
+  color: var(--adm-bg);
 }
 .adm-btn.danger {
   color: var(--adm-accent);
