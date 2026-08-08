@@ -6,3 +6,8 @@
 # dans `hanabi-dwh/.venv` garde l'API aussi legere qu'avant.
 dbt-core==1.12.*
 dbt-postgres==1.11.*
+
+# Pilote PostgreSQL pour l extraction des sources externes (ingestion/).
+# dbt-postgres embarque psycopg2 ; ce module utilise psycopg 3, qui gere
+# nativement les fuseaux et les types date sans adaptateur supplementaire.
+psycopg[binary]==3.2.*

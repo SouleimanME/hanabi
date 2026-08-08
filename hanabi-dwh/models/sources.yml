@@ -59,3 +59,32 @@ sources:
         columns:
           - name: id
             tests: [unique, not_null]
+
+  - name: hanabi_externe
+    description: >
+      Sources publiques chargees par `ingestion/sources.py` dans le schema
+      `externe` : taux de reference de la BCE republies par Frankfurter, et
+      jours feries francais et japonais fournis par Nager.Date.
+
+      Elles vivent hors de `public` a dessein. `public` appartient a
+      l'application et evolue par migrations Alembic ; un `downgrade` ne doit
+      pas pouvoir emporter des donnees que l'application n'a jamais produites.
+    schema: externe
+    tables:
+      - name: taux_change
+        description: >
+          Une ligne par jour cote et par devise. La BCE ne cote ni le week-end
+          ni ses propres feries : la serie a donc des trous, qui sont combles
+          en silver et non ici.
+        loaded_at_field: charge_le
+        freshness:
+          warn_after: { count: 3, period: day }
+          error_after: { count: 10, period: day }
+      - name: jours_feries
+        description: >
+          Une ligne par jour ferie, pays et intitule. `national` distingue un
+          ferie national d'un ferie regional.
+        loaded_at_field: charge_le
+        freshness:
+          warn_after: { count: 45, period: day }
+          error_after: { count: 120, period: day }

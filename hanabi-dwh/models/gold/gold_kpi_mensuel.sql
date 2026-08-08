@@ -1,4 +1,26 @@
+{{
+    config(
+        materialized='incremental',
+        unique_key='mois_date',
+        incremental_strategy='delete+insert',
+    )
+}}
+
 -- Serie mensuelle des indicateurs de la boutique.
+--
+-- INCREMENTAL, AVEC UNE FENETRE DE RATTRAPAGE DE DEUX MOIS.
+--
+-- Un mois clos ne change plus, presque. L'exception est le remboursement
+-- tardif : une commande de mars peut sortir du chiffre d'affaires en mai, et
+-- une reconstruction qui ne toucherait que le mois courant garderait pour
+-- toujours la valeur de mars telle qu'elle etait au 31 mars. Deux mois de
+-- rattrapage couvrent le delai de retour legal francais, quatorze jours, plus
+-- la marge d'un traitement qui traine.
+--
+-- Le gain n'est pas le temps de calcul, qui est modeste sur ce volume : c'est
+-- que la table cesse d'etre entierement reecrite a chaque execution. Une
+-- lecture concurrente pendant la reconstruction ne voit plus disparaitre
+-- vingt-quatre mois d'historique pendant une seconde.
 --
 -- Part du calendrier et joint les faits dessus, jamais l'inverse : un mois sans
 -- commande doit ressortir a zero. Une serie construite depuis les commandes
@@ -83,4 +105,13 @@ left join ventes        on ventes.mois_date = calendrier.mois_date
 left join lignes        on lignes.mois_date = calendrier.mois_date
 left join audience      on audience.mois_date = calendrier.mois_date
 left join inscriptions  on inscriptions.mois_date = calendrier.mois_date
+{% if is_incremental() %}
+    -- Sans `coalesce`, une table vide donnerait un `null` et la comparaison
+    -- laisserait passer zero ligne : la premiere execution incrementale ne
+    -- construirait rien du tout.
+    where calendrier.mois_date >= coalesce(
+        (select max(mois_date) from {{ this }}) - interval '2 months',
+        '1900-01-01'::date
+    )
+{% endif %}
 order by calendrier.mois_date
