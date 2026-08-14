@@ -72,22 +72,50 @@ jobs:
         working-directory: hanabi-dwh
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
+      # Deux cas a ne pas confondre, et c'est tout l'interet de cette etape.
+      #
+      # Secret ABSENT : etat normal d'un fork, qui n'a pas acces a la base. On
+      # s'arrete en vert avec une note, parce qu'un depot clone n'a pas a
+      # afficher une CI cassee pour une base qui ne le concerne pas.
+      #
+      # Secret PRESENT mais mal forme : c'est une erreur de configuration du
+      # proprietaire, et elle doit etre rouge. Le tableau de bord Neon propose
+      # plusieurs formats - parametres separes, extrait psql, bloc .env - et un
+      # seul convient. Sans ce controle de forme, la valeur traversait trois
+      # etapes avant d'echouer dans « Compiler le projet dbt », qui n'y etait
+      # pour rien ; le message parlait de PostgreSQL en masquant l'hote, et ne
+      # disait donc ni ou ni quoi corriger.
+      #
+      # La valeur n'est jamais affichee, meme partiellement : GitHub la
+      # masquerait, et une chaine de connexion partiellement revelee reste une
+      # chaine de connexion revelee.
       - name: Verifier que la base est configuree
         id: garde
         env:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
         run: |
-          if [ -z "$DWH_DATABASE_URL" ]; then
-            echo "configure=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Secret DWH_DATABASE_URL absent : reconstruction ignoree." \
-                 "Voir l'en-tete de .github/workflows/entrepot.yml pour l'activer."
-          else
-            echo "configure=true" >> "$GITHUB_OUTPUT"
-          fi
+          case "$DWH_DATABASE_URL" in
+            "")
+              echo "configure=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::Secret DWH_DATABASE_URL absent : reconstruction ignoree." \
+                   "Voir l'en-tete de .github/workflows/entrepot.yml pour l'activer."
+              ;;
+            postgres://*|postgresql://*)
+              echo "configure=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Le secret DWH_DATABASE_URL ne commence pas par" \
+                   "postgresql:// - c'est la chaine de connexion DIRECTE de Neon" \
+                   "qui est attendue, au format « Connection string », et non un" \
+                   "jeu de parametres separes ni un extrait de code. L'hote ne" \
+                   "doit pas contenir -pooler."
+              exit 1
+              ;;
+          esac
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.garde.outputs.configure == 'true'
         with:
           python-version: "3.13"
@@ -157,7 +185,7 @@ jobs:
       # pouvoir lire ces fichiers.
       - name: Conserver les artefacts dbt
         if: always() && steps.garde.outputs.configure == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dbt-target-${{ github.run_number }}
           path: |
