@@ -11,6 +11,8 @@ Le contenu des agregats, lui, est verifie par les tests dbt (`dbt build` joue
 reviendrait a reecrire les modeles une seconde fois, et donc a tester la copie
 plutot que l'original.
 """
+import pathlib
+
 import pytest
 
 from app import warehouse
@@ -105,6 +107,43 @@ def test_chaque_mart_est_annonce_dans_la_couche_gold():
     gold = next(couche for couche in warehouse.COUCHES if couche["cle"] == "gold")
     for mart in warehouse.MARTS:
         assert mart.table in gold["modeles"], mart.table
+
+
+def test_les_couches_decrivent_tous_les_modeles_dbt():
+    """`COUCHES` doit enumerer exactement les modeles presents dans le projet dbt.
+
+    La verification manquait dans ce sens-la, et c'est celui qui echoue en
+    silence : un modele annonce mais absent de la base se voit dans l'interface,
+    un modele construit mais oublie dans `COUCHES` reste invisible - le compteur
+    affiche « 7/7 » en vert et personne ne cherche le huitieme. Les deux vues
+    bronze des sources externes et le calendrier quotidien ont vecu ainsi
+    pendant deux versions.
+
+    Les noms sont lus dans les fichiers `.sql`, sans dbt ni base : le projet est
+    dans le meme depot, et un simple parcours de dossier suffit a comparer les
+    deux listes. Le test se contente de passer si `hanabi-dwh/` est absent -
+    l'API se deploie seule, et son image n'embarque pas l'entrepot.
+    """
+    modeles = pathlib.Path(__file__).resolve().parents[2] / "hanabi-dwh" / "models"
+    if not modeles.is_dir():
+        pytest.skip("projet dbt absent de cette copie")
+
+    for couche in warehouse.COUCHES:
+        dossier = modeles / couche["cle"]
+        if not dossier.is_dir():
+            pytest.skip(f"couche {couche['cle']} absente du projet dbt")
+
+        sur_disque = {fichier.stem for fichier in dossier.glob("*.sql")}
+        annonces = set(couche["modeles"])
+
+        assert sur_disque - annonces == set(), (
+            f"modeles construits mais absents de COUCHES : "
+            f"{sorted(sur_disque - annonces)}"
+        )
+        assert annonces - sur_disque == set(), (
+            f"modeles annonces mais absents du projet dbt : "
+            f"{sorted(annonces - sur_disque)}"
+        )
 
 
 def test_les_cles_de_mart_sont_uniques():

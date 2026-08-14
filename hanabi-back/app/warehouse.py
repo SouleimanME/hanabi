@@ -159,18 +159,26 @@ PAR_CLE = {mart.cle: mart for mart in MARTS}
 #
 # Redit volontairement ce que `hanabi-dwh/models/` contient : l'API n'a pas
 # acces au projet dbt, qui n'est pas deploye avec elle. La duplication est
-# assumee et bornee - elle ne porte que des noms, jamais une regle de calcul, et
-# une divergence se voit immediatement puisque l'interface signale les modeles
-# annonces qu'elle ne trouve pas en base.
+# assumee et bornee - elle ne porte que des noms, jamais une regle de calcul.
+#
+# ELLE NE SE SURVEILLE QUE DANS UN SENS, ET C'EST LE PIEGE. Un modele annonce
+# ici mais absent de la base se voit tout de suite, l'interface le signalant
+# comme manquant. Un modele present en base mais oublie ici ne se voit PAS :
+# le compteur affiche « 7/7 » en vert et personne ne cherche le huitieme. C'est
+# exactement ce qui est arrive a l'arrivee des sources externes, ou cette liste
+# a cesse de suivre pendant deux versions. Ajouter un modele dans
+# `hanabi-dwh/models/` impose donc de l'ajouter ici, sans quoi il restera
+# invisible au back-office tout en etant construit chaque nuit.
 COUCHES = (
     {
         "cle": "bronze",
         "titre": "Bronze",
-        "resume": "Les tables de l'application, nommees sous une forme stable. Aucune transformation.",
+        "resume": "Les tables de l'application et les sources externes, nommees sous une forme stable. Aucune transformation.",
         "materialisation": "vues",
         "modeles": [
             "brz_clients", "brz_produits", "brz_commandes", "brz_lignes_commande",
             "brz_vues_produit", "brz_avis", "brz_promos",
+            "brz_taux_change", "brz_jours_feries",
         ],
     },
     {
@@ -181,6 +189,7 @@ COUCHES = (
         "modeles": [
             "slv_clients", "slv_commandes", "slv_lignes_commande",
             "slv_vues_produit", "slv_avis", "slv_calendrier_mensuel",
+            "slv_calendrier_quotidien",
         ],
     },
     {
