@@ -341,6 +341,25 @@ arrière aligne enfin le cœur sur l'adaptateur, resté en 1.11.
 l'outil à lui seul. Le reste est réel mais modeste, et c'est dit ici plutôt que
 maquillé.
 
+### Ce qu'une exécution produit
+
+Une construction complète matérialise les 29 actifs en une minute et demie :
+
+```
+29 actifs materialises
+96 controles joues, 0 en echec
+dbt : PASS=140 WARN=0 ERROR=0 SKIP=0
+```
+
+Les 140 nœuds dbt sont les 27 modèles, les 112 assertions et le crochet de fin
+d'exécution qui repose les droits de lecture. La réconciliation croisée tombe à
+zéro d'écart : la somme des commandes facturées dans `public.orders` et le total
+de `gold_kpi_mensuel` donnent le même nombre au centime.
+
+Rejouer la partition du mois en cours rattrape au passage les cotations publiées
+depuis la veille — la BCE publie en fin de journée ouvrée, et l'upsert rend
+l'opération sans effet sur ce qui est déjà chargé.
+
 ### Le déclenchement
 
 `.github/workflows/entrepot.yml` s'exécute **chaque jour à 5 h UTC** et à la
@@ -348,6 +367,15 @@ demande depuis l'onglet Actions. Il compile le projet dbt, joue
 `dbt source freshness` (non bloquant), puis matérialise les 29 actifs sur la
 partition du mois en cours. Les artefacts `manifest.json` et `run_results.json`
 sont conservés 30 jours, y compris en cas d'échec.
+
+Une fois le secret posé, **la chaîne n'a plus besoin de personne** : les taux du
+jour arrivent, l'entrepôt se reconstruit, le back-office lit des agrégats datés
+de la nuit. Deux limites à connaître avant d'y compter. La fraîcheur reste
+quotidienne, ce qui est la cadence de la source elle-même - la BCE publie une
+fois par jour ouvré, un rafraîchissement plus fréquent ne ramènerait rien de
+neuf. Et GitHub désactive les tâches planifiées d'un dépôt resté soixante jours
+sans activité : il prévient par courriel, mais sur un dépôt qu'on ne touche pas
+pendant deux mois, la planification s'arrête d'elle-même.
 
 **Le workflow est inerte tant que le secret `DWH_DATABASE_URL` n'est pas
 renseigné** dans les paramètres du dépôt. Sans lui, la tâche s'arrête avec une

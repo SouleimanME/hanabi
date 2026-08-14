@@ -150,6 +150,12 @@ et n'arrête que l'aval du nœud tombé, la série de taux se découpe en partit
 mensuelles qu'on rejoue une par une, et 96 des 112 assertions dbt deviennent des
 contrôles attachés au modèle qu'elles vérifient.
 
+Une exécution complète matérialise 29 actifs en une minute et demie : les deux
+extractions, puis les 27 modèles construits et testés. Les 96 contrôles passent,
+et la réconciliation croisée tombe à zéro d'écart — la somme des commandes
+facturées dans la base transactionnelle et le total de `gold_kpi_mensuel`
+donnent le même nombre au centime.
+
 Ce que Dagster n'apporte pas, en revanche : rien côté planification. Un
 calendrier Dagster suppose un daemon permanent et rien n'en héberge un, donc
 c'est toujours GitHub Actions qui donne l'heure — il appelle simplement le
@@ -298,6 +304,10 @@ cd hanabi-front && npm run lint && npm run format:check && npm run build
 cd hanabi-dwh && .venv/Scripts/python dwh.py build
 ```
 
+```bash
+cd hanabi-dwh && .venv/Scripts/dbt parse --profiles-dir . --project-dir . && .venv/Scripts/dagster definitions validate
+```
+
 230 tests côté API couvrent le calcul des prix et des remises, le décrément de
 stock en concurrence, l'authentification, les barrières anti-robots, le
 cloisonnement du back-office, l'export CSV et les propriétés de la notation RFM.
@@ -305,6 +315,10 @@ cloisonnement du back-office, l'export CSV et les propriétés de la notation RF
 Les 112 assertions dbt sont jouées après construction, dans l'ordre du graphe.
 La suite Python tourne sur SQLite : rapide, mais aveugle à l'entrepôt qui
 n'existe que sur PostgreSQL. Les deux se complètent au lieu de se doubler.
+
+La dernière commande ne demande aucune base : `parse` compile le Jinja et
+résout le graphe dbt, `validate` charge les définitions Dagster. Ce sont les
+deux vérifications que l'intégration continue joue à chaque poussée.
 
 ---
 
@@ -355,7 +369,15 @@ un stockage objet avec seulement les URL en base.
 **La reconstruction planifiée attend son secret.** Le workflow tourne chaque
 jour mais s'arrête tant que `DWH_DATABASE_URL` n'est pas renseigné dans les
 secrets du dépôt. Le renseigner revient à confier une chaîne de connexion en
-écriture à GitHub Actions, ce qui se décide.
+écriture à GitHub Actions, ce qui se décide. C'est la seule pièce manquante
+pour que la chaîne tourne seule : une fois le secret posé, les taux du jour et
+la reconstruction complète se font sans intervention.
+
+**Un ordonnanceur gratuit s'endort.** GitHub désactive les tâches planifiées
+d'un dépôt resté soixante jours sans activité, et prévient par courriel plutôt
+que d'échouer. Sur un dépôt de portfolio, qu'on ne touche pas pendant deux
+mois est le cas normal : c'est la limite à connaître avant de compter sur
+cette planification pour autre chose qu'une démonstration.
 
 **Les mentions légales comportent des champs à compléter.** Aucune identité
 d'entreprise n'a été inventée : un SIRET fictif constituerait une fausse
