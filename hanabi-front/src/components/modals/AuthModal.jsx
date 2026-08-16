@@ -5,7 +5,17 @@
  * le confort, et refaite cote serveur pour la securite.
  */
 import { useState } from "react";
-import { X, ArrowLeft, Check, Lock, Truck, RotateCcw, Sparkles, ShieldCheck } from "lucide-react";
+import {
+  X,
+  MailCheck,
+  ArrowLeft,
+  Check,
+  Lock,
+  Truck,
+  RotateCcw,
+  Sparkles,
+  ShieldCheck,
+} from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
 import { DatePicker } from "../ui/DatePicker.jsx";
 import { PhoneField } from "../ui/PhoneField.jsx";
@@ -13,6 +23,7 @@ import { PwField, PwStrength, PwChecklist } from "../ui/PasswordField.jsx";
 import { isPasswordStrong } from "../../lib/password.js";
 import { useAntiBot } from "../../hooks/useAntiBot.js";
 import { useFocusTrap } from "../../hooks/useFocusTrap.js";
+import { Auth } from "../../lib/api.js";
 
 /** Ce que le compte apporte, montre a l'inscription.
  *
@@ -45,6 +56,9 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(1);
+  // Confirmation d'envoi du lien de reinitialisation. Un booleen suffit :
+  // l'ecran ne revient jamais en arriere depuis cet etat.
+  const [oubliEnvoye, setOubliEnvoye] = useState(false);
 
   const resetSignup = () => {
     setStep(1);
@@ -76,6 +90,26 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
 
   const submit = async () => {
     setErr(null);
+
+    if (mode === "forgot") {
+      if (!email.includes("@")) return setErr(t("errEmail"));
+      setBusy(true);
+      try {
+        await Auth.forgotPassword(email.trim());
+      } catch (e) {
+        // Une panne reseau se dit ; un compte inconnu, non. Le serveur repond
+        // succes dans les deux cas a dessein, et distinguer ici les deux
+        // situations reintroduirait cote client la fuite qu'il refuse.
+        if (e.network) {
+          setBusy(false);
+          return setErr(e.message);
+        }
+      }
+      setBusy(false);
+      setOubliEnvoye(true);
+      return;
+    }
+
     if (mode === "signup") {
       if (step === 1) {
         const e = validateStep1();
@@ -124,6 +158,14 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
     else onClose();
   };
 
+  // Un titre par mode. Le ternaire d'origine ne connaissait que deux etats et
+  // affichait « Creer un compte » sur le formulaire de mot de passe oublie.
+  const TITRES = {
+    login: t("signin"),
+    signup: t("createAccount"),
+    forgot: t("forgotTitle"),
+  };
+
   const CIVILITIES = [
     { value: "M", label: t("civM") },
     { value: "F", label: t("civF") },
@@ -139,32 +181,34 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={mode === "login" ? t("signin") : t("createAccount")}
+        aria-label={TITRES[mode]}
       >
         <button className="icon-btn modal-x" onClick={onClose} aria-label="Fermer">
           <X size={18} />
         </button>
-        <h2 className="modal-h">{mode === "login" ? t("signin") : t("createAccount")}</h2>
-        <div className="tabs">
-          <button
-            className={mode === "login" ? "on" : ""}
-            onClick={() => {
-              setMode("login");
-              resetSignup();
-            }}
-          >
-            {t("signin")}
-          </button>
-          <button
-            className={mode === "signup" ? "on" : ""}
-            onClick={() => {
-              setMode("signup");
-              setErr(null);
-            }}
-          >
-            {t("signup")}
-          </button>
-        </div>
+        <h2 className="modal-h">{TITRES[mode]}</h2>
+        {mode !== "forgot" && (
+          <div className="tabs">
+            <button
+              className={mode === "login" ? "on" : ""}
+              onClick={() => {
+                setMode("login");
+                resetSignup();
+              }}
+            >
+              {t("signin")}
+            </button>
+            <button
+              className={mode === "signup" ? "on" : ""}
+              onClick={() => {
+                setMode("signup");
+                setErr(null);
+              }}
+            >
+              {t("signup")}
+            </button>
+          </div>
+        )}
 
         {mode === "signup" && (
           <div className="signup-steps">
@@ -320,8 +364,43 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
                 onKeyDown={(e) => e.key === "Enter" && submit()}
                 autoComplete="current-password"
               />
+              {/* Sous le champ, et non dans un coin : c'est ici qu'on regarde
+                  au moment precis ou l'on se rend compte qu'on a oublie. */}
+              <button className="lien-oubli" onClick={() => setMode("forgot")}>
+                {t("forgotLink")}
+              </button>
             </>
           )}
+
+          {mode === "forgot" &&
+            (oubliEnvoye ? (
+              /* Message volontairement IDENTIQUE que le compte existe ou non :
+                 confirmer l'envoi seulement pour les adresses connues ferait de
+                 cette fenetre un detecteur d'adresses, exactement ce que le
+                 serveur refuse en repondant toujours succes. */
+              <div className="oubli-envoye" role="status">
+                <MailCheck size={22} />
+                <p>{t("forgotSentTitle")}</p>
+                <p className="muted small">{t("forgotSentBody")}</p>
+              </div>
+            ) : (
+              <>
+                <p className="modal-intro">{t("forgotBody")}</p>
+                <label className="field">
+                  <span>{t("email")}</span>
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && submit()}
+                    placeholder="toi@exemple.fr"
+                    autoComplete="username"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    spellCheck="false"
+                  />
+                </label>
+              </>
+            ))}
 
           {/* Champ piege : hors ecran et hors tabulation, seuls les robots le
               remplissent. Voir hooks/useAntiBot.js. */}
@@ -334,6 +413,18 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
           )}
 
           <div className="modal-actions">
+            {mode === "forgot" && (
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  setMode("login");
+                  setOubliEnvoye(false);
+                  setErr(null);
+                }}
+              >
+                <ArrowLeft size={15} /> {t("back")}
+              </button>
+            )}
             {mode === "signup" && step === 2 && (
               <button
                 className="btn-ghost"
@@ -345,15 +436,22 @@ export function AuthModal({ onClose, onLogin, onSignup }) {
                 <ArrowLeft size={15} /> {t("back")}
               </button>
             )}
-            <button className="btn-primary grow" onClick={submit} disabled={busy}>
-              {busy
-                ? "…"
-                : mode === "login"
-                  ? t("doLogin")
-                  : step === 1
-                    ? `${t("next")} →`
-                    : t("doSignup")}
-            </button>
+            {/* Le bouton disparait une fois le lien envoye : il n'y a plus
+                rien a soumettre, et le laisser inviterait a le renvoyer en
+                boucle. */}
+            {!(mode === "forgot" && oubliEnvoye) && (
+              <button className="btn-primary grow" onClick={submit} disabled={busy}>
+                {busy
+                  ? "…"
+                  : mode === "forgot"
+                    ? t("forgotSubmit")
+                    : mode === "login"
+                      ? t("doLogin")
+                      : step === 1
+                        ? `${t("next")} →`
+                        : t("doSignup")}
+              </button>
+            )}
           </div>
         </div>
 

@@ -22,23 +22,28 @@ import { parsePath, pathFor } from "../lib/routes.js";
  *   setView: (v: string) => void,
  *   activeProduct: {id: number}|null,
  *   openProductById: (id: number) => void,
+ *   onJeton?: (jeton: string) => void,
  * }} params
  */
-export function useUrlSync({ view, setView, activeProduct, openProductById }) {
+export function useUrlSync({ view, setView, activeProduct, openProductById, onJeton }) {
   const applyingUrl = useRef(false);
   const ready = useRef(false);
 
   // Les fonctions changent a chaque rendu ; on lit toujours la derniere version
   // sans reabonner l'ecouteur popstate pour autant.
-  const latest = useRef({ setView, openProductById });
-  latest.current = { setView, openProductById };
+  const latest = useRef({ setView, openProductById, onJeton });
+  latest.current = { setView, openProductById, onJeton };
 
-  const applyPath = (pathname) => {
-    const { view: nextView, productId } = parsePath(pathname);
+  const applyPath = (pathname, search) => {
+    const { view: nextView, productId, jeton } = parsePath(pathname, search);
     applyingUrl.current = true;
     if (nextView === "product" && productId) {
       latest.current.openProductById(productId);
     } else {
+      // Transmis AVANT le changement d'ecran : l'ecran de confirmation lit le
+      // jeton des son premier rendu, et l'y trouver deja evite un aller-retour
+      // ou il s'afficherait vide.
+      if (jeton) latest.current.onJeton?.(jeton);
       latest.current.setView(nextView);
     }
   };
@@ -47,7 +52,7 @@ export function useUrlSync({ view, setView, activeProduct, openProductById }) {
   useEffect(() => {
     // Volontairement une seule fois : c'est l'amorcage. `applyPath` ne lit que
     // des refs, donc rien a declarer en dependance.
-    applyPath(window.location.pathname);
+    applyPath(window.location.pathname, window.location.search);
     ready.current = true;
   }, []);
 
@@ -63,13 +68,17 @@ export function useUrlSync({ view, setView, activeProduct, openProductById }) {
 
     const path = pathFor(view, activeProduct);
     if (path !== window.location.pathname) {
+      // `pathFor` ne produit jamais de requete : quitter un ecran a jeton
+      // efface donc celui-ci de la barre d'adresse. C'est voulu - un jeton qui
+      // traine dans l'historique, dans un signet ou dans un lien repartage est
+      // un jeton qu'on finit par donner a quelqu'un d'autre.
       window.history.pushState(null, "", path);
     }
   }, [view, activeProduct]);
 
   // 3. Boutons Retour et Suivant du navigateur.
   useEffect(() => {
-    const onPopState = () => applyPath(window.location.pathname);
+    const onPopState = () => applyPath(window.location.pathname, window.location.search);
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);

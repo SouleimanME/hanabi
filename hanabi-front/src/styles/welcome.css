@@ -56,7 +56,7 @@
   flex: 1;
   min-width: 0;
   border: 1px solid var(--line2);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   padding: 9px 12px;
   background: var(--card);
   color: var(--ink);
@@ -84,7 +84,7 @@
   width: 100%;
   padding: 11px 14px;
   border: 1px dashed var(--accent);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 700;
@@ -98,7 +98,7 @@
 }
 .welcome-code:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Date de livraison estimee (components/ui/DeliveryNote.jsx). */

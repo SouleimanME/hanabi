@@ -22,7 +22,6 @@ export default {
   ss: "s",
   theDrop: "La sélection",
   refs: "réf.",
-  sort: "Trier",
   sortPop: "Populaires",
   sortNew: "Nouveautés",
   sortAsc: "Prix croissant",
@@ -52,7 +51,6 @@ export default {
   descSuffix:
     "Édité en petite série. Les légères variations sont la signature du fait main, pas un défaut.",
   soldNow: "Épuisé pour le moment",
-  ship48: "Expédié sous 48 h",
   ret30: "Retours 30 jours",
   securePay: "Paiement chiffré",
   reviews: "Avis",
@@ -224,8 +222,6 @@ export default {
   menu: "Menu",
   myAccount: "Mon compte",
   myInfo: "Mes informations",
-  infoNote:
-    "Informations fournies à l'inscription. Pour les corriger, contacte-nous : la modification en ligne n'est pas encore disponible.",
   categories: "Catégories",
   settings: "Réglages",
   language: "Langue",
@@ -242,5 +238,106 @@ export default {
   ariaFavorites: "Mes favoris",
   ariaAccount: "Mon compte",
   ariaNav: "Navigation principale",
-  ariaHome: "Hanabi — retour à l'accueil",
+  ariaHome: "Hanabi, retour à l'accueil",
+
+  // --- Parcours par courriel : confirmation d'adresse et mot de passe oublie ---
+  forgotLink: "Mot de passe oublié ?",
+  forgotTitle: "Mot de passe oublié",
+  forgotBody:
+    "Indique l'adresse de ton compte. Si elle nous est connue, tu recevras un lien pour choisir un nouveau mot de passe.",
+  forgotSubmit: "Envoyer le lien",
+  forgotSentTitle: "C'est parti.",
+  forgotSentBody:
+    "Si un compte existe pour cette adresse, le lien y est déjà. Il expire dans une heure. Pense aux indésirables.",
+
+  verifyChecking: "Confirmation en cours…",
+  verifyOkTitle: "Adresse confirmée",
+  verifyOkBody: "Merci. Nous savons maintenant que nous écrivons à la bonne adresse.",
+  verifyFailTitle: "Ce lien ne fonctionne plus",
+  verifyFailBody: "Il a peut-être expiré, ou déjà servi.",
+  verifyFailHint:
+    "Rien n'est perdu : ton compte fonctionne normalement. Connecte-toi pour demander un nouveau lien.",
+
+  resetTitle: "Nouveau mot de passe",
+  resetBody: "Choisis-en un que tu n'utilises nulle part ailleurs.",
+  resetNewLabel: "Nouveau mot de passe",
+  resetSubmit: "Valider",
+  resetSending: "Enregistrement…",
+  pwMismatch: "Les deux mots de passe ne correspondent pas.",
+  pwTooWeak: "Ce mot de passe ne remplit pas encore toutes les règles.",
+  cancel: "Annuler",
+  login: "Se connecter",
+  resetOkToast: "Mot de passe modifié. Te voilà connecté.",
+  verifPending: "Ton adresse e-mail n'est pas encore confirmée.",
+  verifResend: "Renvoyer le lien",
+  verifResent: "Lien renvoyé. Pense aux indésirables.",
+  verifRetry: "Échec de l'envoi, réessayer",
+  // --- Gestion du compte ---
+  edit: "Modifier",
+  save: "Enregistrer",
+  change: "Modifier",
+  noChange: "Aucune modification",
+  nChanges: "{n} champ(s) modifié(s)",
+  infoSaved: "Informations enregistrées.",
+  adresseExtra: "Complément d'adresse",
+
+  myPayments: "Mes moyens de paiement",
+  mySecurity: "Sécurité",
+
+  payNotice:
+    "Le numéro de ta carte ne quitte jamais cette page : seuls le réseau, les quatre derniers chiffres et l'expiration sont conservés.",
+  payEmpty: "Aucun moyen de paiement enregistré.",
+  payAdd: "Ajouter une carte",
+  payCard: "Carte",
+  payExpires: "Expire {d}",
+  payDefault: "Par défaut",
+  payMakeDefault: "Définir par défaut",
+  payDefaultSet: "Carte par défaut modifiée.",
+  payDelete: "Supprimer cette carte",
+  payDeleted: "Carte supprimée.",
+  payAdded: "Carte enregistrée.",
+  payNoCvc:
+    "Le cryptogramme n'est pas demandé : il sert à autoriser un paiement, jamais à enregistrer une carte.",
+  payBadNumber: "Ce numéro de carte est invalide.",
+  payBadExpiry: "Cette date d'expiration est invalide ou dépassée.",
+  cardNumber: "Numéro de carte",
+  cardExpiry: "Expiration",
+  cardLabel: "Libellé",
+  cardLabelHint: "perso, pro…",
+
+  secPwHint: "Modifié pour la dernière fois à l'inscription.",
+  secPwDone: "Mot de passe modifié.",
+  secCurrentPw: "Mot de passe actuel",
+  secNewPw: "Nouveau mot de passe",
+  secNewMail: "Nouvelle adresse e-mail",
+  secMailHint:
+    "La nouvelle adresse devra être confirmée : un lien y sera envoyé. Ton mot de passe actuel est demandé pour valider le changement.",
+  secMailDone: "Adresse modifiée. Un lien de confirmation vient d'y être envoyé.",
+  payOther: "Utiliser une autre carte",
+  // --- RGPD : portabilité et effacement ---
+  myData: "Mes données",
+  rgpdExportTitle: "Récupérer mes données",
+  rgpdExportHint: "Tout ce que la boutique détient sur toi, en un fichier.",
+  rgpdExportOpen: "Exporter",
+  rgpdExportDo: "Télécharger",
+  rgpdExportDone: "Export téléchargé.",
+  rgpdExportFormat:
+    "Fichier JSON, lisible par une machine comme par un humain. Il ne transite par aucun serveur : il est construit dans ton navigateur à partir de la réponse.",
+
+  rgpdDeleteTitle: "Supprimer mon compte",
+  rgpdDeleteHint: "Définitif. Aucune restauration possible.",
+  rgpdDeleteOpen: "Supprimer",
+  rgpdDeleteDo: "Supprimer définitivement",
+  rgpdDeleteWarn: "Cette action est irréversible.",
+  rgpdDeleteGone:
+    "Tes informations, tes moyens de paiement et ton inscription aux annonces sont effacés.",
+  rgpdDeleteKept:
+    "Tes commandes sont conservées sans aucune donnée personnelle : la loi impose de garder dix ans les pièces comptables.",
+  rgpdDeleteReviews: "Le texte de tes avis reste en ligne, sous un auteur anonyme.",
+  rgpdDeleteType: "Recopie « {formule} » pour confirmer",
+  rgpdDeleteDone: "Ton compte a été supprimé.",
+  cgvAccept: "J'ai lu et j'accepte les",
+  cgvLink: "conditions générales de vente",
+  cgvAcceptEnd: ".",
+  errCgv: "Merci d'accepter les conditions générales de vente.",
 };

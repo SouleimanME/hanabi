@@ -65,14 +65,14 @@
   display: flex;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   padding: 4px;
   margin-bottom: 20px;
 }
 .tabs button {
   flex: 1;
   padding: 9px;
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   font-weight: 700;
   font-size: 14px;
   color: var(--muted);
@@ -85,7 +85,7 @@
 }
 .tabs button.on {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .civ-row {
   display: flex;
@@ -96,7 +96,7 @@
   flex: 1;
   padding: 10px 6px;
   border: 1px solid var(--line2);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   font-size: 14px;
   font-weight: 700;
   color: var(--muted);
@@ -115,7 +115,7 @@
 }
 .civ-btn.on {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 .modal-tall {

@@ -143,7 +143,7 @@
 .order-thumb {
   width: 42px;
   height: 42px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -152,4 +152,313 @@
   flex: 1;
   font-weight: 500;
   font-size: 14px;
+}
+
+/* Rappel d'adresse non confirmee.
+ *
+ * Un FILET, pas un panneau d'alerte. Le compte fonctionne sans confirmation :
+ * une bande vermillon pleine sur un compte qui marche apprend surtout a ignorer
+ * les bandes vermillon. Un trait sur le cote gauche suffit a distinguer ce bloc
+ * du reste de la page, et c'est tout ce qu'on lui demande. */
+.acc-verif {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 18px 0 28px;
+  padding: 13px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r-sm);
+  max-width: 62ch;
+  color: var(--accent);
+}
+.acc-verif p {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.acc-verif-ok {
+  color: var(--ok) !important;
+  font-size: 13px !important;
+  margin-top: 5px !important;
+}
+/* Le lien de renvoi reprend l'apparence de « mot de passe oublie », mais aligne
+   a GAUCHE : il suit une phrase, il ne clot pas un formulaire.
+ *
+ * Selecteur descendant, et non `.acc-verif-lien` seul : `.lien-oubli` vit dans
+ * `jeton.css`, importe APRES cette feuille, et son `margin-left: auto` gagnait
+ * a specificite egale par simple ordre de cascade. Deux classes valent mieux
+ * qu'un `!important`, qui aurait masque la vraie cause. */
+.acc-verif .lien-oubli {
+  margin: 5px 0 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Gestion du compte : formulaires, paiements, securite              */
+/* ---------------------------------------------------------------- */
+
+.acc-modifier {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.cpt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* Deux champs courts sur une ligne : code postal et ville, expiration et
+   libelle. Ils vont par paires dans la tete de qui les remplit. */
+.cpt-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 520px) {
+  .cpt-duo {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cpt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.cpt-compte {
+  margin-left: auto;
+}
+.cpt-erreur {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  margin: 0;
+}
+.cpt-note {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.cpt-bloc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* L'avertissement sur le numero de carte. Il n'alarme pas - il RASSURE, et
+   c'est pour cela qu'il est vert et discret plutot que vermillon : ce qu'il
+   annonce est une garantie, pas un risque. */
+.cpt-avis {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+}
+.cpt-avis svg {
+  color: var(--ok);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cartes {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+.carte {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+/* La carte par defaut se distingue par sa TRANCHE, comme le tiroir du panier
+   et le pied de page. Un fond teinte l'aurait fait passer pour une alerte. */
+.carte.defaut {
+  border-left: 2px solid var(--accent);
+}
+.carte-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.carte-nom {
+  font-weight: 700;
+  font-size: 14px;
+}
+.carte-num {
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+.carte-defaut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.carte-suppr {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.carte-suppr:hover {
+  color: var(--accent);
+}
+.carte-reseau {
+  position: absolute;
+  right: 12px;
+  bottom: 11px;
+}
+.carte-form .field {
+  position: relative;
+}
+.cpt-ajout {
+  align-self: flex-start;
+}
+
+/* Une ligne de la section Securite : ce qu'on peut changer, et le bouton. */
+.cpt-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cpt-ligne:last-of-type {
+  border-bottom: none;
+}
+.cpt-ligne > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.cpt-ligne-titre {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* La ligne de carte au telephone.
+ *
+ * MESURE A L'APPUI : a 375 px, la rangee horizontale laissait 87 px sur 301 a
+ * l'information - le badge « par defaut » et la corbeille mangeaient le reste -
+ * et « Visa •••• 4242 » se cassait sur trois lignes. Un moyen de paiement qu'on
+ * ne parvient pas a lire ne se choisit pas.
+ *
+ * En grille : l'icone et l'action encadrent l'information, qui prend toute la
+ * largeur restante, et le badge passe sur sa propre rangee. */
+@media (max-width: 520px) {
+  .carte {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px 10px;
+  }
+  .carte-info {
+    min-width: 0;
+  }
+  .carte-nom {
+    /* Le numero ne se separe plus du reseau : ils forment un seul reperage. */
+    white-space: nowrap;
+  }
+  .carte-defaut,
+  .carte .lien-oubli {
+    grid-column: 2 / -1;
+    margin: 0;
+  }
+  .carte-suppr {
+    grid-row: 1;
+    grid-column: 3;
+  }
+}
+
+/* Les deux boutons d'une action de compte passent l'un sous l'autre plutot que
+   de se comprimer : un bouton de 90 px de large ne se lit plus. */
+@media (max-width: 420px) {
+  .cpt-actions .btn-primary,
+  .cpt-actions .btn-ghost {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .cpt-compte {
+    margin: 4px 0 0;
+  }
+  .cpt-ligne {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Droits sur ses donnees.
+ *
+ * L'EFFACEMENT NE RESSEMBLE PAS A L'EXPORT, et l'ecran doit le dire. Exporter
+ * est anodin et reversible ; effacer ne l'est pas. Les presenter dans le meme
+ * ton inviterait a cliquer sur le second comme sur le premier. */
+.cpt-separateur {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 6px 0;
+}
+.cpt-ligne-titre.danger,
+.btn-ghost.danger {
+  color: var(--accent);
+}
+.btn-ghost.danger {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.btn-ghost.danger:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Le bloc de suppression porte la tranche vermillon, comme tout ce qui, dans
+   cette direction, demande qu'on s'arrete. */
+.cpt-danger {
+  border-left: 2px solid var(--accent);
+  padding-left: 16px;
+  margin-top: 4px;
+}
+.cpt-avertissement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0;
+}
+.cpt-liste {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.cpt-liste li {
+  padding-left: 2px;
 }

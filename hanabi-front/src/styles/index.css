@@ -34,6 +34,7 @@
 @import "./saved.css";
 @import "./checkout.css";
 @import "./legal.css";
+@import "./jeton.css";
 
 /* --- Retours utilisateur --- */
 @import "./welcome.css";

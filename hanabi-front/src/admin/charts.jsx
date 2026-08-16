@@ -148,7 +148,7 @@ export function LineChart({
             <td>{l}</td>
             {series.map((s) => (
               <td key={s.key} className="mono">
-                {s.values[i] == null ? "—" : format(s.values[i])}
+                {s.values[i] == null ? "-" : format(s.values[i])}
               </td>
             ))}
           </tr>
@@ -184,7 +184,7 @@ export function LineChart({
           </defs>
 
           {/* Grille : filets pleins d'un ton au-dessus du fond, jamais en
-              pointillés — le pointillé se lit comme un seuil. */}
+              pointillés, le pointillé se lisant comme un seuil. */}
           {ticks.map((t) => (
             <g key={t}>
               <line
@@ -405,7 +405,7 @@ export function BarChart({
  * Part d'un tout, en anneau.
  *
  * Réservé aux répartitions lisibles d'un coup d'oeil : six segments au plus, et
- * jamais pour comparer des valeurs proches — un anneau ne permet pas de dire
+ * jamais pour comparer des valeurs proches : un anneau ne permet pas de dire
  * lequel de deux arcs presque egaux est le plus grand. Un écart de 2 px dans la
  * couleur du fond sépare les segments, plutôt qu'un contour : un trait ajouterait
  * de l'encre qui n'est pas de la donnée.

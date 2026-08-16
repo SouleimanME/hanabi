@@ -143,11 +143,17 @@
 .card:hover .card-sheen {
   opacity: 1;
 }
-/* Pastille "Decouvrir" qui monte du bas du visuel au survol. */
+/* "Decouvrir" monte du bas du visuel au survol.
+ *
+ * Ancre a DROITE et non centre : centre, il venait se poser exactement sur le
+ * bandeau « Nouveau » ancre en bas a gauche, et masquait au survol la seule
+ * information que la carte cherchait a mettre en avant. Deux ancrages opposes
+ * ne peuvent plus se rencontrer, quelle que soit la longueur des deux
+ * libelles. */
 .card-peek {
   position: absolute;
-  left: 50%;
-  bottom: 14px;
+  right: 12px;
+  bottom: 12px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -156,18 +162,18 @@
   font-size: 12px;
   font-weight: 700;
   padding: 7px 14px;
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   white-space: nowrap;
   box-shadow: var(--shadow);
   opacity: 0;
-  transform: translate(-50%, 18px);
+  transform: translateY(18px);
   transition:
     opacity 0.3s var(--ease-out),
     transform 0.3s var(--ease-out);
 }
 .card:hover .card-peek {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 .card-cat {
   position: absolute;
@@ -177,7 +183,7 @@
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 99px;
+  border-radius: var(--r-sm);
   color: var(--accent);
   border: 1px solid var(--line);
 }
@@ -186,12 +192,12 @@
   bottom: 12px;
   left: 12px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
   padding: 4px 9px;
-  border-radius: 99px;
+  border-radius: var(--r-sm);
   font-family: var(--font-serif);
 }
 .art {
@@ -262,32 +268,47 @@
   justify-content: space-between;
   gap: 10px;
 }
+/* Sur une carte, l'ajout n'est PAS une boite.
+ *
+ * Douze articles a l'ecran, c'est douze boutons : encadres, ils font douze
+ * rectangles qui se disputent l'attention avec les douze visuels au-dessus, et
+ * la grille devient un mur. Un libelle souligne d'un trait de vermillon occupe
+ * la meme surface utile et laisse la page respirer.
+ *
+ * Le trait est un coup de pinceau : sourd au repos, il prend la couleur pleine
+ * au survol. C'est le seul changement, et il porte a la fois l'etat et
+ * l'invitation. */
 .btn-add {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid var(--line2);
-  border-radius: 99px;
-  padding: 9px 15px;
-  font-weight: 700;
-  font-size: 13px;
+  gap: 7px;
+  border: 0;
+  border-bottom: 2px solid var(--line2);
+  border-radius: var(--r-btn);
+  padding: 7px 0;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--ink);
   transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s,
-    opacity 0.15s,
-    transform 0.15s;
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    opacity 0.15s;
   white-space: nowrap;
 }
 .btn-add:hover:not(:disabled) {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-  transform: translateY(-1px);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 .btn-add:active:not(:disabled) {
-  transform: scale(0.94);
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.btn-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 /* --- Squelettes de chargement (voir catalog/CardSkeleton.jsx) --- */
 .skel-card {
@@ -309,7 +330,7 @@
 }
 .skel-line {
   height: 11px;
-  border-radius: 99px;
+  border-radius: 0;
 }
 .skel-line.lg {
   height: 17px;
@@ -324,7 +345,7 @@
 .skel-pill {
   width: 88px;
   height: 34px;
-  border-radius: 99px;
+  border-radius: 0;
   flex-shrink: 0;
 }
 /* Reflet qui balaye : signale "ca charge" sans spinner. */
@@ -370,7 +391,7 @@
   align-items: flex-start;
   background: var(--accent-soft);
   border: 1px solid var(--accent);
-  border-radius: 16px;
+  border-radius: var(--r-sm);
   padding: 20px 22px;
   color: var(--accent);
 }
@@ -404,7 +425,7 @@
   gap: 12px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   padding: 10px 16px 10px 10px;
   flex-shrink: 0;
   transition:
@@ -421,7 +442,7 @@
 .recent-art {
   width: 50px;
   height: 50px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--paper);
 }

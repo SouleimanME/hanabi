@@ -1,110 +1,154 @@
-/* Pied de page : colonnes, liens et bandeau legal. */
+/* Pied de page : colonnes, liens et bandeau legal.
+ *
+ * La tranche de la plaque. Un filet de vermillon franc en haut, sur toute la
+ * largeur, exactement comme l'arete du tiroir du panier : c'est ce qui dit que
+ * la page s'arrete et que la laque commence. Il remplace une frise de vagues
+ * qui faisait un decor la ou il fallait une limite. */
 .ft {
   background: var(--footer-bg);
   color: var(--footer-tx);
-  /* Reference de positionnement du Fuji, pose en absolu au fond. */
+  border-top: 2px solid var(--footer-accent);
+  /* Reference de positionnement du filigrane, et rognage de son debord. */
   position: relative;
   overflow: hidden;
   isolation: isolate;
 }
-/* Frise seigaiha : renversee pour que les vagues pointent vers le haut, en
-   crete de separation avec le contenu de la page. */
-.ft-crest {
+
+/* L'embleme dans la matiere. Assez grand pour deborder par deux cotes, assez
+   faible pour qu'on ne le voie pas d'abord : a cinq pour cent, il ne se
+   remarque qu'une fois qu'on a lu le reste, ce qui est le propre d'un
+   filigrane. Il ne prend aucun evenement de pointeur. */
+.ft-filigrane {
+  position: absolute;
+  right: -130px;
+  bottom: -170px;
+  z-index: 0;
+  color: var(--footer-accent);
+  opacity: 0.05;
+  pointer-events: none;
   line-height: 0;
-  transform: rotate(180deg);
 }
+
 .ft-in {
   position: relative;
   z-index: 1;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 54px 24px 36px;
+  /* L'intervalle fait tout le travail : c'est le seul outil de mise en page que
+     cette direction s'autorise, avec l'echelle. */
+  padding: 78px 24px 64px;
   display: grid;
-  grid-template-columns: 1.2fr 1.5fr;
-  gap: 40px;
+  grid-template-columns: 1fr;
+  gap: 52px;
+}
+@media (min-width: 820px) {
+  .ft-in {
+    grid-template-columns: 1.1fr 1.5fr;
+    gap: 64px;
+  }
 }
 .ft-logo {
-  color: #fbf8f0;
-  font-size: 23px;
+  color: #f7ebe6;
+  font-size: 26px;
+  letter-spacing: -0.03em;
 }
 .ft-logo .logo-jp {
-  color: var(--accent);
+  color: var(--footer-accent);
 }
 .ft-tag {
   color: var(--footer-tx);
-  font-size: 14px;
-  max-width: 320px;
-  margin-top: 12px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  max-width: 34ch;
+  margin-top: 16px;
 }
 .ft-cols {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 34px 24px;
 }
+/* Les intitules de colonne portent la meme voix que les boutons : capitales,
+   graisse 800, approche ouverte. C'est ce qui fait la difference entre trois
+   listes empilees et trois colonnes. */
 .ft-cols h4 {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  margin-bottom: 14px;
-  color: #fbf8f0;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  color: var(--footer-accent);
 }
 /* Les <span> sont des intitules inertes dans cette demo ; seuls les .ft-link
    mènent quelque part et portent donc le curseur main. */
 .ft-cols span,
 .ft-cols .ft-link {
   display: block;
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--footer-tx);
-  padding: 5px 0;
+  padding: 6px 0;
   text-align: left;
 }
 .ft-cols .ft-link {
   cursor: pointer;
   background: none;
   border: none;
+  border-bottom: 1px solid transparent;
   font-family: inherit;
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out);
 }
+/* Un trait de vermillon sous le libelle, comme sur les boutons de carte. Le
+   fond teinte au survol appartenait a une autre grammaire. */
 .ft-cols .ft-link:hover {
-  color: #fbf8f0;
+  color: #f7ebe6;
+  border-bottom-color: var(--footer-accent);
 }
+.ft-cols .ft-link:focus-visible {
+  outline: 2px solid var(--footer-accent);
+  outline-offset: 3px;
+}
+
 .ft-legal {
   position: relative;
   z-index: 1;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(247, 235, 230, 0.1);
 }
 .ft-legal-in {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 18px 24px 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
   flex-wrap: wrap;
   font-size: 12px;
   color: var(--footer-tx);
 }
 .ft-legal-links {
   display: flex;
-  gap: 4px;
+  gap: 22px;
   flex-wrap: wrap;
 }
 .ft-legal-link {
   font-size: 12px;
   color: var(--footer-tx);
-  padding: 4px 10px;
-  border-radius: 99px;
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s,
-    opacity 0.15s,
-    transform 0.15s;
-  background: none;
+  padding: 3px 0;
+  border-radius: var(--r-sm);
   border: none;
+  border-bottom: 1px solid transparent;
+  background: none;
   cursor: pointer;
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out);
 }
 .ft-legal-link:hover {
-  color: #fbf8f0;
-  background: rgba(255, 255, 255, 0.08);
+  color: #f7ebe6;
+  border-bottom-color: var(--footer-accent);
+}
+.ft-legal-link:focus-visible {
+  outline: 2px solid var(--footer-accent);
+  outline-offset: 3px;
 }

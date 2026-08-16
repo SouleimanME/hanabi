@@ -75,7 +75,7 @@
 .thumb {
   width: 72px;
   height: 72px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);
@@ -155,7 +155,7 @@
 .notify {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r-sm);
   padding: 18px;
   margin-bottom: 18px;
 }
@@ -173,7 +173,7 @@
 .notify-row input {
   flex: 1;
   border: 1px solid var(--line2);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   padding: 11px 13px;
   background: var(--paper);
   outline: none;
@@ -194,7 +194,7 @@
   display: flex;
   align-items: center;
   border: 1px solid var(--line2);
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   overflow: hidden;
 }
 .stepper button {
@@ -205,8 +205,15 @@
   justify-content: center;
   color: var(--ink);
 }
+/* La touche prend la couleur, elle ne s'enfonce pas : un ombrage interne au
+   clic remettait du biseau la ou toute la direction l'a banni. */
 .stepper button:hover:not(:disabled) {
-  background: var(--paper);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.stepper button:active:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-accent);
 }
 .stepper span {
   min-width: 30px;
@@ -251,7 +258,7 @@
 .rev-form {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--r-sm);
   padding: 18px;
   margin-bottom: 24px;
   display: flex;
@@ -262,7 +269,7 @@
 .rev-form textarea {
   width: 100%;
   border: 1px solid var(--line2);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   padding: 11px 13px;
   background: var(--paper);
   outline: none;
@@ -281,7 +288,7 @@
 .rev {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   padding: 16px 18px;
 }
 .rev-top {
@@ -302,11 +309,11 @@
   align-items: center;
   gap: 3px;
   background: var(--ok);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 99px;
+  border-radius: var(--r-sm);
   text-transform: uppercase;
 }
 .rev p {

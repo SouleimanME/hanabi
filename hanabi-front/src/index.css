@@ -18,7 +18,7 @@
    * deux familles qui se disputent une page vieillissent moins bien qu'une
    * seule bien echelonnee.
    *
-   * Inter n'est pas une police a chasse fixe comme l'etait DM Mono : chaque
+   * Manrope n'est pas une police a chasse fixe comme l'etait DM Mono : chaque
    * regle qui pose `font-family: var(--font-mono)` doit donc s'accompagner de
    * `font-variant-numeric: tabular-nums`, qui fige la largeur des chiffres via
    * la feature OpenType correspondante. Sans elle, les colonnes de prix ne
@@ -28,14 +28,22 @@
    * numeros de commande. N'a rien a faire sur du texte d'interface comme un
    * nom de langue.
    */
-  /* Une seule famille pour toute la boutique et tout le back-office : Inter.
+  /* Une seule famille pour toute la boutique et tout le back-office : Manrope.
+   *
+   * Elle remplace Inter, qui est le reglage par defaut de la quasi-totalite
+   * des interfaces dessinees depuis trois ans. Une boutique d'objets choisis
+   * ne peut pas se permettre la police que personne ne choisit. Manrope est
+   * une grotesque a tendance geometrique : ses rondeurs plus franches et son
+   * `a` moins neutre donnent une identite qui se remarque sans s'imposer, et
+   * elle tient les petits corps des tables du back-office, ou une geometrique
+   * pure comme Jost se serait fatiguee.
    *
    * Les quatre jetons restent distincts parce qu'ils portent des roles, pas
    * des polices : le jour ou l'un d'eux doit changer, il change seul. Les
    * faire pointer sur la meme valeur est un choix, pas un oubli.
    *
-   * Zen Kaku Gothic New reste en second rang partout. Inter ne couvre pas les
-   * ideogrammes : sans ce repli, 花火 et 限定 tomberaient sur la police par
+   * Zen Kaku Gothic New reste en second rang partout. Manrope ne couvre pas
+   * les ideogrammes : sans ce repli, 花火 et 限定 tomberaient sur la police par
    * defaut du systeme, differente d'une machine a l'autre. */
   /* Le titre d'accueil, et lui seul. Un mincho est un serif japonais : ses
    * pleins et deliees viennent du pinceau, pas du burin latin. C'est ce que
@@ -43,10 +51,10 @@
    * une police d'identite vaut son telechargement. */
   --font-hero: "Shippori Mincho B1", "Zen Kaku Gothic New", Georgia, serif;
 
-  --font-display: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
-  --font-serif: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
-  --font-body: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
-  --font-mono: "Inter", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-display: "Manrope", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-serif: "Manrope", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-body: "Manrope", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-mono: "Manrope", "Zen Kaku Gothic New", system-ui, sans-serif;
 }
 
 /* Fond porte par <html>, et pas seulement par le conteneur de l'application.
@@ -60,12 +68,16 @@
  * de couleurs employer pour ce qu'il dessine lui-meme. L'attribut data-theme
  * est pose sur <html> par le hook useTheme.
  */
+/* Ces deux valeurs doublent `--paper` de `styles/tokens.css`, en clair et en
+   sombre. La duplication est inevitable : elle s'applique a <html>, peint
+   avant que la moindre feuille de composant ne soit lue, et un jeton n'est pas
+   encore resolu a cet instant. Toucher a l'une impose de toucher a l'autre. */
 html {
-  background: #f4f0e6;
+  background: #efe7d6;
   color-scheme: light;
 }
 html[data-theme="dark"] {
-  background: #15130f;
+  background: #0a0605;
   color-scheme: dark;
 }
 html,

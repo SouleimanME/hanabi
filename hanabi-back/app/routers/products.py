@@ -104,7 +104,7 @@ def record_view(
     Volontairement silencieuse. Un produit inconnu ne provoque pas d'erreur :
     c'est une mesure d'usage, pas une operation metier, et faire remonter un
     404 dans la console d'un visiteur pour une fiche supprimee entre-temps
-    n'apporte rien. Meme raison pour le 204 sans corps — le client n'a rien a
+    n'apporte rien. Meme raison pour le 204 sans corps : le client n'a rien a
     faire de la reponse.
 
     Le plafond de 60 appels par minute et par IP evite qu'un rafraichissement

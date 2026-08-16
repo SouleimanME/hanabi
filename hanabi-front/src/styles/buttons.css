@@ -1,83 +1,112 @@
-/* Boutons : primaire, fantome, variantes de taille. */
+/* Boutons.
+ *
+ * APLAT FRANC. Aucun degrade, aucun biseau, aucune ombre - ni portee, ni
+ * interne. Une version precedente donnait aux boutons une arete claire en haut
+ * et une arete sombre en bas, avec un fond degrade : c'est la grammaire du
+ * bouton lustre des kits d'interface, et elle contredit tout le reste. L'urushi
+ * est une laque MATE. Sa profondeur vient de l'epaisseur de la matiere, jamais
+ * d'un reflet pose dessus.
+ *
+ * CE QUI DONNE LA PRESENCE, ALORS. La typographie et l'intervalle, c'est-a-dire
+ * les deux seuls outils de cette direction. Capitales, graisse 800, approche
+ * ouverte a 0,16 em : un libelle espace occupe l'oeil autrement qu'une phrase
+ * serree, et c'est ce qui fait qu'un aplat de vermillon n'est pas un rectangle
+ * mais un bouton.
+ *
+ * ET LE VERMILLON S'EPAISSIT. Au survol puis au clic, la laque passe a sa
+ * variante ternie puis a la plus chargee des trois. Une couche de plus a chaque
+ * fois, jamais un eclaircissement : on ne fait pas briller de la laque, on en
+ * remet.
+ */
 .btn-primary {
   position: relative;
   overflow: hidden;
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  background: var(--ink);
-  color: var(--paper);
-  font-weight: 700;
-  font-size: 15px;
-  padding: 13px 22px;
-  border-radius: 99px;
-  transition:
-    background var(--dur) var(--ease-out),
-    transform 0.18s var(--ease-spring),
-    box-shadow var(--dur) var(--ease-out);
+  justify-content: center;
+  gap: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 16px 26px;
+  border-radius: var(--r-btn);
+  transition: background 0.2s var(--ease-out);
 }
-/* Reflet qui balaye le bouton au survol. */
+
+/* Passage de brosse. Le seul mouvement de surface admis : ce n'est pas un
+   reflet qui glisse sur du verre mais la trace du pinceau qui a pose la laque,
+   d'ou une lumiere chaude et lente plutot qu'un eclat blanc. */
 .btn-primary::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     100deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.28) 50%,
-    transparent 80%
+    transparent 24%,
+    rgba(255, 214, 190, 0.18) 50%,
+    transparent 76%
   );
   transform: translateX(-120%);
-  transition: transform 0.6s var(--ease-out);
+  transition: transform 0.75s var(--ease-out);
+  pointer-events: none;
 }
 .btn-primary:hover:not(:disabled)::after {
   transform: translateX(120%);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent);
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: var(--glow);
+  background: var(--gold);
 }
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  background: color-mix(in srgb, var(--gold) 82%, #000);
+}
+.btn-primary:focus-visible,
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 .btn-primary.full,
 .btn-ghost.full {
   width: 100%;
-  justify-content: center;
 }
 .btn-primary.grow {
   flex: 1;
-  justify-content: center;
 }
+
+/* Le secondaire n'est qu'un contour d'un pixel. Il ne se remplit pas au
+   survol - deux aplats de vermillon cote a cote se disputeraient l'action
+   principale - il prend la couleur, et c'est assez. */
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
   border: 1px solid var(--line2);
-  border-radius: 99px;
-  padding: 11px 20px;
-  font-weight: 700;
-  font-size: 14px;
+  border-radius: var(--r-btn);
+  padding: 15px 24px;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: transparent;
   transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s,
-    opacity 0.15s,
-    transform 0.15s;
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    opacity 0.15s;
 }
-.btn-ghost:hover {
+.btn-ghost:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
-  transform: translateY(-1px);
 }
-.btn-ghost:active {
-  transform: translateY(0) scale(0.97);
+.btn-ghost:active:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
 }
 .btn-ghost.sm,
 .btn-primary.sm {
-  padding: 9px 16px;
-  font-size: 13px;
+  padding: 11px 18px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
 }

@@ -26,7 +26,15 @@
   transform: translateX(100%);
   display: flex;
   flex-direction: column;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.18);
+  /* Le tiroir est un panneau de laque tire hors du meuble. Son arete est un
+     trait de vermillon franc, sans filet clair ni relief : la tranche d'une
+     piece laquee est une couleur, pas un reflet.
+     L'ombre est la seule de toute la direction, et elle ne decore pas - elle dit
+     que le panneau flotte au-dessus de la page. Assez large pour se lire, assez
+     faible pour ne pas se voir. */
+  box-shadow:
+    -2px 0 0 var(--accent),
+    -24px 0 60px rgba(0, 0, 0, 0.4);
   /* `visibility: hidden` retire le panier ferme du parcours de tabulation.
      `aria-hidden` seul ne suffit pas : il le masque aux lecteurs d'ecran mais
      laisse ses boutons focusables, si bien qu'au clavier on se retrouvait a
@@ -71,7 +79,7 @@
 .co-thumb {
   width: 64px;
   height: 64px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);
@@ -162,16 +170,20 @@
   font-size: 12px;
   margin-bottom: 8px;
 }
+/* Deux aplats, rien de plus. Un creux ombre et un remplissage degrade y
+ * faisaient une barre de progression de tableau de bord ; ici c'est une bande
+ * de laque qui s'allonge sur un fond de laque, et la lecture tient au seul
+ * contraste des deux. */
 .gauge-track {
-  height: 6px;
-  border-radius: 99px;
-  background: color-mix(in srgb, currentColor 16%, transparent);
+  height: 4px;
+  border-radius: 0;
+  background: color-mix(in srgb, currentColor 12%, transparent);
   overflow: hidden;
 }
 .gauge-fill {
   height: 100%;
-  border-radius: 99px;
-  background: var(--grad-accent);
+  border-radius: 0;
+  background: var(--accent);
   transition: width 0.6s var(--ease-out);
 }
 .gauge.done .gauge-fill {
@@ -226,7 +238,7 @@
 .promo-row input {
   flex: 1;
   border: 1px solid var(--line2);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   padding: 9px 12px;
   background: var(--paper);
   outline: none;
@@ -254,7 +266,7 @@
   justify-content: space-between;
   background: var(--accent-soft);
   border: 1px dashed var(--accent);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   padding: 10px 14px;
   margin-bottom: 14px;
   font-size: 14px;

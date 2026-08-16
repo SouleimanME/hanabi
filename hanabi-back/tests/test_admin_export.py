@@ -14,6 +14,7 @@ def checkout_payload(product_id, qty=1, email="client@test.fr"):
             "cp": "75001",
             "ville": "Paris",
         },
+        "cgv_acceptees": True,
         "promo_code": None,
     }
 
@@ -76,6 +77,7 @@ class TestFormat:
                     "cp": "75001",
                     "ville": "Paris",
                 },
+                "cgv_acceptees": True,
                 "promo_code": None,
             },
         )

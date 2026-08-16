@@ -11,6 +11,7 @@ import { createPriceFormatter } from "../lib/format.js";
 import { MAIN_SIZE, toCanonicalMain, toGalleryImage } from "./image.js";
 import { axisEuro, heatColor } from "./chart-utils.js";
 import { BarChart, DonutChart, HeatScale, LineChart } from "./charts.jsx";
+import { LogoMark } from "../components/brand/LogoMark.jsx";
 import { SERIES } from "./palette.js";
 import "./admin.css";
 
@@ -167,63 +168,78 @@ export default function Admin() {
     <div className="adm" data-theme={theme}>
       <aside className="adm-nav">
         <div className="adm-logo">
-          <span className="adm-logo-mark">花</span>
+          {/* Le même emblème que la boutique, et non un idéogramme dans une
+              pastille : le back-office est une autre interface du même
+              commerce, pas un autre produit. Ses teintes sont ramenées aux ors
+              d'ici par les variables que `LogoMark` expose, ce qui évite d'en
+              maintenir une seconde version. */}
+          <span className="adm-logo-mark">
+            <LogoMark size={32} />
+          </span>
           <span className="adm-logo-txt">
             HANABI
             <small>管理 · back-office</small>
           </span>
         </div>
-        {/* Deux groupes nommés plutôt qu'une liste de six entrées : lire et
-            gérer ne sont pas la même activité, et un intitulé de section coûte
-            moins cher à l'œil qu'un choix parmi six items indifférenciés. */}
-        {[
-          {
-            titre: "Piloter",
-            items: [
-              { key: "dashboard", label: "Tableau de bord", icon: "◳" },
-              { key: "analytics", label: "Analytique", icon: "◫" },
-              { key: "warehouse", label: "Entrepôt", icon: "◨" },
-            ],
-          },
-          {
-            titre: "Gérer",
-            items: [
-              { key: "products", label: "Produits", icon: "◰" },
-              { key: "promos", label: "Codes promo", icon: "◱" },
-              { key: "orders", label: "Commandes", icon: "◲" },
-              { key: "users", label: "Clients", icon: "◴" },
-            ],
-          },
-        ].map((groupe) => (
-          <div key={groupe.titre} className="adm-nav-groupe">
-            <span className="adm-nav-titre">{groupe.titre}</span>
-            {groupe.items.map((item) => (
-              <button
-                key={item.key}
-                className={"adm-nav-btn" + (tab === item.key ? " on" : "")}
-                onClick={() => setTab(item.key)}
-                aria-current={tab === item.key ? "page" : undefined}
-              >
-                <span className="adm-nav-ic">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        ))}
+        {/* Un vrai repère de navigation, et non un `<aside>` nu.
+         *
+         * Sans lui, un lecteur d'écran n'a aucun moyen d'atteindre le menu :
+         * il faut parcourir la page depuis le début à chaque changement de vue.
+         * `aria-label` le nomme, parce que la page en compte un second - la
+         * sous-navigation de l'entrepôt - et que deux repères anonymes ne se
+         * distinguent pas.
+         *
+         * Deux groupes nommés plutôt qu'une liste de six entrées : lire et
+         * gérer ne sont pas la même activité, et un intitulé de section coûte
+         * moins cher à l'œil qu'un choix parmi six items indifférenciés. */}
+        <nav className="adm-nav-groupes" aria-label="Sections du back-office">
+          {[
+            {
+              titre: "Piloter",
+              items: [
+                { key: "dashboard", label: "Tableau de bord" },
+                { key: "analytics", label: "Analytique" },
+                { key: "warehouse", label: "Entrepôt" },
+                { key: "exploitation", label: "Exploitation" },
+              ],
+            },
+            {
+              titre: "Gérer",
+              items: [
+                { key: "products", label: "Produits" },
+                { key: "promos", label: "Codes promo" },
+                { key: "orders", label: "Commandes" },
+                { key: "users", label: "Clients" },
+              ],
+            },
+          ].map((groupe) => (
+            <div key={groupe.titre} className="adm-nav-groupe">
+              <span className="adm-nav-titre">{groupe.titre}</span>
+              {groupe.items.map((item) => (
+                <button
+                  key={item.key}
+                  className={"adm-nav-btn" + (tab === item.key ? " on" : "")}
+                  onClick={() => setTab(item.key)}
+                  aria-current={tab === item.key ? "page" : undefined}
+                >
+                  <Ico nom={item.key} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
         <div className="adm-nav-foot">
           <button
-            className="adm-theme"
+            className="adm-nav-btn"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             aria-label={theme === "dark" ? "Passer au thème clair" : "Passer au thème sombre"}
-            title={theme === "dark" ? "Thème clair" : "Thème sombre"}
           >
-            <span className="adm-theme-track">
-              <span className="adm-theme-knob">{theme === "dark" ? "☾" : "☀"}</span>
-            </span>
+            <Ico nom={theme === "dark" ? "sombre" : "clair"} />
             {theme === "dark" ? "Sombre" : "Clair"}
           </button>
           <a href="/" className="adm-nav-btn adm-back">
-            <span className="adm-nav-ic">↩</span> Voir le site
+            <Ico nom="retour" /> Voir le site
           </a>
           {/* Le back-office n'offrait aucun moyen de fermer sa session : il
               fallait retourner sur la boutique pour se déconnecter, en sachant
@@ -241,7 +257,7 @@ export default function Admin() {
             }}
             title={me?.email ? `Connecté en tant que ${me.email}` : undefined}
           >
-            <span className="adm-nav-ic">⏻</span> Se déconnecter
+            <Ico nom="quitter" /> Se déconnecter
           </button>
           {me?.email && <span className="adm-compte">{me.email}</span>}
         </div>
@@ -255,6 +271,7 @@ export default function Admin() {
                 dashboard: "Tableau de bord",
                 analytics: "Analytique",
                 warehouse: "Entrepôt décisionnel",
+                exploitation: "Exploitation",
                 products: "Produits",
                 promos: "Codes promo",
                 orders: "Commandes",
@@ -297,6 +314,7 @@ export default function Admin() {
             qui lui sont propres, et rien ne justifie de les appeler avant qu'on
             l'ouvre. */}
         {tab === "warehouse" && <Warehouse flash={flash} />}
+        {tab === "exploitation" && <Exploitation />}
         {tab === "products" && (
           <Products
             items={products}
@@ -339,8 +357,66 @@ export default function Admin() {
 /* ================================================================== */
 /* Analytique                                                         */
 /* ================================================================== */
+/* Icones du menu, dessinees plutot qu'empruntees.
+ *
+ * C'etaient des caracteres Unicode geometriques - ◳ ◫ ◨ - et ils avaient deux
+ * defauts. Leur dessin depend de la police installee, donc du poste : le meme
+ * menu n'avait pas la meme allure d'une machine a l'autre. Et ils ne
+ * signifiaient rien, quatre quadrants remplis differemment ne disant ni
+ * « produits » ni « commandes ».
+ *
+ * Ceux-ci sont traces dans la grammaire de la direction : angles francs, une
+ * seule epaisseur, aucune courbe hors des cercles. « Entrepot » porte les trois
+ * couches empilees du medaillon, « Analytique » les barres d'un histogramme -
+ * la forme dit ce que l'onglet contient.
+ */
+const ICONES = {
+  dashboard: "M2.5 3h6v5.5h-6zM11.5 3h6v3.5h-6zM2.5 11.5h6V17h-6zM11.5 9.5h6V17h-6z",
+  analytics: "M3 17V9.5M8 17V4.5M13 17V12M18 17V7",
+  warehouse: "M3 4.5h14M4.5 9.5h11M6.5 14.5h7",
+  exploitation: "M3 5h9M3 10h6M3 15h9M14 7l3 3-3 3M17 10h-6",
+  products: "M10 2.5 17.5 6.5v7L10 17.5 2.5 13.5v-7zM2.5 6.5 10 10.5l7.5-4M10 10.5V17.5",
+  promos: "M3 3h7l7 7-7 7-7-7zM6.5 6.5h.01",
+  orders: "M4.5 2.5h11v15l-2.5-2-2.5 2-3-2-3 2zM7.5 7h5M7.5 11h5",
+  users:
+    "M7 9.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 17c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5M14 5.2a2.6 2.6 0 0 1 0 5M14.5 12.8c2 .6 3.5 2.1 3.5 4.2",
+  retour: "M8 4 3 9.5l5 5.5M3 9.5h9.5a4.5 4.5 0 0 1 0 9",
+  quitter: "M10 2.5v8M5.5 5.2a7 7 0 1 0 9 0",
+  /* Croissant et soleil, la convention. Le reglage de theme est l'endroit d'une
+     interface ou l'on n'invente rien : tout le monde sait ou cliquer, et une
+     trouvaille n'y ferait que ralentir. */
+  sombre: "M15.6 12.9A6.6 6.6 0 0 1 7.1 4.4a6.6 6.6 0 1 0 8.5 8.5Z",
+  clair:
+    "M10 6.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2M10 1.9v2.1M10 16v2.1" +
+    "M4 4l1.5 1.5M14.5 14.5 16 16M1.9 10H4M16 10h2.1M4 16l1.5-1.5M14.5 5.5 16 4",
+};
+
+/** Un trace unique, en filet. Les icones heritent de la couleur du texte, donc
+ *  du survol et de l'etat actif, sans qu'aucune regle ne les cible. */
+function Ico({ nom }) {
+  return (
+    <svg
+      className="adm-nav-ic"
+      viewBox="0 0 20 20"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+    >
+      <path d={ICONES[nom]} />
+    </svg>
+  );
+}
+
 const pct = (v) => `${(v * 100).toFixed(1)} %`;
 const num = (v) => (v ?? 0).toLocaleString("fr-FR");
+/** Accorde un nom avec son compte. En francais l'accord se fait a partir de
+ *  deux : « 0 produit », « 1 produit », « 2 produits ». */
+const pluriel = (n, mot) => `${num(n)} ${mot}${n > 1 ? "s" : ""}`;
 
 const ANALYTICS_VIEWS = [
   { key: "overview", label: "Vue d'ensemble" },
@@ -566,7 +642,7 @@ function Overview({ data, days }) {
           // couleur décorative : sur ces huit tuiles, la couleur signifie
           // « ça monte » ou « ça baisse », et une teinte fixe rouge disait le
           // contraire d'un indicateur en hausse. Le libellé chiffré reste à
-          // côté — la couleur seule ne porte jamais l'information.
+          // côté : la couleur seule ne porte jamais l'information.
           <div key={card.label} className="adm-card" data-tendance={tendance(card.delta)}>
             <div className="adm-card-top">
               <span className="adm-card-val sm">{card.value}</span>
@@ -852,7 +928,7 @@ function Profitability({ data }) {
         </div>
         <div className="adm-card" style={{ "--carte-teinte": SERIES[1] }}>
           <div className="adm-card-val" style={{ color: SERIES[1] }}>
-            {c.views_units == null ? "—" : c.views_units.toFixed(2)}
+            {c.views_units == null ? "-" : c.views_units.toFixed(2)}
           </div>
           <div className="adm-card-lbl">Corrélation vues / ventes</div>
           <div className="adm-card-hint">
@@ -909,8 +985,8 @@ function Profitability({ data }) {
                 <span className={`abc-tag abc-${x.abc}`}>{x.abc}</span>
               </td>
               <td className="mono">{eur(x.price_cents)}</td>
-              <td className="mono">{x.cost_cents ? eur(x.cost_cents) : "—"}</td>
-              <td className="mono">{x.cost_cents ? eur(x.unit_margin_cents) : "—"}</td>
+              <td className="mono">{x.cost_cents ? eur(x.cost_cents) : "-"}</td>
+              <td className="mono">{x.cost_cents ? eur(x.unit_margin_cents) : "-"}</td>
               <td className="mono">{num(x.units)}</td>
               <td className="mono">
                 <span className="marge-cell">
@@ -923,7 +999,7 @@ function Profitability({ data }) {
                   {eur(x.margin_cents)}
                 </span>
               </td>
-              <td className="mono">{x.margin_rate ? pct(x.margin_rate) : "—"}</td>
+              <td className="mono">{x.margin_rate ? pct(x.margin_rate) : "-"}</td>
               <td className="mono">{pct(x.cumulative_share)}</td>
               <td className="mono">{x.stock}</td>
             </tr>
@@ -967,7 +1043,7 @@ function Profitability({ data }) {
                   {r.shift > 0 ? `+${r.shift}` : r.shift || "="}
                 </span>
               </td>
-              <td className="mono">{r.margin_rate ? pct(r.margin_rate) : "—"}</td>
+              <td className="mono">{r.margin_rate ? pct(r.margin_rate) : "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -1086,7 +1162,7 @@ function Forecast({ data }) {
         </div>
         <div className="adm-card" style={{ "--carte-teinte": SERIES[4] }}>
           <div className="adm-card-val" style={{ color: SERIES[4] }}>
-            {data.cmgr == null ? "—" : pct(data.cmgr)}
+            {data.cmgr == null ? "-" : pct(data.cmgr)}
           </div>
           <div className="adm-card-lbl">Croissance mensuelle composée</div>
           <div className="adm-card-hint">Lissée sur toute la période</div>
@@ -1212,7 +1288,7 @@ function Cohorts({ data }) {
                       style={{ background: heatColor(cell.rate, max) }}
                       title={`${num(cell.active)} client(s) actif(s) sur ${num(ligne.size)}`}
                     >
-                      {cell.rate > 0 ? `${(cell.rate * 100).toFixed(1)}` : "–"}
+                      {cell.rate > 0 ? `${(cell.rate * 100).toFixed(1)}` : "-"}
                     </td>
                   );
                 })}
@@ -1773,9 +1849,12 @@ function Products({ items, flash, reload, readonly }) {
         >
           + Nouveau produit
         </button>
+        {/* L'accord se fait a partir de deux en francais : zero et un prennent
+            le singulier. Le compteur annoncait « 1 inactifs » des qu'un seul
+            produit etait desactive, ce qui est l'etat courant du catalogue. */}
         <span className="adm-count">
-          {items.filter((p) => p.active).length} actifs · {items.filter((p) => !p.active).length}{" "}
-          inactifs
+          {pluriel(items.filter((p) => p.active).length, "actif")} ·{" "}
+          {pluriel(items.filter((p) => !p.active).length, "inactif")}
         </span>
       </div>
       <table className="adm-table">
@@ -2864,7 +2943,7 @@ function Users({ items, setItems, alerts, flash, readonly }) {
  * La différence de fond avec l'onglet analytique tient en une phrase : là-bas,
  * chaque affichage relance des agrégations sur la base transactionnelle ; ici,
  * la lecture est un `SELECT ... LIMIT` sur une table déjà calculée. D'où
- * l'horodatage affiché en permanence — ces chiffres sont ceux de la dernière
+ * l'horodatage affiché en permanence : ces chiffres sont ceux de la dernière
  * construction, pas ceux de l'instant. */
 
 const TAILLE_PAGE = 25;
@@ -2872,13 +2951,13 @@ const FORMATS_NUMERIQUES = ["euro", "pourcent", "entier", "decimal", "identifian
 
 /** Formate une cellule selon le type annoncé par l'API.
  *
- * Le tiret cadratin pour une valeur absente n'est pas de la coquetterie : dans
- * ces tables, NULL veut dire « non mesurable » — une couverture de stock
- * infinie, un panier moyen sans commande. Afficher 0 à la place ferait lire un
- * effondrement là où il n'y a rien à mesurer.
+ * Le tiret pour une valeur absente n'est pas de la coquetterie : dans ces
+ * tables, NULL veut dire « non mesurable », par exemple une couverture de stock
+ * infinie ou un panier moyen sans commande. Afficher 0 à la place ferait lire
+ * un effondrement là où il n'y a rien à mesurer.
  */
 function celluleEntrepot(valeur, format) {
-  if (valeur === null || valeur === undefined) return "—";
+  if (valeur === null || valeur === undefined) return "-";
   switch (format) {
     case "euro":
       return eur(valeur);
@@ -2908,7 +2987,7 @@ function celluleEntrepot(valeur, format) {
  * rejouer, sans le moindre affordance pour l'emporter, c'est une promesse qu'on
  * ne tient pas.
  *
- * `navigator.clipboard` n'est pas toujours disponible — il exige un contexte
+ * `navigator.clipboard` n'est pas toujours disponible : il exige un contexte
  * sécurisé (HTTPS, ou localhost qui compte comme tel) et que le document ait le
  * focus. En cas de refus, on ne se contente pas de s'excuser : on sélectionne
  * le bloc, et il ne reste qu'à presser Ctrl+C. L'échec redevient une étape de
@@ -2920,7 +2999,7 @@ async function copierTexte(texte, flash, bloc) {
     flash("Copié dans le presse-papiers");
   } catch {
     if (!bloc?.current) {
-      flash("Copie refusée par le navigateur — sélectionne le texte à la main.", "err");
+      flash("Copie refusée par le navigateur. Sélectionne le texte à la main.", "err");
       return;
     }
     const plage = document.createRange();
@@ -2967,6 +3046,178 @@ function anciennete(iso) {
   return `il y a ${Math.round(heures / 24)} j`;
 }
 
+/* ------------------------------------------------------------------ */
+/* Exploitation : file de courriels, commandes a rapprocher           */
+/* ------------------------------------------------------------------ */
+
+/** Ce que cet ecran repare.
+ *
+ * Deux mecanismes du projet ABSORBENT les pannes plutot que de les propager :
+ * la file de courriels reessaie sans que l'acheteur en sache rien, et une
+ * commande au paiement indecis est conservee en attente au lieu d'echouer.
+ * C'est le bon comportement - mais il transforme une panne bruyante en panne
+ * silencieuse, et il faut alors un endroit ou la regarder.
+ *
+ * Sans cet ecran, deux situations ne se decouvraient que par un client
+ * mecontent : un relais en panne depuis trois jours, et une commande payee que
+ * personne n'a jamais confirmee.
+ *
+ * LECTURE SEULE. Rejouer un courriel abandonne ou trancher un paiement indecis
+ * suppose de savoir ce que le prestataire a reellement fait, et cette boutique
+ * n'en a pas. Un bouton « renvoyer » donnerait l'illusion d'un outil de reprise.
+ */
+function Exploitation() {
+  const [etat, setEtat] = useState(null);
+  const [erreur, setErreur] = useState(null);
+
+  const charger = useCallback(() => {
+    api("/admin/exploitation")
+      .then(setEtat)
+      .catch((e) => setErreur(e.message));
+  }, []);
+
+  useEffect(() => {
+    charger();
+    // Rafraichissement periodique : c'est un ecran de surveillance, et une file
+    // figee a l'ouverture ne dit pas si elle avance. Trente secondes suffisent -
+    // l'ouvrier passe toutes les cinq secondes, mais personne ne regarde cet
+    // ecran assez vite pour que la difference compte.
+    const minuteur = setInterval(charger, 30000);
+    return () => clearInterval(minuteur);
+  }, [charger]);
+
+  if (erreur) return <p className="adm-vide">{erreur}</p>;
+  if (!etat) return <p className="adm-vide">Chargement…</p>;
+
+  const { courriels, commandes_en_attente: commandes } = etat;
+  const fileLente = courriels.age_attente_minutes != null && courriels.age_attente_minutes > 15;
+
+  return (
+    <div>
+      <div className="expl-cartes">
+        <ExplCarte
+          libelle="En attente"
+          valeur={courriels.en_attente}
+          note={
+            courriels.age_attente_minutes == null
+              ? "file vide"
+              : `plus ancien : ${dureeCourte(courriels.age_attente_minutes)}`
+          }
+          alerte={fileLente}
+        />
+        <ExplCarte libelle="Remis" valeur={courriels.envoyes} note="depuis toujours" />
+        <ExplCarte
+          libelle="Abandonnés"
+          valeur={courriels.abandonnes}
+          note={`après ${courriels.tentatives_max} tentatives`}
+          alerte={courriels.abandonnes > 0}
+        />
+        <ExplCarte libelle="Sortie" valeur={courriels.sortie} note="MAIL_BACKEND" texte />
+      </div>
+
+      {/* L'age prime sur le nombre. Vingt messages en attente depuis dix
+          secondes est un fonctionnement normal ; un seul depuis trois heures
+          est une panne, et le compte seul ne distingue pas les deux. */}
+      {fileLente && (
+        <p className="expl-note alerte">
+          La file n&apos;avance plus : le plus ancien message attend depuis{" "}
+          {dureeCourte(courriels.age_attente_minutes)}. Vérifie le relais configuré.
+        </p>
+      )}
+      {courriels.sortie === "fichier" && (
+        <p className="expl-note">
+          Sortie <code>fichier</code> : les messages sont écrits dans <code>var/courriels/</code> et
+          ne partent sur aucun réseau. C&apos;est le mode par défaut, et il n&apos;exige aucun
+          identifiant.
+        </p>
+      )}
+
+      <h3 className="expl-h">Échecs de remise</h3>
+      {courriels.echecs.length === 0 ? (
+        <p className="adm-vide">Aucun échec. Tout ce qui est parti est arrivé.</p>
+      ) : (
+        <div className="wh-cadre">
+          <table className="adm-table expl-table">
+            <thead>
+              <tr>
+                <th className="c-dest">Destinataire</th>
+                <th className="c-sujet">Sujet</th>
+                <th className="c-etat">État</th>
+                <th className="c-essais num">Essais</th>
+                <th className="c-motif">Motif</th>
+              </tr>
+            </thead>
+            <tbody>
+              {courriels.echecs.map((m) => (
+                <tr key={m.id}>
+                  {/* Adresses masquées côté serveur : cet écran sert à
+                      diagnostiquer un relais, pas à lire la clientèle. */}
+                  <td className="mono">{m.destinataire}</td>
+                  <td>{m.sujet}</td>
+                  <td>
+                    <span className={"expl-etat " + m.statut}>
+                      {m.statut === "abandonne" ? "abandonné" : "en attente"}
+                    </span>
+                  </td>
+                  <td className="num">{m.tentatives}</td>
+                  <td className="expl-motif">{m.erreur || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h3 className="expl-h">Commandes à rapprocher</h3>
+      <p className="expl-intro">
+        Paiement resté indécis : le débit a peut-être eu lieu. Ni confirmées ni annulées, stock
+        retenu, en attente d&apos;un rapprochement avec le prestataire.
+      </p>
+      {commandes.length === 0 ? (
+        <p className="adm-vide">Aucune. Tous les paiements ont été tranchés.</p>
+      ) : (
+        <div className="wh-cadre">
+          <table className="adm-table expl-table">
+            <thead>
+              <tr>
+                <th>Commande</th>
+                <th className="num">Montant</th>
+                <th className="num">Âge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {commandes.map((c) => (
+                <tr key={c.numero}>
+                  <td className="mono">{c.numero}</td>
+                  <td className="num">{eur(c.total_cents)}</td>
+                  <td className="num">{c.age_heures} h</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExplCarte({ libelle, valeur, note, alerte = false, texte = false }) {
+  return (
+    <div className={"expl-carte" + (alerte ? " alerte" : "")}>
+      <span className="expl-libelle">{libelle}</span>
+      <span className={"expl-valeur" + (texte ? " texte" : "")}>{valeur}</span>
+      <span className="expl-note-carte">{note}</span>
+    </div>
+  );
+}
+
+/** « 2 min », « 3 h », « 2 j » : la precision n'apporte rien au-dela. */
+function dureeCourte(minutes) {
+  if (minutes < 60) return `${Math.round(minutes)} min`;
+  if (minutes < 1440) return `${Math.round(minutes / 60)} h`;
+  return `${Math.round(minutes / 1440)} j`;
+}
+
 function Warehouse({ flash }) {
   const [etat, setEtat] = useState(null);
   const [cle, setCle] = useState(null);
@@ -2987,7 +3238,7 @@ function Warehouse({ flash }) {
       })
       .catch((e) => flash(e.message, "err"));
     // Les règles et les exemples de la console ne changent jamais : un seul
-    // appel à l'ouverture de l'onglet. Un échec n'est pas bloquant — la console
+    // appel à l'ouverture de l'onglet. Un échec n'est pas bloquant, la console
     // reste utilisable sans son aide.
     api("/admin/warehouse/sql/aide")
       .then(setAide)
@@ -3047,7 +3298,7 @@ function Warehouse({ flash }) {
         <strong>L&apos;entrepôt n&apos;est pas construit sur cette base.</strong>
         <p>
           {etat.raison === "moteur"
-            ? "La base courante n'est pas PostgreSQL. Les modèles de l'entrepôt emploient date_trunc, generate_series et des fonctions de fenêtrage : ils ne se construisent que sur PostgreSQL — un conteneur jetable en local, ou Neon."
+            ? "La base courante n'est pas PostgreSQL. Les modèles de l'entrepôt emploient date_trunc, generate_series et des fonctions de fenêtrage : ils ne se construisent que sur PostgreSQL, un conteneur jetable en local ou Neon."
             : "Les schémas bronze, silver et gold sont absents de cette base. Ils se créent en une commande."}
         </p>
         <BlocCode titre="À lancer" texte="cd hanabi-dwh && python dwh.py build" flash={flash} />
@@ -3067,9 +3318,17 @@ function Warehouse({ flash }) {
       {/* Le graphe des trois couches, avant les données : un tableau d'agrégats
           sans son ascendance est un tableau qu'il faut croire sur parole. */}
       <div className="wh-couches">
-        {etat.couches.map((couche) => (
+        {etat.couches.map((couche, rang) => (
           <div key={couche.cle} className={"wh-couche wh-" + couche.cle}>
             <div className="wh-couche-tete">
+              {/* Le rang, écrit. Bronze, argent et or ne se classent pas d'eux-mêmes
+                  à l'œil : hors du podium sportif, rien ne dit lequel vient en
+                  premier, et la seule nuance qui les distinguait tenait dans trois
+                  vermillons voisins. Un numéro tranche sans rien demander à la
+                  couleur — donc lisible aussi pour qui ne la distingue pas. */}
+              <span className="wh-couche-rang mono" aria-hidden="true">
+                {String(rang + 1).padStart(2, "0")}
+              </span>
               <span className="wh-couche-titre">{couche.titre}</span>
               <span className="wh-couche-compte mono">
                 {couche.presents.length}/{couche.modeles.length}
@@ -3106,7 +3365,7 @@ function Warehouse({ flash }) {
         )}
         <span className="wh-note">
           {" "}
-          — ces chiffres sont ceux de la dernière construction, pas ceux de l&apos;instant.
+          · ces chiffres sont ceux de la dernière construction, pas ceux de l&apos;instant.
         </span>
       </div>
 
@@ -3204,7 +3463,7 @@ function Warehouse({ flash }) {
  *
  * Les garde-fous sont côté serveur, et ils y restent : transaction en lecture
  * seule, délai d'exécution, examen du plan pour vérifier quelles tables sont
- * réellement lues. Rien ici ne prétend valider quoi que ce soit — un contrôle
+ * réellement lues. Rien ici ne prétend valider quoi que ce soit : un contrôle
  * dans le navigateur n'est pas un contrôle. L'interface se contente d'afficher
  * les règles et de rendre lisible le refus quand il tombe. */
 
@@ -3264,7 +3523,7 @@ function ConsoleSql({ sqlInitial, aide, flash, onResultat }) {
   return (
     <div className="wh-console">
       <div className="wh-requete-tete">
-        <span>Requête — modifiable</span>
+        <span>Requête modifiable</span>
         <div className="wh-console-actions">
           <button
             className="adm-btn sm"

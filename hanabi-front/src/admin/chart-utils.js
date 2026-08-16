@@ -51,15 +51,34 @@ export function useMeasuredWidth(fallback = 640) {
   return [ref, width];
 }
 
-/** Graduations rondes : 0, 250, 500 plutot que 0, 237, 474. */
+/** Graduations rondes : 0, 250, 500 plutot que 0, 237, 474.
+ *
+ * La derniere graduation COUVRE toujours le maximum, et c'est la seule chose
+ * qui compte vraiment ici. La version precedente s'arretait au dernier multiple
+ * du pas inferieur ou egal au maximum : pour un maximum de 93, elle rendait
+ * [0, 25, 50, 75]. Or `charts.jsx` prend cette derniere valeur comme haut de
+ * l'echelle, si bien que le point a 93 se tracait a 24 % de la hauteur du cadre
+ * AU-DESSUS de celui-ci - hors du graphique, sur le titre. Le defaut ne se
+ * voyait qu'en apparence, parce que les series de demonstration tombaient
+ * souvent juste, mais il touchait tout maximum non multiple du pas, soit la
+ * plupart des donnees reelles.
+ *
+ * On arrondit donc au multiple superieur. Le nombre d'intervalles ne depasse
+ * jamais `count` pour autant : le pas est choisi superieur ou egal a
+ * `max / count`, donc `ceil(max / pas) <= count`.
+ */
 export function niceTicks(max, count = 4) {
   if (max <= 0) return [0];
   const brut = max / count;
   const magnitude = 10 ** Math.floor(Math.log10(brut));
   const pas = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((p) => p >= brut) || magnitude * 10;
-  const ticks = [];
-  for (let v = 0; v <= max + pas * 0.001; v += pas) ticks.push(v);
-  return ticks;
+
+  // Graduations calculees par multiplication et non par addition repetee : un
+  // pas comme 0,025 n'a pas de representation binaire exacte, et l'accumuler
+  // dizaine de fois deplacait la derniere graduation d'un cheveu - assez pour
+  // afficher « 99,99999 » sur un axe.
+  const intervalles = Math.ceil(max / pas);
+  return Array.from({ length: intervalles + 1 }, (_, i) => i * pas);
 }
 
 const compact = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });

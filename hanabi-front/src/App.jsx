@@ -19,7 +19,7 @@ import { User } from "lucide-react";
 import { translator } from "./i18n/index.js";
 import { I18nProvider } from "./i18n/context.jsx";
 import { createPriceFormatter } from "./lib/format.js";
-import { Products, Promos, Orders } from "./lib/api.js";
+import { Products, Promos, Orders, nouvelleCleIdempotence } from "./lib/api.js";
 
 import { useLocalStorageState } from "./hooks/useLocalStorageState.js";
 import { useTheme } from "./hooks/useTheme.js";
@@ -53,6 +53,8 @@ import Saved from "./pages/Saved.jsx";
 import Account from "./pages/Account.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Confirmation from "./pages/Confirmation.jsx";
+import ConfirmerAdresse from "./pages/ConfirmerAdresse.jsx";
+import NouveauMotDePasse from "./pages/NouveauMotDePasse.jsx";
 
 import "./styles/index.css";
 
@@ -123,7 +125,17 @@ export default function App() {
   );
   const pricing = usePricing(cart.items, promo, cart.subtotalCents, onPromoRejected);
 
-  const { user, orders, login, signup, logout, refreshOrders } = useAuth();
+  const {
+    user,
+    orders,
+    login,
+    signup,
+    logout,
+    refreshOrders,
+    refreshUser,
+    adopterSession,
+    poserProfil,
+  } = useAuth();
 
   // Offre de bienvenue : ni pendant la commande, ou toute interruption coute
   // une vente, ni pour un client connecte, qui a deja franchi le pas.
@@ -193,7 +205,12 @@ export default function App() {
     [catalog, lang, openProduct],
   );
 
-  useUrlSync({ view, setView, activeProduct, openProductById });
+  // Jeton lu dans l'URL, pour les deux ecrans atteints depuis un courriel.
+  // Il ne descend pas plus bas que ces ecrans, et `useUrlSync` l'efface de la
+  // barre d'adresse des qu'on les quitte.
+  const [jetonUrl, setJetonUrl] = useState(null);
+
+  useUrlSync({ view, setView, activeProduct, openProductById, onJeton: setJetonUrl });
 
   // Revenir sur l'ecran de confirmation apres coup n'a pas de sens : la
   // commande n'est plus en memoire, et la page serait vide.
@@ -320,20 +337,46 @@ export default function App() {
     [flash, pricing.subtotal_cents, t],
   );
 
+  // Cle d'idempotence de l'achat en cours. Tiree au premier envoi et CONSERVEE
+  // tant que la commande n'a pas abouti : c'est ce qui fait qu'un second clic,
+  // ou un reessai apres une coupure, est reconnu par le serveur comme le meme
+  // achat au lieu d'en creer un second. La tirer a chaque appel reviendrait a
+  // ne rien proteger du tout.
+  const cleAchat = useRef(null);
+
   const placeOrder = useCallback(
     async (form) => {
-      const order = await Orders.checkout({
-        items: cart.toPayload(),
-        email: form.email,
-        shipping: {
-          prenom: form.prenom,
-          nom: form.nom,
-          adresse: form.adresse,
-          cp: form.cp,
-          ville: form.ville,
+      if (!cleAchat.current) cleAchat.current = nouvelleCleIdempotence();
+
+      const order = await Orders.checkout(
+        {
+          items: cart.toPayload(),
+          email: form.email,
+          shipping: {
+            prenom: form.prenom,
+            nom: form.nom,
+            adresse: form.adresse,
+            cp: form.cp,
+            ville: form.ville,
+          },
+          promo_code: promo,
+          // Carte enregistree choisie au paiement. Le JETON n'est jamais
+          // manipule ici : le serveur le retrouve a partir de l'identifiant,
+          // apres avoir verifie que la carte appartient bien au demandeur.
+          payment_method_id: form.payment_method_id ?? null,
+          // Acceptation des conditions de vente. Le corps est construit champ
+          // par champ et non par diffusion de `form` : c'est volontaire - on
+          // sait exactement ce qui part - mais cela veut dire qu'un champ
+          // ajoute a l'ecran doit etre ajoute ICI aussi. Il a manque une fois,
+          // et le serveur a refuse la commande sans que l'ecran sache pourquoi.
+          cgv_acceptees: form.cgv_acceptees === true,
         },
-        promo_code: promo,
-      });
+        cleAchat.current,
+      );
+
+      // Achat conclu : la prochaine commande en est une autre. En cas d'echec,
+      // on ne passe pas ici et la cle survit - c'est exactement ce qu'on veut.
+      cleAchat.current = null;
       setLastOrder(order);
       cart.clear();
       setPromo(null);
@@ -533,6 +576,15 @@ export default function App() {
                 onLogout={handleLogout}
                 onBack={goHome}
                 eur={eur}
+                onProfil={poserProfil}
+                onEfface={(resultat) => {
+                  // Le compte n'existe plus : la session qui pointe dessus non
+                  // plus. On deconnecte et on renvoie a l'accueil plutot que de
+                  // laisser un ecran de compte se recharger sur un jeton mort.
+                  handleLogout();
+                  flash(resultat?.message || t("rgpdDeleteDone"));
+                }}
+                flash={flash}
               />
             ) : (
               <main className="pp">
@@ -557,6 +609,7 @@ export default function App() {
               user={user}
               onBack={goHome}
               onPay={placeOrder}
+              onOpenLegal={setLegalPage}
               empty={cart.lines.length === 0}
               lang={lang}
               eur={eur}
@@ -573,6 +626,31 @@ export default function App() {
               loggedIn={!!user}
               onAccount={() => setView("account")}
               eur={eur}
+            />
+          )}
+
+          {view === "verifyEmail" && (
+            <ConfirmerAdresse
+              jeton={jetonUrl}
+              loggedIn={!!user}
+              onConfirme={refreshUser}
+              onContinue={resetToHome}
+              onSeConnecter={() => {
+                setView("home");
+                setAuthOpen(true);
+              }}
+            />
+          )}
+
+          {view === "resetPassword" && (
+            <NouveauMotDePasse
+              jeton={jetonUrl}
+              onReussite={(session) => {
+                adopterSession(session);
+                flash(t("resetOkToast"));
+                setView("account");
+              }}
+              onContinue={resetToHome}
             />
           )}
         </div>

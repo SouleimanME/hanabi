@@ -23,17 +23,11 @@ def _promo_label(p: models.Promo) -> str:
     return "Port offert"
 
 
-def _as_utc(value: datetime) -> datetime:
-    """Ramene un datetime a UTC, qu'il porte ou non un fuseau.
-
-    La colonne `expires_at` est declaree `DateTime(timezone=True)`, mais SQLite
-    n'a pas de type date natif et ne conserve pas le fuseau : la valeur relue est
-    naive. La comparer a un `datetime.now(timezone.utc)` levait un TypeError, si
-    bien qu'un code promo expire renvoyait une erreur 500 au lieu d'etre refuse
-    proprement. On considere une valeur naive comme etant deja en UTC, ce qui
-    correspond a ce qu'ecrit l'application.
-    """
-    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+# Le meme piege s'est represente sur la file d'attente des courriels, ou une
+# comparaison de dates echouait pour cette raison exacte. L'aide vit desormais
+# aupres des modeles, la ou sont declarees les colonnes concernees : c'est le
+# seul endroit ou l'on pense a elle en ajoutant une date.
+_as_utc = models.as_utc
 
 
 def validate_promo(db: Session, code: str, subtotal_cents: int) -> models.Promo:

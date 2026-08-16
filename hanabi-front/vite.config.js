@@ -6,6 +6,33 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+
+  // Tests unitaires et de composants (Vitest). Ils partagent la configuration de
+  // Vite a dessein : les tests resolvent les modules exactement comme le fait la
+  // construction, si bien qu'un test ne peut pas passer sur un graphe de
+  // dependances que la production n'a jamais.
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/tests/setup.js"],
+    // Vitest ne ramasse que `src/`. Sans cette borne, il chargeait aussi les
+    // parcours Playwright de `e2e/` - deux coureurs, deux API `test()`
+    // incompatibles - et le fichier echouait au chargement sans qu'aucun test
+    // n'echoue, ce qui donne un decompte contradictoire : « 1 fichier en echec,
+    // 188 tests passes ».
+    include: ["src/**/*.{test,spec}.{js,jsx}"],
+    // Les feuilles de style ne sont pas evaluees : aucun test n'affirme quoi que
+    // ce soit sur la mise en forme, et les analyser couterait a chaque execution.
+    css: false,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["src/**/*.{js,jsx}"],
+      // Les dictionnaires et le contenu legal sont des donnees, pas du code : les
+      // compter ferait chuter la couverture sans rien dire de sa qualite.
+      exclude: ["src/i18n/dictionaries/**", "src/content/**", "src/tests/**", "src/main.jsx"],
+    },
+  },
   // Note de deploiement : la boutique sert plusieurs chemins (/produit/:id,
   // /favoris, /compte...) resolus cote navigateur par `lib/routes.js`. Le
   // serveur de developpement de Vite renvoie index.html pour tout chemin

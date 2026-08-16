@@ -73,5 +73,46 @@ export function useAuth() {
     setOrders([]);
   }, []);
 
-  return { user, orders, login, signup, logout, refreshOrders };
+  /** Relit le profil depuis l'API, sans toucher au jeton.
+   *
+   * Sert apres une confirmation d'adresse : le drapeau `email_verified` a
+   * change cote serveur, et l'interface doit cesser de proposer un lien deja
+   * suivi. Recharger la page entiere pour un booleen serait disproportionne.
+   */
+  const refreshUser = useCallback(async () => {
+    if (!getToken()) return;
+    try {
+      setUser(await Auth.me());
+    } catch {
+      /* profil indisponible : on garde celui qu'on a */
+    }
+  }, []);
+
+  /** Adopte la session rendue par une route qui authentifie d'elle-meme.
+   *
+   * La reinitialisation de mot de passe renvoie un jeton d'acces : la personne
+   * vient de prouver son identite et de choisir un mot de passe, la renvoyer
+   * vers l'ecran de connexion serait une etape de trop.
+   */
+  const adopterSession = useCallback((response) => applySession(response), [applySession]);
+
+  /** Remplace le profil en memoire par celui que le serveur vient de rendre.
+   *
+   * Les routes de modification renvoient le profil a jour : le relire aussitot
+   * par `/auth/me` serait un aller-retour pour une information qu'on tient
+   * deja, et laisserait l'ecran afficher l'ancienne valeur entre les deux.
+   */
+  const poserProfil = useCallback((profil) => setUser(profil), []);
+
+  return {
+    user,
+    orders,
+    login,
+    signup,
+    logout,
+    refreshOrders,
+    refreshUser,
+    adopterSession,
+    poserProfil,
+  };
 }

@@ -1,4 +1,5 @@
 """Commande : decrement de stock, integrite des montants, cloisonnement."""
+from app import models
 
 
 def checkout_payload(product_id, qty=1, email="client@test.fr", promo_code=None):
@@ -13,6 +14,11 @@ def checkout_payload(product_id, qty=1, email="client@test.fr", promo_code=None)
             "ville": "Paris",
         },
         "promo_code": promo_code,
+        # Obligatoire depuis l'ajout des conditions de vente. Son absence a fait
+        # echouer huit tests d'un coup, ce qui est le comportement voulu : un
+        # champ obligatoire qui laisserait passer un appel sans lui ne servirait
+        # a rien.
+        "cgv_acceptees": True,
     }
 
 
@@ -53,10 +59,17 @@ class TestCheckout:
         assert product.stock == 5  # inchange
 
     def test_le_stock_ne_devient_jamais_negatif(self, client, db_session, product):
-        """Deux commandes concurrentes sur le dernier article.
+        """Deux commandes SUCCESSIVES sur le dernier article.
 
         La seconde doit echouer : le decrement passe par un UPDATE conditionnel
         (`WHERE stock >= qty`), pas par une lecture suivie d'une ecriture.
+
+        Ce test disait « concurrentes », ce qu'il n'a jamais fait : ses deux
+        requetes partent l'une apres l'autre. Il verifie le refus sur stock
+        insuffisant, ce qui compte, mais ne met jamais deux requetes en vol
+        ensemble - or c'est la que se cache l'entrelacement. Le vrai
+        parallelisme est teste dans `test_concurrence.py`, avec des fils
+        d'execution et une barriere de depart.
         """
         client.post("/orders/checkout", json=checkout_payload(product.id, qty=5))
         seconde = client.post("/orders/checkout", json=checkout_payload(product.id, qty=1))
@@ -126,3 +139,51 @@ class TestHistorique:
         res = client.get(f"/orders/{commande['number']}", headers=bob_headers)
 
         assert res.status_code == 404
+
+
+class TestConditionsDeVente:
+    """Obligatoires en vente a distance, et verifiees COTE SERVEUR.
+
+    Une case a cocher qui ne vit que dans le navigateur se contourne depuis la
+    console, et l'acceptation perdrait toute valeur probante.
+    """
+
+    def test_une_commande_sans_acceptation_est_refusee(self, client, db_session, product):
+        charge = checkout_payload(product.id)
+        charge["cgv_acceptees"] = False
+
+        res = client.post("/orders/checkout", json=charge)
+
+        assert res.status_code == 422
+        assert db_session.query(models.Order).count() == 0
+
+    def test_le_champ_est_obligatoire(self, client, product):
+        """Absent n'est pas « false » : c'est un corps invalide."""
+        charge = checkout_payload(product.id)
+        del charge["cgv_acceptees"]
+
+        assert client.post("/orders/checkout", json=charge).status_code == 422
+
+    def test_le_refus_precede_toute_ecriture(self, client, db_session, product):
+        """Inutile de prendre du stock pour une commande qu'on va rejeter."""
+        depart = product.stock
+        charge = checkout_payload(product.id)
+        charge["cgv_acceptees"] = False
+
+        client.post("/orders/checkout", json=charge)
+
+        db_session.refresh(product)
+        assert product.stock == depart
+
+    def test_la_version_acceptee_est_enregistree(self, client, db_session, product):
+        """Un booleen dirait qu'une case a ete cochee, pas CE QUI a ete accepte.
+
+        Les conditions evoluent ; sans la version, l'acceptation ne prouve rien.
+        """
+        from app.config import settings
+
+        client.post("/orders/checkout", json=checkout_payload(product.id))
+
+        commande = db_session.query(models.Order).one()
+        assert commande.cgv_version == settings.CGV_VERSION
+        assert commande.cgv_acceptees_le is not None

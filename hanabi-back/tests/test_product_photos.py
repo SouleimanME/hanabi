@@ -96,6 +96,7 @@ class TestCommandeAvecPhoto:
                     "cp": "75001",
                     "ville": "Paris",
                 },
+                "cgv_acceptees": True,
                 "promo_code": None,
             },
         )

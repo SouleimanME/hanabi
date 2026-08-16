@@ -45,6 +45,21 @@ try {
 
 export const getToken = () => token;
 
+/** Tire une cle d'idempotence pour une tentative d'achat.
+ *
+ * `randomUUID` n'existe que sur les origines sures - HTTPS, ou localhost. Le
+ * repli n'est pas un detail : sans lui, la fonction leverait sur un site servi
+ * en HTTP, et la commande echouerait au lieu de simplement perdre sa protection
+ * contre le double envoi.
+ */
+export function nouvelleCleIdempotence() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const octets = new Uint8Array(16);
+  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(octets);
+  else for (let i = 0; i < 16; i++) octets[i] = Math.floor(Math.random() * 256);
+  return [...octets].map((o) => o.toString(16).padStart(2, "0")).join("");
+}
+
 export function setToken(value) {
   token = value;
   try {
@@ -60,10 +75,11 @@ export function setToken(value) {
  *
  * @throws {Error} avec `.status` (code HTTP) ou `.network` (serveur injoignable)
  */
-export async function request(path, { method = "GET", body, auth = false } = {}) {
+export async function request(path, { method = "GET", body, auth = false, idempotencyKey } = {}) {
   const headers = {};
   if (body) headers["Content-Type"] = "application/json";
   if (auth && token) headers.Authorization = `Bearer ${token}`;
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
   let res;
   try {
@@ -137,12 +153,100 @@ export const Auth = {
   login: (email, password, antibot) =>
     request("/auth/login", { method: "POST", body: { email, password, antibot } }),
   me: () => request("/auth/me", { auth: true }),
+
+  /** Confirme une adresse depuis le lien recu par courriel. */
+  verifyEmail: (jeton) => request("/auth/verify-email", { method: "POST", body: { jeton } }),
+
+  /** Renvoie un lien de confirmation au compte connecte. */
+  resendVerification: () => request("/auth/resend-verification", { method: "POST", auth: true }),
+
+  /**
+   * Demande un lien de reinitialisation.
+   *
+   * Repond toujours succes, compte connu ou non : c'est ce qui empeche ce
+   * formulaire de servir a tester une liste d'adresses. L'interface doit donc
+   * afficher le meme message dans les deux cas, sans quoi elle reintroduirait
+   * cote client la fuite que le serveur refuse.
+   */
+  forgotPassword: (email) => request("/auth/forgot-password", { method: "POST", body: { email } }),
+
+  /** Fixe un nouveau mot de passe. Rend un jeton d'acces : on est connecte. */
+  resetPassword: (jeton, password) =>
+    request("/auth/reset-password", { method: "POST", body: { jeton, password } }),
+};
+
+/** Gestion de son propre compte.
+ *
+ * Toutes ces routes agissent sur le porteur du jeton : aucune ne prend
+ * d'identifiant de compte, donc aucune ne se detourne vers celui d'un autre.
+ */
+export const Compte = {
+  /** Modifie SEULEMENT les champs passes. Un champ absent n'est pas touche. */
+  majProfil: (champs) => request("/compte/profil", { method: "PATCH", auth: true, body: champs }),
+
+  changerMotDePasse: (ancien, nouveau) =>
+    request("/compte/mot-de-passe", { method: "POST", auth: true, body: { ancien, nouveau } }),
+
+  changerEmail: (email, password) =>
+    request("/compte/email", { method: "POST", auth: true, body: { email, password } }),
+
+  paiements: () => request("/compte/paiements", { auth: true }),
+
+  /**
+   * Enregistre une carte.
+   *
+   * `carte` ne contient NI numero NI cryptogramme : le navigateur en tire de
+   * quoi reconnaitre la carte a l'ecran, et rien d'autre ne part. C'est le
+   * partage des roles d'une integration reelle, ou le numero ne quitte jamais
+   * l'iframe du prestataire.
+   */
+  ajouterPaiement: (carte) =>
+    request("/compte/paiements", { method: "POST", auth: true, body: carte }),
+
+  paiementParDefaut: (id) =>
+    request(`/compte/paiements/${id}/defaut`, { method: "POST", auth: true }),
+
+  supprimerPaiement: (id) => request(`/compte/paiements/${id}`, { method: "DELETE", auth: true }),
+
+  /** Toutes les données détenues sur le compte (RGPD art. 20). */
+  exporterMesDonnees: (password) =>
+    request("/compte/export", { method: "POST", auth: true, body: { password } }),
+
+  /**
+   * Efface le compte (RGPD art. 17). IRRÉVERSIBLE.
+   *
+   * Deux confirmations, exigées par le serveur : le mot de passe prouve qu'on
+   * est bien là maintenant, la formule recopiée prouve qu'on a lu ce qui va se
+   * passer.
+   */
+  supprimerMonCompte: (password, confirmation) =>
+    request("/compte/suppression", {
+      method: "POST",
+      auth: true,
+      body: { password, confirmation },
+    }),
 };
 
 export const Orders = {
   quote: (items, promoCode) =>
     request("/orders/quote", { method: "POST", body: { items, promo_code: promoCode || null } }),
-  checkout: (payload) => request("/orders/checkout", { method: "POST", auth: true, body: payload }),
+  /**
+   * Passe la commande. La cle d'idempotence est TIREE PAR L'APPELANT, et c'est
+   * la seule facon dont le mecanisme fonctionne : une cle generee ici serait
+   * neuve a chaque appel, donc chaque reessai creerait une commande. Elle doit
+   * etre tiree une fois a l'ouverture du tunnel et repetee a l'identique tant
+   * que le meme achat est en cours.
+   *
+   * @param {object} payload corps de la commande
+   * @param {string} cle identifiant stable de cette tentative d'achat
+   */
+  checkout: (payload, cle) =>
+    request("/orders/checkout", {
+      method: "POST",
+      auth: true,
+      body: payload,
+      idempotencyKey: cle,
+    }),
   history: () => request("/orders", { auth: true }),
 };
 

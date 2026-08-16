@@ -34,7 +34,16 @@ const BRANDS = [
     id: "mastercard",
     label: "Mastercard",
     // 51-55, ou la plage 2221-2720 ouverte en 2017.
-    pattern: /^(5[1-5]|2(2[2-9]|[3-6]\d|7[01]|720))/,
+    //
+    // La plage est decrite sur QUATRE chiffres, ses deux bornes etant elles-memes
+    // a quatre chiffres. Une version anterieure la resumait sur trois - `2[2-9]`
+    // acceptait tout 222x - et classait donc 2220 en Mastercard, un prefixe qui
+    // n'appartient a personne. Aucune carte reelle ne commence ainsi, mais une
+    // regle approchee finit toujours par etre lue comme exacte : autant ecrire
+    // la vraie. La contrepartie est que le reseau se revele au quatrieme chiffre
+    // au lieu du troisieme, ce qui ne change ni le groupage ni la longueur
+    // attendue.
+    pattern: /^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/,
     lengths: [16],
     gaps: [4, 8, 12],
     cvcLength: 3,

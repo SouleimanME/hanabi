@@ -94,7 +94,7 @@ export function PwField({
 const STRENGTH_TIERS = [
   { key: "pwWeak", color: "#E05252" },
   { key: "pwFair", color: "#D9742E" },
-  { key: "pwGood", color: "#B98A2E" },
+  { key: "pwGood", color: "#C88A1E" },
   { key: "pwStrong", color: "#3E7A5B" },
 ];
 

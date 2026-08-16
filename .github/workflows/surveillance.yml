@@ -1,0 +1,88 @@
+# Surveillance de la sonde de sante.
+#
+# CE QUE CE FICHIER REPARE. `/health` fait un aller-retour reel jusqu'a la base
+# et repond 503 quand elle ne repond plus. C'est correct - et parfaitement
+# inutile tant que personne n'ecoute. Une sonde que rien n'interroge est un
+# journal que personne ne lit.
+#
+# POURQUOI GITHUB ACTIONS plutot qu'un service de surveillance. Le projet tient
+# sur des paliers gratuits, et un service de plus signifie un compte de plus, un
+# jeton de plus a faire tourner, une facture de plus a surveiller. Un `cron`
+# ici ne coute rien, tourne dans une infrastructure deja utilisee, et
+# l'alerte arrive par le canal que l'on regarde deja : une tache rouge et le
+# courriel que GitHub envoie automatiquement a la premiere execution en echec.
+#
+# LA LIMITE EST ASSUMEE. Les taches planifiees de GitHub ne sont pas ponctuelles
+# - un retard de plusieurs minutes est courant, et elles sont desactivees apres
+# soixante jours sans activite sur le depot. Ce n'est donc pas de la
+# surveillance de production a la seconde ; c'est ce qui distingue « le site est
+# tombe cette nuit et je l'apprends au reveil » de « je l'apprends par un
+# visiteur ».
+
+name: Surveillance
+
+on:
+  schedule:
+    # Toutes les quinze minutes. Plus souvent n'apporterait rien : la base
+    # hebergee se reveille en quelques secondes, et une panne reelle dure
+    # bien plus longtemps que cet intervalle.
+    - cron: "*/15 * * * *"
+  # Declenchable a la main, pour verifier le dispositif sans attendre.
+  workflow_dispatch:
+
+# Une seule execution a la fois : deux sondes simultanees ne diraient rien de
+# plus, et un cumul de taches en attente masquerait l'etat reel.
+concurrency:
+  group: surveillance
+  cancel-in-progress: false
+
+jobs:
+  sonde:
+    name: Sonde de sante
+    runs-on: ubuntu-latest
+
+    steps:
+      # L'adresse vit dans un secret et non dans le fichier : elle n'a rien de
+      # confidentiel, mais la placer ici obligerait a modifier le depot pour
+      # changer d'hebergeur. Si le secret est absent, la tache passe sans
+      # rien faire plutot que d'echouer - un depot clone ne doit pas sonner
+      # l'alarme faute de configuration.
+      - name: Interroger la sonde
+        env:
+          URL: ${{ secrets.API_HEALTH_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::notice::API_HEALTH_URL n'est pas configure : surveillance inactive."
+            exit 0
+          fi
+
+          # `--max-time` : une API qui met plus de trente secondes a repondre
+          # est aussi indisponible qu'une API muette, du point de vue d'un
+          # visiteur.
+          reponse=$(curl -sS --max-time 30 -w '\n%{http_code}' "$URL" || echo -e '\n000')
+          corps=$(echo "$reponse" | head -n -1)
+          code=$(echo "$reponse" | tail -n 1)
+
+          echo "Code HTTP : $code"
+          echo "Reponse   : $corps"
+
+          if [ "$code" = "000" ]; then
+            echo "::error::API injoignable - aucune reponse en 30 s."
+            exit 1
+          fi
+          if [ "$code" != "200" ]; then
+            echo "::error::La sonde repond $code. La base est probablement injoignable."
+            exit 1
+          fi
+
+          # 200 ne suffit pas : la sonde rend 200 avec `status: degrade` quand
+          # la remise des courriels est en panne. Le service repond, mais
+          # quelque chose ne va pas, et c'est precisement ce qu'on veut savoir
+          # sans attendre qu'un client se plaigne.
+          etat=$(echo "$corps" | grep -o '"status":"[a-z]*"' | head -1)
+          if echo "$etat" | grep -q "degrade"; then
+            echo "::error::Service degrade : $corps"
+            exit 1
+          fi
+
+          echo "::notice::Service en bonne sante."

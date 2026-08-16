@@ -46,3 +46,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# --- Tests de bout en bout (Playwright) ---
+# Traces, captures et rapports ne sont produits qu'a l'echec, et se regenerent
+# a chaque execution : les versionner alourdirait le depot sans rien apporter.
+hanabi-front/test-results/
+hanabi-front/playwright-report/
+hanabi-front/blob-report/
+hanabi-front/.playwright/
+
+# --- Courriels ecrits localement (MAIL_BACKEND=fichier) ---
+# Chaque commande, inscription ou reinitialisation depose un .eml ici. Ce sont
+# des messages reels adresses a de vraies personnes : ils n'ont rien a faire
+# dans un depot.
+hanabi-back/var/

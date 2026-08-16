@@ -1,7 +1,18 @@
-/** Pied de page : identite, raccourcis catalogue et acces aux pages legales. */
+/** Pied de page : identite, raccourcis catalogue et acces aux pages legales.
+ *
+ * C'est la seule surface du site qui reste en laque quand la boutique est sur
+ * papier : la page s'arrete, et dessous il y a l'urushi brut. Le pied n'est donc
+ * pas un bas de page, c'est le support sur lequel tout le reste etait pose.
+ *
+ * Deux ornements y vivaient, herites de l'identite precedente : une frise de
+ * vagues seigaiha et une scene de mont Fuji. Ils dessinaient un paysage, ce que
+ * cette direction ne fait jamais - et deux motifs japonais empiles sous un
+ * embleme japonais, c'est un motif de trop. A leur place, l'embleme lui-meme,
+ * agrandi jusqu'a deborder et pose si bas dans le contraste qu'il se lit comme
+ * une trace dans la matiere plutot que comme une image.
+ */
 import { useT } from "../../i18n/context.jsx";
 import { LogoMark } from "../brand/LogoMark.jsx";
-import { FujiScene, SeigaihaBand } from "../brand/Ornaments.jsx";
 
 const LEGAL_PAGES = ["mentions", "cgv", "confidentialite", "cookies"];
 const SHOP_CATEGORIES = ["Compagnons", "Tradition", "Collection"];
@@ -11,13 +22,14 @@ export function Footer({ onGoCategory, onOpenLegal }) {
 
   return (
     <footer className="ft">
-      {/* Frise de vagues en cretes : marque la bascule vers le pied de page. */}
-      <div className="ft-crest">
-        <SeigaihaBand height={34} />
+      {/* Filigrane : l'embleme dans la laque, rogne par le bord droit. Il est
+          decoratif au sens strict, donc masque aux lecteurs d'ecran. */}
+      <div className="ft-filigrane" aria-hidden="true">
+        <LogoMark size={520} />
       </div>
-      <FujiScene />
+
       <div className="ft-in">
-        <div>
+        <div className="ft-marque">
           <div className="logo ft-logo">
             <LogoMark size={30} />
             HANABI<span className="logo-jp">花火</span>

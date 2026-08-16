@@ -1,41 +1,90 @@
-/* Jetons de design : palette, ombres, theme clair et sombre. */
+/* Jetons de design : palette, ombres, theme clair et sombre.
+ *
+ * DIRECTION NEGORO. Le negoro-nuri est une laque noire recouverte de laque
+ * vermillon : a l'usage, le vermillon s'efface aux points de contact et le
+ * noir reapparait dessous. Toute la palette tient dans ces deux matieres,
+ * plus le papier washi de la boutique.
+ *
+ * DEUX COULEURS, PAS TROIS. Il n'y a plus d'or nulle part. Le jeton `--gold`
+ * subsiste sous son nom - une trentaine de regles s'en servent - mais il
+ * porte desormais le vermillon terni, si bien que les degrades vont du
+ * vermillon vif au vermillon sourd au lieu de virer a l'or. Renommer un
+ * jeton coute une passe sur seize feuilles ; lui changer sa valeur ne coute
+ * rien et se defait aussi vite.
+ *
+ * LES RAYONS SONT A ZERO. La laque et le sceau n'ont pas d'angles arrondis,
+ * et un `border-radius` generalise est le premier reflexe qui fait paraitre
+ * une interface generique. C'est le reglage le plus visible de ce fichier :
+ * le remettre a 10 px suffirait a defaire la direction.
+ */
 .root {
   /* Indique au navigateur quel theme est actif, pour qu'il accorde ce qu'il
      dessine lui-meme : barres de defilement, menus deroulants natifs, champs de
      saisie. Sans cela, un formulaire clair pouvait apparaitre sur fond sombre. */
   color-scheme: light;
-  --paper: #f4f0e6;
-  --card: #fbf8f0;
-  --ink: #16140f;
-  --muted: #6e665a;
-  --line: #e2dbcb;
-  --line2: #cfc6b2;
-  --accent: #e0382a;
-  --accent-soft: rgba(224, 56, 42, 0.1);
-  --indigo: #1b3a5b;
-  --gold: #b98a2e;
-  --ok: #3e7a5b;
-  --on-accent: #fbf8f0;
-  --header-bg: rgba(244, 240, 230, 0.86);
+  --paper: #efe7d6;
+  --card: #f7f2e6;
+  --ink: #1a0f0b;
+  --muted: #6b5347;
+  --line: #ddd2bc;
+  --line2: #c7b99e;
+  /* Vermillon assombri pour le papier : le #d8452b de la laque passe au gris
+     sur un fond clair et tombe sous le contraste exigible d'un texte.
+   *
+   * ASSOMBRI UNE SECONDE FOIS, apres mesure. Le #c33a20 precedent donnait 4,33:1
+   * sur le papier et 3,78:1 sur les fonds teintes - juste sous le seuil WCAG AA
+   * de 4,5:1, donc invisible a l'oeil nu mais fautif pour qui lit mal. Les
+   * valeurs ont ete essayees une par une contre les quatre fonds clairs
+   * reellement rencontres ; #ad3116 est la PREMIERE qui passe partout (4,63:1).
+   * On ne va pas plus loin : chaque cran supplementaire rapproche du brun, et
+   * le vermillon cesse d'etre du vermillon. */
+  --accent: #ad3116;
+  --accent-soft: rgba(173, 49, 22, 0.1);
+  --indigo: #24384a;
+  --gold: #8e2c1c;
+  --ok: #4a7a52;
+  /* Couleur du TEXTE pose sur un aplat vermillon.
+   *
+   * Elle existait depuis le debut et n'etait utilisee nulle part : seize regles
+   * ecrivaient `color: #fff` en dur. Sur le vermillon clair du theme sombre,
+   * le blanc donne 3,12:1 - sous le seuil WCAG AA de 4,5:1 pour du texte
+   * courant, et ces aplats portent des libelles utiles : « Nouveau », le
+   * compteur du panier, la categorie active.
+   *
+   * Le noir de laque donne 6,4:1 sur le meme fond, et c'est en plus PLUS fidele
+   * au negoro : le vermillon recouvre le noir, il ne recouvre pas du blanc. */
+  --on-accent: #f7f2e6;
+  --header-bg: rgba(239, 231, 214, 0.86);
   /* Meme teinte que --header-bg, sans transparence : fond permanent de
      l'en-tete, qui n'a plus de flou d'arriere-plan. La variante translucide
      reste utilisee par la barre basse mobile. */
-  --header-bg-plein: #f4f0e6;
-  --footer-bg: #16140f;
-  --footer-tx: #b6ad9c;
-  --shadow: 0 1px 2px rgba(22, 20, 15, 0.05), 0 10px 34px rgba(22, 20, 15, 0.07);
+  --header-bg-plein: #efe7d6;
+  --footer-bg: #0a0605;
+  --footer-tx: #b3948b;
+  /* ACCENT DU PIED DE PAGE, constant dans les deux themes.
+   *
+   * Le pied de page est la seule surface qui ne suit PAS le theme : il reste
+   * noir sur fond clair, parce que c'est la tranche de la plaque de laque. Son
+   * accent ne pouvait donc pas suivre le theme non plus - en clair, le
+   * vermillon assombri tombait a 3,79:1 sur ce noir, presque illisible. Le
+   * vermillon de la laque y donne 6,47:1. Une surface qui ne change pas veut
+   * des couleurs qui ne changent pas. */
+  --footer-accent: #f4643f;
+  --shadow: 0 1px 2px rgba(26, 15, 11, 0.05), 0 10px 34px rgba(26, 15, 11, 0.07);
 
   /* Elevation : trois paliers pour hierarchiser survol et fenetres. */
-  --shadow-sm: 0 1px 2px rgba(22, 20, 15, 0.05), 0 3px 10px rgba(22, 20, 15, 0.05);
-  --shadow-lg: 0 2px 6px rgba(22, 20, 15, 0.06), 0 24px 60px rgba(22, 20, 15, 0.14);
-  --glow: 0 10px 40px rgba(224, 56, 42, 0.28);
+  --shadow-sm: 0 1px 2px rgba(26, 15, 11, 0.05), 0 3px 10px rgba(26, 15, 11, 0.05);
+  --shadow-lg: 0 2px 6px rgba(26, 15, 11, 0.06), 0 24px 60px rgba(26, 15, 11, 0.14);
+  --glow: 0 10px 40px rgba(195, 58, 32, 0.26);
 
-  /* Degrades signature : la "fleur de feu" et le liseré vermillon → or. */
+  /* Degrades signature. La "fleur de feu" ne vire plus a l'or : elle va du
+     vermillon vif au vermillon terni, comme une laque plus chargee par
+     endroits. */
   --grad-accent: linear-gradient(120deg, var(--accent) 0%, var(--gold) 100%);
   --grad-hanabi: radial-gradient(
     120% 120% at 50% 0%,
-    rgba(224, 56, 42, 0.16) 0%,
-    rgba(185, 138, 46, 0.08) 40%,
+    rgba(195, 58, 32, 0.14) 0%,
+    rgba(142, 44, 28, 0.07) 40%,
     transparent 72%
   );
 }
@@ -48,40 +97,69 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Rayons de bordure. */
-  --r-sm: 10px;
-  --r-md: 14px;
-  --r-lg: 20px;
+  /* Rayons de bordure : l'ARETE ADOUCIE, pas le coin arrondi.
+   *
+   * Ces trois paliers ont d'abord ete mis a zero, au nom d'une regle que je
+   * croyais juste - « une laque ne s'arrondit pas ». C'est faux, et l'objet le
+   * dit : une piece de negoro porte une vingtaine de couches, et une arete
+   * parfaitement vive s'ecaillerait au premier choc. L'artisan l'abat toujours
+   * d'un rien.
+   *
+   * Deux pixels, donc. A distance de lecture ca ne se voit pas comme un coin
+   * arrondi, ca se sent comme un bord fini - ce qui est exactement la
+   * difference entre une piece laquee et une decoupe. Trois pixels sur les
+   * grands panneaux, dont le bord est proportionnellement plus long.
+   *
+   * Le seuil a ne pas franchir est connu : au-dela de quatre pixels on retombe
+   * dans la carte arrondie, qui est le tic visuel que cette direction refuse. */
+  --r-sm: 2px;
+  --r-md: 2px;
+  --r-lg: 3px;
+
+  /* Les COMMANDES portent un peu plus que les surfaces, et c'est normal : un
+     bouton est un objet qu'on prend en main, pas un plan sur lequel on pose
+     quelque chose. Cinq pixels adoucissent la prise sans jamais evoquer la
+     gelule - la limite des quatre pixels enoncee plus haut vise les panneaux,
+     pas ce qu'on presse.
+     Le back-office garde ses deux pixels : c'est une interface dense, ou les
+     commandes sont petites et nombreuses, et ou un rayon plus large commence a
+     manger la place du libelle. */
+  --r-btn: 5px;
 
   --dur: 0.28s;
 }
 .root.dark {
   color-scheme: dark;
-  --paper: #15130f;
-  --card: #211e18;
-  --ink: #ece6d8;
-  --muted: #9a9080;
-  --line: #312c24;
-  --line2: #3e382e;
-  --accent: #ff5340;
-  --accent-soft: rgba(255, 83, 64, 0.15);
-  --indigo: #7fa8ce;
-  --gold: #d7ae5b;
-  --ok: #5fa37e;
-  --on-accent: #15130f;
-  --header-bg: rgba(21, 19, 15, 0.86);
-  --header-bg-plein: #15130f;
-  --footer-bg: #0f0d0a;
-  --footer-tx: #9a9080;
+  /* La laque. Un noir CHAUD : l'urushi tire sur le brun sombre, jamais sur le
+     bleu. Un gris neutre a cote du vermillon le fait paraitre sale. */
+  --paper: #0a0605;
+  --card: #140c09;
+  --ink: #f7ebe6;
+  --muted: #b3948b;
+  --line: #241511;
+  --line2: #33201a;
+  /* Vermillon eclairci pour la laque : le meme pigment, vu sous une lumiere
+     rasante. */
+  --accent: #f4643f;
+  --accent-soft: rgba(244, 100, 63, 0.15);
+  --indigo: #6f93b4;
+  --gold: #d8452b;
+  --ok: #7fa663;
+  --on-accent: #0a0605;
+  --header-bg: rgba(10, 6, 5, 0.86);
+  --header-bg-plein: #0a0605;
+  --footer-bg: #060403;
+  --footer-tx: #b3948b;
+  --footer-accent: #f4643f;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 44px rgba(0, 0, 0, 0.55);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.5), 0 28px 70px rgba(0, 0, 0, 0.66);
-  --glow: 0 10px 44px rgba(255, 83, 64, 0.4);
+  --glow: 0 10px 44px rgba(244, 100, 63, 0.36);
   --grad-accent: linear-gradient(120deg, var(--accent) 0%, var(--gold) 100%);
   --grad-hanabi: radial-gradient(
     120% 120% at 50% 0%,
-    rgba(255, 83, 64, 0.2) 0%,
-    rgba(215, 174, 91, 0.1) 40%,
+    rgba(244, 100, 63, 0.18) 0%,
+    rgba(216, 69, 43, 0.09) 40%,
     transparent 72%
   );
 }

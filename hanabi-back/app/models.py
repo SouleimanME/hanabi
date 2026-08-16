@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     String, Integer, Boolean, ForeignKey, Text, DateTime, CheckConstraint, UniqueConstraint,
+    Index,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,6 +11,24 @@ from .database import Base
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def as_utc(value: datetime | None) -> datetime | None:
+    """Ramene un datetime a UTC, qu'il porte ou non un fuseau.
+
+    Les colonnes sont declarees `DateTime(timezone=True)`, mais SQLite n'a pas
+    de type date natif et ne conserve pas le fuseau : la valeur relue est naive
+    alors que la meme colonne rend une valeur consciente sur PostgreSQL. Toute
+    comparaison Python entre une de ces valeurs et un `datetime.now(timezone.utc)`
+    leve donc un TypeError - en local et dans la suite de tests seulement, ce qui
+    en fait un piege qui ne se declenche jamais la ou on l'attend.
+
+    Une valeur naive est consideree comme etant deja en UTC, ce qui correspond a
+    ce que l'application ecrit.
+    """
+    if value is None:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
 class User(Base):
@@ -27,6 +46,26 @@ class User(Base):
     cp: Mapped[str | None] = mapped_column(String(10), nullable=True)
     city: Mapped[str | None] = mapped_column(String(120), nullable=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Adresse confirmee par un lien recu sur cette adresse.
+    #
+    # Le compte reste UTILISABLE sans confirmation, et c'est un choix : bloquer
+    # la connexion tant que le lien n'est pas suivi transforme un courriel perdu
+    # dans les indesirables en compte inaccessible, et fait fuir a l'etape la
+    # plus fragile du parcours. C'est aussi ce que font la plupart des boutiques.
+    # Le drapeau sert a ne pas ecrire a une adresse jamais confirmee, et a
+    # exiger la confirmation le jour ou une action sensible s'ajouterait.
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Date d'exercice du droit a l'effacement (RGPD art. 17). Non nul signifie
+    # que la ligne ne porte plus aucune donnee personnelle : elle subsiste pour
+    # que les commandes gardent leur rattachement comptable, rien de plus.
+    #
+    # Le champ ne sert PAS a interdire la connexion - c'est le condensat rendu
+    # inutilisable qui s'en charge, et une garde qui repose sur un drapeau est
+    # une garde que chaque nouvelle route doit penser a poser. Il sert a
+    # l'affichage et a l'audit : savoir qu'un compte a ete efface, et quand.
+    anonymise_le: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Indexe : les cohortes d'inscription et la courbe des nouveaux comptes
     # regroupent sur ce champ, et la liste du back-office trie dessus.
     created_at: Mapped[datetime] = mapped_column(
@@ -112,6 +151,24 @@ class Order(Base):
     shipping_cents: Mapped[int] = mapped_column(Integer, default=0)
     total_cents: Mapped[int] = mapped_column(Integer)
     promo_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Reference d'autorisation rendue par le prestataire de paiement (simule ici,
+    # voir `payments.py`). Sans elle, rien ne permet de rapprocher une commande
+    # d'un mouvement bancaire : c'est la premiere chose que demande un service
+    # comptable, et la seule piste exploitable en cas de litige.
+    payment_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # VERSION DES CONDITIONS DE VENTE acceptees au moment de commander.
+    #
+    # En vente a distance, l'acceptation doit pouvoir se PROUVER, et une case
+    # cochee qui ne laisse aucune trace ne prouve rien. On enregistre donc la
+    # version du texte, pas un simple booleen : les conditions changent, et
+    # savoir qu'une personne a coche une case ne dit pas CE QU'ELLE a accepte.
+    #
+    # Nullable : les commandes anterieures a cette regle n'en portent pas, et
+    # leur inventer une valeur serait une affirmation fausse en base.
+    cgv_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    cgv_acceptees_le: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=now_utc, index=True
     )
@@ -224,3 +281,186 @@ class Subscriber(Base):
     lang: Mapped[str] = mapped_column(String(5), default="fr")
     unsubscribed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+class OutboxEmail(Base):
+    """File d'attente des courriels a remettre.
+
+    POURQUOI UNE TABLE PLUTOT QU'UN ENVOI DIRECT. Envoyer depuis la requete de
+    commande lie deux choses qui n'ont pas la meme fiabilite : une ecriture en
+    base, transactionnelle, et un appel reseau vers un tiers, qui peut etre lent
+    ou indisponible. Les coudre ensemble donne deux pannes symetriques et toutes
+    deux graves - soit on fait attendre l'acheteur pendant que le relais rame,
+    soit une panne du relais fait echouer une commande deja payee.
+
+    Le message est donc ECRIT DANS LA MEME TRANSACTION que la commande. S'il y a
+    une commande, il y a un courriel : la garantie vient de la base, pas d'un
+    espoir. Une tache de fond le remet ensuite, avec reessais espaces.
+
+    C'est le motif « transactional outbox ». Sa limite est connue et assumee :
+    la remise est au-moins-une-fois, jamais exactement-une-fois. Un envoi reussi
+    dont l'ecriture du statut echoue sera rejoue. Pour une confirmation de
+    commande, un doublon occasionnel est preferable a un silence.
+    """
+
+    __tablename__ = "outbox_emails"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    destinataire: Mapped[str] = mapped_column(String(255))
+    sujet: Mapped[str] = mapped_column(String(255))
+    texte: Mapped[str] = mapped_column(Text)
+    html: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # en_attente | envoye | abandonne
+    #
+    # Indexe conjointement a la date de prochaine tentative : la tache de fond
+    # ne pose qu'une seule question, « qu'y a-t-il a envoyer maintenant », et
+    # elle la pose en boucle. Sans cet index elle balaierait toute la table a
+    # chaque tour, y compris les messages deja remis, dont le nombre ne fait que
+    # croitre.
+    statut: Mapped[str] = mapped_column(String(20), default="en_attente")
+    tentatives: Mapped[int] = mapped_column(Integer, default=0)
+    derniere_erreur: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prochaine_tentative: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=now_utc
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    envoye_le: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_outbox_a_traiter", "statut", "prochaine_tentative"),
+    )
+
+
+class IdempotencyKey(Base):
+    """Trace d'une requete non rejouable, et de sa reponse.
+
+    LE PROBLEME. Un double-clic sur « Payer », un navigateur qui rejoue une
+    requete apres une coupure, un client mobile qui reessaie sur delai depasse :
+    dans les trois cas la meme intention arrive deux fois. Sans garde, cela fait
+    deux commandes, deux debits de stock et deux courriels pour un seul achat -
+    et le client n'a rien fait de mal.
+
+    LA REGLE. Le client tire une cle au hasard AVANT d'envoyer, et la repete a
+    l'identique s'il reessaie. Le serveur enregistre la cle et la reponse qu'il a
+    produite ; a la deuxieme presentation de la meme cle, il rejoue cette reponse
+    sans refaire le travail.
+
+    L'EMPREINTE de la requete est conservee avec la cle. Une meme cle presentee
+    avec un corps different n'est pas un reessai mais une erreur du client -
+    typiquement une cle reutilisee par megarde - et doit etre refusee plutot que
+    de renvoyer la reponse d'un autre achat.
+
+    L'unicite est portee par la BASE et non par une verification prealable :
+    entre un `SELECT` qui ne trouve rien et l'`INSERT` qui suit, une seconde
+    requete peut passer. C'est exactement le cas du double-clic, ou les deux
+    appels partent a quelques millisecondes d'intervalle. La contrainte unique
+    tranche, et le perdant traite la violation comme un reessai.
+    """
+
+    __tablename__ = "idempotency_keys"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    cle: Mapped[str] = mapped_column(String(128))
+    # La cle n'est unique QUE pour un point d'entree donne : deux appels
+    # differents peuvent legitimement porter la meme, et rien n'oblige un client
+    # a cloisonner ses tirages.
+    point_entree: Mapped[str] = mapped_column(String(80))
+    empreinte: Mapped[str] = mapped_column(String(64))
+
+    # en_cours | termine
+    statut: Mapped[str] = mapped_column(String(20), default="en_cours")
+    code_reponse: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    corps_reponse: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=now_utc, index=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint("cle", "point_entree", name="uq_idempotence"),
+    )
+
+
+class Token(Base):
+    """Jeton a usage unique : verification d'adresse, reinitialisation.
+
+    STOCKE HACHE, jamais en clair. Le raisonnement est celui des mots de passe :
+    une copie de la base ne doit pas suffire a prendre la main sur des comptes.
+    Un jeton de reinitialisation en clair dans une sauvegarde, c'est un acces
+    administrateur a chaque compte dont le jeton n'a pas expire.
+
+    SHA-256 sans sel ni etirement, contrairement aux mots de passe, et c'est
+    voulu : un jeton fait 32 octets tires au hasard, il n'a ni motif ni
+    reutilisation entre sites, et il expire en une heure. Ce qui rend bcrypt
+    indispensable pour un mot de passe - sa faible entropie - n'existe pas ici,
+    et la lenteur y serait payee a chaque verification sans rien acheter.
+
+    A USAGE UNIQUE, et c'est la raison de le mettre en base plutot que de le
+    signer. Un jeton signe se verifie sans etat, mais rien ne l'empeche de
+    resservir tant qu'il n'a pas expire : un lien de reinitialisation reste
+    alors valable une heure apres avoir change le mot de passe, y compris dans
+    la boite de quelqu'un qui a eu acces au courriel. Ici, `utilise_le` ferme
+    la porte des le premier usage.
+    """
+
+    __tablename__ = "tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # verification_email | reinitialisation
+    usage: Mapped[str] = mapped_column(String(30), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    # Indexe et unique : c'est par lui qu'on retrouve la ligne, et deux jetons
+    # identiques signaleraient un tirage defaillant.
+    empreinte: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expire_le: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    utilise_le: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+    user: Mapped["User"] = relationship()
+
+
+class PaymentMethod(Base):
+    """Moyen de paiement enregistre.
+
+    CE QUI N'EST PAS ICI, et c'est l'essentiel : le numero de carte et le
+    cryptogramme. Ni chiffres, ni chiffres masques, ni chiffres chiffres. Cette
+    table contient exactement ce qu'une vraie integration conserve - de quoi
+    RECONNAITRE une carte a l'ecran, et un jeton opaque emis par le prestataire
+    pour la debiter. C'est ce qui maintient l'application hors du perimetre
+    PCI-DSS : on ne peut pas se faire voler ce qu'on ne detient pas.
+
+    Le jeton est simule ici, comme tout le paiement de cette boutique (voir
+    `payments.py`). Sa forme et son usage sont ceux d'un vrai : le serveur ne
+    sait pas le lire, il se contente de le transmettre.
+
+    Les quatre derniers chiffres ne sont pas une donnee sensible : ils figurent
+    sur tout ticket de caisse, et ne permettent ni de reconstituer un numero ni
+    d'autoriser quoi que ce soit.
+    """
+
+    __tablename__ = "payment_methods"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+
+    # visa | mastercard | amex | unknown - tel que detecte cote client.
+    reseau: Mapped[str] = mapped_column(String(20))
+    quatre_derniers: Mapped[str] = mapped_column(String(4))
+    exp_mois: Mapped[int] = mapped_column(Integer)
+    exp_annee: Mapped[int] = mapped_column(Integer)
+    # Etiquette libre : « perso », « pro ». Facultative.
+    libelle: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+    # Jeton opaque du prestataire. Unique : deux enregistrements du meme moyen
+    # de paiement produiraient deux lignes indiscernables a l'ecran.
+    jeton: Mapped[str] = mapped_column(String(64), unique=True)
+
+    # Carte proposee par defaut au paiement. L'unicite n'est PAS portee par une
+    # contrainte : PostgreSQL sait faire un index partiel, SQLite non, et un
+    # index unique ordinaire sur (user_id, defaut) interdirait d'avoir deux
+    # cartes non favorites. La regle est donc appliquee a l'ecriture, en un seul
+    # endroit (voir `routers/paiements.py`).
+    defaut: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+    user: Mapped["User"] = relationship()

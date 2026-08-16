@@ -15,7 +15,7 @@
 }
 .carou {
   position: relative;
-  border-radius: 20px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);
@@ -129,7 +129,7 @@
 }
 .carou-arrow:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 .carou-arrow.left {

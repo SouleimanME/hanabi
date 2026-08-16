@@ -77,7 +77,7 @@ jobs:
         run: dagster definitions validate
 
   front:
-    name: Interface (lint + build)
+    name: Interface (lint + tests + build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -103,5 +103,64 @@ jobs:
       - name: Verification du formatage
         run: npm run format:check
 
+      # Attention si l'on optimise un jour cette tache : `src/tests/contrat-tarification.test.js`
+      # lit `hanabi-back/app/pricing.py` pour verifier que les deux piles
+      # appliquent les memes frais de port. Elle a donc besoin du depot entier,
+      # ce que `actions/checkout` fait par defaut. Un `sparse-checkout` limite a
+      # `hanabi-front` rendrait ce test rouge sans qu'aucun code soit fautif.
+      - name: Tests
+        run: npm test
+
       - name: Build
         run: npm run build
+
+  e2e:
+    name: Parcours de bout en bout (Playwright)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: hanabi-back/requirements*.txt
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hanabi-front/package-lock.json
+
+      - name: Installer l'API
+        run: pip install -r hanabi-back/requirements.txt
+
+      - name: Installer l'interface
+        run: npm ci
+        working-directory: hanabi-front
+
+      # `--with-deps` installe les bibliotheques systeme dont Chromium a besoin
+      # sur une image nue. Sans elles, le navigateur se lance et meurt aussitot,
+      # avec une erreur qui ne mentionne jamais la vraie cause.
+      - name: Installer Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: hanabi-front
+
+      # `PYTHON` : l'integration continue installe les dependances dans son
+      # propre environnement, sans le venv que la configuration cherche en local.
+      - name: Parcours de bout en bout
+        run: npm run e2e
+        working-directory: hanabi-front
+        env:
+          PYTHON: python
+
+      # Traces et captures du seul echec : de quoi rejouer le parcours image par
+      # image sans avoir a le reproduire.
+      - name: Conserver les traces en cas d'echec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: hanabi-front/test-results/
+          retention-days: 7

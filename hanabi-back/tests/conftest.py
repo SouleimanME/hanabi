@@ -50,6 +50,32 @@ def antibot_for():
     return solve_antibot
 
 
+# --------------------------------------------------------------------------
+# Courriels
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def boite_courriels(monkeypatch):
+    """Detourne les courriels vers une boite en memoire.
+
+    Applique partout, y compris aux tests qui n'y touchent pas : sans cela, la
+    sortie par defaut ecrirait de vrais fichiers .eml dans `var/courriels/` a
+    chaque commande de test, et la suite laisserait des dechets derriere elle.
+
+    La remise, elle, n'est jamais automatique en test : le `client` ci-dessous
+    ne declenche pas le lifespan, donc l'ouvrier de fond ne demarre pas, et les
+    tests qui veulent voir partir un message appellent `traiter_lot` eux-memes.
+    Une tache de fond et des assertions font mauvais menage - le test passerait
+    ou non selon la vitesse de la machine.
+    """
+    from app import mailer
+
+    boite = mailer.ExpediteurMemoire()
+    monkeypatch.setattr(mailer, "expediteur", boite)
+    return boite
+
+
 @pytest.fixture
 def db_session():
     # StaticPool : SQLite en memoire est propre a chaque connexion. Sans lui,
@@ -176,8 +202,11 @@ def user_factory(db_session):
 def auth_header(client, user_factory):
     """En-tete Authorization pour un client connecte."""
 
-    def make(email="client@test.fr", is_admin=False):
-        user, password = user_factory(email=email, is_admin=is_admin)
+    # `password` est transmis a `user_factory` : les tests du compte ont besoin
+    # de CONNAITRE le mot de passe courant, que plusieurs routes exigent avant
+    # de laisser changer un identifiant.
+    def make(email="client@test.fr", is_admin=False, password="MotDePasse1!"):
+        user, password = user_factory(email=email, is_admin=is_admin, password=password)
         res = client.post(
             "/auth/login",
             json={"email": email, "password": password, "antibot": solve_antibot("login")},

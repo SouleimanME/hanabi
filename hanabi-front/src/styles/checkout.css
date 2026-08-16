@@ -1,7 +1,17 @@
 /* Tunnel de paiement et page de confirmation. */
+/* `minmax(0, 1fr)` et non `1fr`.
+ *
+ * Le minimum implicite d'une piste `1fr` est `min-content`, pas zero : la
+ * colonne ne peut donc pas descendre sous la largeur du contenu le plus large
+ * qu'elle porte, et deborde de son conteneur au lieu de le comprimer. Le
+ * symptome est toujours le meme - un debordement horizontal sur petit ecran que
+ * la feuille de style ne semble pas expliquer.
+ *
+ * `minmax(0, 1fr)` autorise la piste a retrecir, et laisse aux enfants le soin
+ * de gerer leur propre debordement. */
 .co-in {
   display: grid;
-  grid-template-columns: 1.3fr 0.9fr;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
   gap: 46px;
   align-items: start;
 }
@@ -66,12 +76,12 @@
   top: -7px;
   right: -7px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 11px;
   font-weight: 700;
   min-width: 19px;
   height: 19px;
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,7 +106,7 @@
 .done-card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--r-sm);
   padding: 48px;
   text-align: center;
   max-width: 460px;
@@ -108,7 +118,7 @@
   height: 64px;
   border-radius: 99px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -130,7 +140,7 @@
   gap: 14px;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   padding: 18px;
   margin-bottom: 28px;
 }
@@ -143,4 +153,106 @@
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+/* Cartes enregistrees, au moment de payer.
+ *
+ * Des BOUTONS en groupe radio plutot qu'un `select` : le choix se fait en un
+ * geste, les quatre derniers chiffres restent lisibles sans deplier une liste,
+ * et l'ensemble se touche correctement au doigt. Un menu deroulant aurait cache
+ * l'information qui permet justement de reconnaitre sa carte. */
+.co-cartes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.co-carte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 2px solid transparent;
+  border-radius: var(--r-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.16s var(--ease-out),
+    background-color 0.16s var(--ease-out);
+}
+.co-carte:hover {
+  border-color: var(--line2);
+}
+/* La selection se dit par la TRANCHE, comme partout dans cette direction : le
+   tiroir du panier, le pied de page, la carte par defaut du compte. */
+.co-carte.on {
+  border-left-color: var(--accent);
+  background: var(--card);
+}
+.co-carte:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.co-carte-nom {
+  font-weight: 700;
+  font-size: 14px;
+}
+.co-carte-nom .mono {
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0.06em;
+}
+
+/* Acceptation des conditions de vente.
+ *
+ * JAMAIS PRE-COCHEE : une case deja cochee n'est pas un consentement. Le droit
+ * de la consommation comme le RGPD demandent un acte positif, et l'interface ne
+ * doit pas le simuler.
+ *
+ * Placee juste au-dessus du bouton de paiement, la ou le regard passe en
+ * dernier. Plus haut, elle serait oubliee ; en dessous, elle arriverait apres
+ * la decision. */
+.co-cgv {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  cursor: pointer;
+}
+.co-cgv input {
+  /* 18 px : au-dessous, la cible devient difficile a viser au doigt, et c'est
+     la derniere chose a rater avant de payer. */
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.co-cgv input[aria-invalid="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Un bouton et non un lien : il ouvre une fenetre, il ne navigue pas. Le rendre
+   `<a href>` promettrait une page que le clic ne donne pas. */
+.co-cgv-lien {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.co-cgv-lien:hover {
+  color: var(--gold);
 }

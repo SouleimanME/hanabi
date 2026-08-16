@@ -14,7 +14,7 @@
 .saved-thumb {
   width: 76px;
   height: 76px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);

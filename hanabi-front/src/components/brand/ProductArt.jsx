@@ -64,7 +64,7 @@ export const ProductArt = memo(function ProductArt({ art, small }) {
   }
 
   const brut = typeof art === "string" ? art : Array.isArray(art) ? art.join(",") : "";
-  const [shape, c1 = "#E0382A", c2 = "#E8DFC9"] = brut.split(",");
+  const [shape, c1 = "#D8452B", c2 = "#EFE7D6"] = brut.split(",");
   const id = cle(brut);
   const r = small ? 6 : 8;
 

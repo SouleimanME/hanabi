@@ -136,12 +136,12 @@ button.logo:active {
   top: 1px;
   right: 1px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 10px;
   font-weight: 700;
   min-width: 17px;
   height: 17px;
-  border-radius: 99px;
+  border-radius: var(--r-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -186,7 +186,7 @@ button.logo:active {
   gap: 8px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   padding: 8px 14px;
   color: var(--muted);
   transition:
@@ -222,7 +222,7 @@ button.logo:active {
   font-weight: 500;
   color: var(--muted);
   padding: 7px 16px;
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   border: 1px solid var(--line);
   background: var(--card);
   transition:
@@ -239,7 +239,7 @@ button.logo:active {
 }
 .chip.on {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 
@@ -319,14 +319,14 @@ button.logo:active {
 .msheet-count {
   margin-left: auto;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-style: normal;
   font-size: 11px;
   min-width: 19px;
   height: 19px;
-  border-radius: 99px;
+  border-radius: var(--r-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,7 +394,7 @@ button.logo:active {
   flex-wrap: wrap;
   background: var(--accent-soft);
   border: 1px dashed var(--accent);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   width: calc(100% - 48px);
 }
 .dropbar-l {

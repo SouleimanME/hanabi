@@ -357,7 +357,7 @@ zéro d'écart : la somme des commandes facturées dans `public.orders` et le to
 de `gold_kpi_mensuel` donnent le même nombre au centime.
 
 Rejouer la partition du mois en cours rattrape au passage les cotations publiées
-depuis la veille — la BCE publie en fin de journée ouvrée, et l'upsert rend
+depuis la veille : la BCE publie en fin de journée ouvrée, et l'upsert rend
 l'opération sans effet sur ce qui est déjà chargé.
 
 ### Le déclenchement

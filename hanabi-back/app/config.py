@@ -103,6 +103,73 @@ class Settings(BaseSettings):
     # met plusieurs secondes a saisir ; un robot repond instantanement.
     MIN_FORM_SECONDS: float = 1.5
 
+    # --- Conditions generales de vente ---
+    #
+    # La version acceptee est enregistree sur chaque commande. A CHANGER des que
+    # le texte des conditions change : sans cela, on saurait qu'une personne a
+    # coche une case, mais pas ce qu'elle a accepte - et c'est precisement ce
+    # qu'il faut pouvoir prouver.
+    CGV_VERSION: str = "2026-08"
+
+    # --- Journalisation (voir observability.py) ---
+    #
+    # Le JSON s'active de lui-meme en production : les hebergeurs l'indexent et
+    # le rendent interrogeable, alors que la meme ligne sur un terminal de
+    # developpement est illisible. Le reglage reste forcable dans les deux sens.
+    LOG_JSON: bool = False
+    LOG_LEVEL: str = "INFO"
+
+    # --- Courriels (voir mailer.py) ---
+    #
+    # `fichier` par defaut, et c'est un vrai mode de fonctionnement, pas un
+    # bouchon : le message complet est ecrit dans `var/courriels/` au format
+    # .eml, ouvrable d'un double-clic. Le depot reste ainsi clonable sans
+    # identifiants, ce qu'un SMTP par defaut interdirait.
+    #
+    # `smtp` bascule sur un vrai relais. Gratuits et suffisants pour ce projet :
+    # Brevo (300/jour a vie), Resend (3 000/mois), Gmail avec un mot de passe
+    # d'application (500/jour). Tous parlent le SMTP standard.
+    #
+    # `memoire` est reserve a la suite de tests.
+    MAIL_BACKEND: str = "fichier"
+    MAIL_FROM: str = "commandes@hanabi.example"
+    MAIL_FROM_NAME: str = "Hanabi"
+
+    # Racine publique de la BOUTIQUE, pas de l'API : c'est elle qui figure dans
+    # les liens de confirmation et de reinitialisation. Une valeur fausse produit
+    # des courriels dont les liens ne menent nulle part - panne silencieuse, que
+    # rien ne signale cote serveur puisque l'envoi, lui, a reussi.
+    PUBLIC_SITE_URL: str = "http://localhost:5173"
+
+    SMTP_HOST: str = ""
+    # 587 (STARTTLS) est le port courant ; 465 ouvre directement en TLS. Le code
+    # deduit le mode du port, parce que les confondre produit une attente muette
+    # jusqu'au delai d'expiration plutot qu'une erreur lisible.
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_STARTTLS: bool = True
+    SMTP_TIMEOUT: int = 10
+
+    # --- File d'attente des courriels (voir outbox.py) ---
+    #
+    # A zero, la tache de fond ne demarre pas : c'est ce que fait la suite de
+    # tests, qui declenche la remise elle-meme pour rester deterministe.
+    OUTBOX_INTERVALLE_SECONDES: float = 5.0
+    OUTBOX_LOT: int = 20
+    # Au-dela, le message est abandonne plutot que reessaye indefiniment. Cinq
+    # tentatives espacees exponentiellement couvrent environ une demi-heure
+    # d'indisponibilite du relais, ce qui absorbe l'immense majorite des pannes
+    # passageres sans encombrer la file de messages voues a l'echec.
+    OUTBOX_TENTATIVES_MAX: int = 5
+
+    # --- Idempotence (voir idempotency.py) ---
+    #
+    # Duree au-dela de laquelle une cle est oubliee. Assez longue pour couvrir
+    # tous les reessais plausibles d'un client, assez courte pour que la table
+    # ne croisse pas indefiniment.
+    IDEMPOTENCE_RETENTION_HEURES: int = 24
+
     @property
     def cors_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
@@ -140,4 +207,17 @@ def _resolve_secret(cfg: Settings) -> Settings:
     return cfg
 
 
-settings = _resolve_secret(Settings())
+def _defauts_selon_environnement(cfg: Settings) -> Settings:
+    """Aligne sur l'environnement les reglages dont le bon defaut en depend.
+
+    Seulement si l'on n'a rien dit : une valeur posee explicitement dans `.env`
+    l'emporte toujours. On regarde donc les champs REELLEMENT fournis plutot que
+    la valeur courante, qu'on ne saurait pas distinguer du defaut.
+    """
+    fournis = cfg.model_fields_set
+    if "LOG_JSON" not in fournis and cfg.is_prod:
+        cfg.LOG_JSON = True
+    return cfg
+
+
+settings = _defauts_selon_environnement(_resolve_secret(Settings()))

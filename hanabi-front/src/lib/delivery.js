@@ -46,12 +46,23 @@ export function isBeforeCutoff(from = new Date()) {
 /**
  * Date de livraison estimee pour une commande passee maintenant.
  *
+ * La valeur rendue est ramenee a minuit. Seul le JOUR est estime - il n'existe
+ * aucune heure de livraison ici - et conserver l'heure de la commande donnait
+ * une precision fictive, avec une consequence mesurable : une commande du
+ * samedi 0 h et une du vendredi 16 h arrivent le meme jeudi, mais la premiere
+ * portait 00:00 et la seconde 16:00. Comparees comme instants, commander PLUS
+ * TARD livrait donc PLUS TOT. L'affichage n'en montrait rien, puisqu'il ne lit
+ * que le jour, mais tout appelant qui compare deux estimations - un tri, un
+ * « livre avant le », un test - obtenait une reponse fausse.
+ *
  * @param {Date} [from]
- * @returns {Date}
+ * @returns {Date} minuit, le jour de livraison estime
  */
 export function estimateDelivery(from = new Date()) {
   const prepDays = isBeforeCutoff(from) ? 1 : 2;
-  return addBusinessDays(from, prepDays + TRANSIT_DAYS);
+  const date = addBusinessDays(from, prepDays + TRANSIT_DAYS);
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
 
 /**

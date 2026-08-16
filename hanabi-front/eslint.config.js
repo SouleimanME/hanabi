@@ -41,4 +41,31 @@ export default [
       "no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
+
+  // Les tests tournent sous Node, pas dans le navigateur : ils lisent des
+  // fichiers et interrogent des chemins. Sans ce bloc, `process` ou `console`
+  // seraient signales comme indefinis dans les seuls fichiers qui ont le droit
+  // de s'en servir.
+  {
+    files: ["**/*.test.{js,jsx}", "src/tests/**/*.js"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
+
+  // Outillage : parcours de bout en bout et scripts de construction. Ces
+  // fichiers tournent sous Node et non dans le navigateur.
+  {
+    files: ["e2e/**/*.js", "playwright.config.js", "scripts/**/*.js"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      // La fixture de Playwright se declare `async ({ page }, use) => ...` :
+      // `use` y est un parametre, pas le hook React du meme nom. La regle ne
+      // peut pas faire la difference, et n'a de toute facon rien a verifier
+      // dans un fichier sans composant.
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 ];

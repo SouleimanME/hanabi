@@ -1,0 +1,182 @@
+/* Ecrans atteints depuis un courriel : confirmation d'adresse, nouveau mot de
+   passe.
+ *
+ * Une colonne etroite, centree, rien autour. C'est le seul endroit du site ou
+ * l'on arrive avec une intention unique, venue d'ailleurs : proposer un
+ * catalogue ou une rubrique a cote reviendrait a disperser un geste qui n'a
+ * qu'un aboutissement. La sobriete est ici une decision, pas une economie. */
+.jeton-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 70px 24px 90px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.jeton-carte {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  /* La tranche de vermillon, comme le tiroir du panier et le pied de page :
+     c'est la signature de la direction, et elle dit que ce panneau est pose
+     sur la page plutot que decoupe dedans. */
+  border-top: 2px solid var(--accent);
+  border-radius: var(--r-lg);
+  padding: 38px 34px 32px;
+  text-align: center;
+}
+.jeton-carte.large {
+  max-width: 480px;
+}
+
+.jeton-carte h1 {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+.jeton-carte p {
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.65;
+  margin: 0 0 6px;
+}
+
+/* Pastille d'etat. Ronde : c'est un symbole, pas une surface - la regle des
+   deux pixels vise les panneaux, pas les emblemes. */
+.jeton-pastille {
+  width: 56px;
+  height: 56px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  border: 2px solid currentColor;
+}
+.jeton-pastille.ok {
+  color: var(--ok);
+}
+.jeton-pastille.echec {
+  color: var(--accent);
+}
+.jeton-pastille.neutre {
+  color: var(--accent);
+}
+.jeton-pastille.attente {
+  color: var(--muted);
+  border-style: dashed;
+}
+/* La rotation signale l'attente. Coupee si la personne a demande a limiter les
+   animations : une pastille immobile reste comprehensible, le titre le dit. */
+.jeton-pastille.attente svg {
+  animation: jeton-tourne 1.1s linear infinite;
+}
+@keyframes jeton-tourne {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jeton-pastille.attente svg {
+    animation: none;
+  }
+}
+
+.jeton-rassure {
+  margin-top: 14px !important;
+  font-size: 13px !important;
+}
+
+.jeton-form {
+  margin-top: 26px;
+  /* Les champs se lisent a gauche : un formulaire centre oblige l'oeil a
+     rechercher le debut de chaque libelle. Seul l'en-tete reste centre. */
+  text-align: left;
+}
+
+.jeton-erreur {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent) !important;
+  font-weight: 700;
+  font-size: 13px !important;
+  margin: 14px 0 0 !important;
+}
+
+.jeton-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+.jeton-form .jeton-actions {
+  justify-content: flex-start;
+}
+
+/* --- Mot de passe oublie, dans la fenetre de connexion --- */
+
+/* Un lien, pas un bouton : l'action est secondaire et ne doit pas concurrencer
+   « Se connecter ». Aligne a droite sous le champ, la ou se pose le regard au
+   moment precis ou l'on se rend compte qu'on a oublie. */
+.lien-oubli {
+  display: block;
+  margin: 8px 0 0 auto;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out);
+}
+.lien-oubli:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.lien-oubli:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.modal-intro {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.oubli-envoye {
+  text-align: center;
+  padding: 22px 6px 10px;
+  color: var(--ok);
+}
+.oubli-envoye p {
+  color: var(--ink);
+  font-weight: 700;
+  margin: 12px 0 0;
+}
+.oubli-envoye p.muted {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .jeton-page {
+    padding: 44px 16px 70px;
+  }
+  .jeton-carte {
+    padding: 30px 22px 26px;
+  }
+}

@@ -72,8 +72,10 @@ suivante.
 2. **Create project**. Choisir une région proche de celle du service Render
    (`aws-eu-central-1` pour Francfort) : chaque requête traverse le réseau, et
    deux continents ajoutent une centaine de millisecondes à chacune.
-3. Dans **Connection Details**, copier la chaîne de connexion **directe** —
-   celle proposée par défaut, dont le nom d'hôte ne comporte pas `-pooler`.
+3. Dans le panneau **Connect**, copier la chaîne de connexion **directe** :
+   celle du format « Connection string », dont le nom d'hôte ne comporte pas
+   `-pooler`. L'option **Connection pooling** doit être désactivée, sinon c'est
+   la variante mise en commun qui est proposée.
 
    Le gestionnaire de connexions de Neon travaille en mode transaction et ne
    conserve pas l'état de session. Or l'API fixe le fuseau de sa session à UTC
@@ -105,6 +107,71 @@ dans la foulée.
   réveil prend quelques centaines de millisecondes, et le pool est configuré
   pour le supporter (`pool_pre_ping`).
 - Pas de date d'expiration : le projet reste en place tant qu'il est utilisé.
+
+### Sauvegardes et restauration
+
+Neon sauvegarde en continu, et l'offre gratuite permet de **remonter le temps
+sur les sept derniers jours** (*point-in-time recovery*). C'est un vrai filet,
+mais il ne couvre pas tout — et surtout, il ne se découvre pas le jour où on en
+a besoin.
+
+**Ce que Neon couvre.** Une suppression accidentelle, une migration ratée, un
+`UPDATE` sans `WHERE` : on crée une branche à l'instant précédant l'incident,
+on vérifie, puis on bascule. Dans la console Neon : *Branches → Create branch →
+Time travel*, en choisissant l'horodatage.
+
+**Ce que Neon ne couvre pas.** Un compte fermé, un projet supprimé, ou une
+panne du fournisseur emportent aussi les sauvegardes. Une copie hors de chez lui
+reste nécessaire dès que les données ont de la valeur.
+
+Copie manuelle, avec la chaîne **directe** (pas celle du *pooler*) :
+
+```bash
+pg_dump "$DWH_DATABASE_URL" --format=custom --no-owner --file=hanabi-$(date +%F).dump
+```
+
+Restauration dans une base vide :
+
+```bash
+pg_restore --dbname="$URL_CIBLE" --no-owner --clean --if-exists hanabi-2026-08-16.dump
+```
+
+**Une sauvegarde jamais restaurée n'est pas une sauvegarde.** La seule façon de
+savoir qu'un fichier `.dump` est exploitable est de le restaurer ailleurs et de
+compter les lignes. À faire une fois, sur une branche Neon jetable, plutôt que
+de le supposer.
+
+> Sur ce projet, la base est reconstructible : le catalogue vient de `seed.py`
+> et le jeu de démonstration de `demo_data.py`. Les seules données réellement
+> irremplaçables seraient de vraies commandes de vrais clients — il n'y en a
+> pas. La procédure est documentée parce qu'elle devrait exister avant d'en
+> avoir besoin, pas parce qu'il y a aujourd'hui quelque chose à sauver.
+
+### Savoir que le site est tombé
+
+`/health` exécute un aller-retour réel jusqu'à la base et rend **503** si elle
+ne répond pas. C'est correct, et parfaitement inutile tant que personne ne
+l'interroge.
+
+Le workflow `.github/workflows/surveillance.yml` la sonde toutes les quinze
+minutes. Il échoue si l'API est injoignable, si elle rend autre chose que 200,
+ou si elle rend 200 avec `status: degrade` — ce qui arrive quand la remise des
+courriels est en panne alors que le site répond normalement.
+
+Pour l'activer, ajouter un secret de dépôt :
+
+| Secret | Valeur |
+| --- | --- |
+| `API_HEALTH_URL` | `https://ton-api.onrender.com/health` |
+
+Sans ce secret, le workflow ne fait rien plutôt que d'échouer : un dépôt cloné
+ne doit pas sonner l'alarme faute de configuration. L'alerte arrive par le
+courriel que GitHub envoie à la première exécution en échec.
+
+**Limite assumée** : les tâches planifiées de GitHub ne sont pas ponctuelles —
+plusieurs minutes de retard sont courantes — et se désactivent après soixante
+jours sans activité sur le dépôt. Ce n'est pas de la surveillance à la seconde ;
+c'est la différence entre l'apprendre au réveil et l'apprendre par un visiteur.
 
 ---
 

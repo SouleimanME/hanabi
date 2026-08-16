@@ -7,7 +7,7 @@
   background: var(--ink);
   color: var(--paper);
   padding: 12px 20px;
-  border-radius: 99px;
+  border-radius: var(--r-btn);
   display: flex;
   align-items: center;
   gap: 9px;
