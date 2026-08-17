@@ -1,32 +1,48 @@
 # Surveillance de la sonde de sante.
 #
 # CE QUE CE FICHIER REPARE. `/health` fait un aller-retour reel jusqu'a la base
-# et repond 503 quand elle ne repond plus. C'est correct - et parfaitement
+# et repond 503 quand elle ne repond plus. C'est correct, et parfaitement
 # inutile tant que personne n'ecoute. Une sonde que rien n'interroge est un
 # journal que personne ne lit.
 #
 # POURQUOI GITHUB ACTIONS plutot qu'un service de surveillance. Le projet tient
 # sur des paliers gratuits, et un service de plus signifie un compte de plus, un
-# jeton de plus a faire tourner, une facture de plus a surveiller. Un `cron`
-# ici ne coute rien, tourne dans une infrastructure deja utilisee, et
-# l'alerte arrive par le canal que l'on regarde deja : une tache rouge et le
-# courriel que GitHub envoie automatiquement a la premiere execution en echec.
+# jeton de plus a faire tourner, une facture de plus a surveiller. Un `cron` ici
+# ne coute rien, tourne dans une infrastructure deja utilisee, et l'alerte
+# arrive par le canal qu'on regarde deja : une tache rouge et le courriel que
+# GitHub envoie a la premiere execution en echec.
 #
-# LA LIMITE EST ASSUMEE. Les taches planifiees de GitHub ne sont pas ponctuelles
-# - un retard de plusieurs minutes est courant, et elles sont desactivees apres
-# soixante jours sans activite sur le depot. Ce n'est donc pas de la
-# surveillance de production a la seconde ; c'est ce qui distingue « le site est
-# tombe cette nuit et je l'apprends au reveil » de « je l'apprends par un
-# visiteur ».
+# DEUX LECONS APPRISES A LA PREMIERE EXECUTION, toutes deux dues au palier
+# gratuit de l'hebergeur.
+#
+#   1. UN DEMARRAGE A FROID N'EST PAS UNE PANNE. Render eteint un service
+#      gratuit apres quinze minutes sans requete, et son reveil depasse
+#      largement les trente secondes que la premiere version accordait. La
+#      sonde a donc echoue sur un service en parfait etat. C'est le pire defaut
+#      qu'un moniteur puisse avoir : il crie au loup des que le site n'a pas
+#      servi, et on apprend a ignorer ses alertes.
+#
+#      La sonde reveille donc d'abord, sans juger, puis mesure.
+#
+#   2. SONDER TROP SOUVENT COUTE LE QUOTA. Une requete tous les quarts d'heure
+#      maintient le service eveille en permanence, soit environ 730 heures
+#      d'instance par mois pour une allocation gratuite de 750. Il ne resterait
+#      rien pour les vrais visiteurs. Une fois par heure laisse le service
+#      dormir entre deux passages.
+#
+# LA LIMITE EST ASSUMEE. Les taches planifiees de GitHub ne sont pas
+# ponctuelles, et se desactivent apres soixante jours sans activite sur le
+# depot. Ce n'est pas de la surveillance a la seconde ; c'est ce qui distingue
+# « le site est tombe cette nuit et je l'apprends au reveil » de « je l'apprends
+# par un visiteur ».
 
 name: Surveillance
 
 on:
   schedule:
-    # Toutes les quinze minutes. Plus souvent n'apporterait rien : la base
-    # hebergee se reveille en quelques secondes, et une panne reelle dure
-    # bien plus longtemps que cet intervalle.
-    - cron: "*/15 * * * *"
+    # Une fois par heure. Voir la lecon 2 ci-dessus : plus souvent viderait
+    # l'allocation gratuite de l'hebergeur.
+    - cron: "17 * * * *"
   # Declenchable a la main, pour verifier le dispositif sans attendre.
   workflow_dispatch:
 
@@ -44,9 +60,9 @@ jobs:
     steps:
       # L'adresse vit dans un secret et non dans le fichier : elle n'a rien de
       # confidentiel, mais la placer ici obligerait a modifier le depot pour
-      # changer d'hebergeur. Si le secret est absent, la tache passe sans
-      # rien faire plutot que d'echouer - un depot clone ne doit pas sonner
-      # l'alarme faute de configuration.
+      # changer d'hebergeur. Si le secret est absent, la tache passe sans rien
+      # faire plutot que d'echouer : un depot clone ne doit pas sonner l'alarme
+      # faute de configuration.
       - name: Interroger la sonde
         env:
           URL: ${{ secrets.API_HEALTH_URL }}
@@ -56,18 +72,39 @@ jobs:
             exit 0
           fi
 
-          # `--max-time` : une API qui met plus de trente secondes a repondre
-          # est aussi indisponible qu'une API muette, du point de vue d'un
-          # visiteur.
-          reponse=$(curl -sS --max-time 30 -w '\n%{http_code}' "$URL" || echo -e '\n000')
-          corps=$(echo "$reponse" | head -n -1)
-          code=$(echo "$reponse" | tail -n 1)
+          # --- 1. Reveil, sans jugement ---------------------------------
+          # Un service endormi met parfois une minute a repondre. Cette
+          # premiere requete ne sert qu'a le sortir de veille : son resultat
+          # est ignore, y compris son echec.
+          debut=$(date +%s)
+          curl -sS --max-time 120 -o /dev/null "$URL" || true
+          reveil=$(( $(date +%s) - debut ))
+          echo "Reveil : ${reveil}s"
+
+          # --- 2. Mesure, cette fois pour de bon ------------------------
+          # Le service est desormais chaud. Dix secondes suffisent largement,
+          # et un depassement signale une vraie lenteur, pas une mise en veille.
+          # Corps et code separes, plutot que concatenes puis redecoupes.
+          #
+          # Et SANS repli `|| echo 000` : curl ecrit deja « 000 » via `-w`
+          # lorsque la connexion echoue, si bien qu'un repli le doublait et
+          # produisait un code « 000000 » que plus aucune comparaison ne
+          # reconnaissait. La sonde signalait alors une panne, mais pas la
+          # bonne.
+          #
+          # Le fichier est efface avant chaque appel : sans cela, un corps
+          # laisse par une execution precedente s'affichait dans la trace d'un
+          # echec ou rien n'avait ete recu.
+          rm -f corps.txt
+          code=$(curl -sS --max-time 10 -o corps.txt -w '%{http_code}' "$URL") || true
+          code=${code:-000}
+          corps=$(cat corps.txt 2>/dev/null || true)
 
           echo "Code HTTP : $code"
           echo "Reponse   : $corps"
 
           if [ "$code" = "000" ]; then
-            echo "::error::API injoignable - aucune reponse en 30 s."
+            echo "::error::API injoignable, meme apres un reveil de ${reveil}s."
             exit 1
           fi
           if [ "$code" != "200" ]; then
@@ -79,10 +116,9 @@ jobs:
           # la remise des courriels est en panne. Le service repond, mais
           # quelque chose ne va pas, et c'est precisement ce qu'on veut savoir
           # sans attendre qu'un client se plaigne.
-          etat=$(echo "$corps" | grep -o '"status":"[a-z]*"' | head -1)
-          if echo "$etat" | grep -q "degrade"; then
+          if echo "$corps" | grep -q '"status":"degrade"'; then
             echo "::error::Service degrade : $corps"
             exit 1
           fi
 
-          echo "::notice::Service en bonne sante."
+          echo "::notice::Service en bonne sante (reveil ${reveil}s)."
