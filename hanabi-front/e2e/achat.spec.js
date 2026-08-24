@@ -158,8 +158,8 @@ test.describe("Tunnel d'achat", () => {
   });
 
   test("payer sans accepter les conditions est refusé", async ({ page }) => {
-    /* Obligatoire en vente à distance. Le serveur refuse aussi — c'est vérifié
-     * côté API — mais ce parcours prouve que la case existe bel et bien à
+    /* Obligatoire en vente à distance. Le serveur refuse aussi (c'est vérifié
+     * côté API), mais ce parcours prouve que la case existe bel et bien à
      * l'écran et qu'elle bloque. Une règle qui ne vit que dans les tests
      * d'API ne protège personne. */
     await ouvrirBoutique(page);

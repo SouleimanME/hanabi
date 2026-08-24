@@ -6,7 +6,7 @@
  *
  * L'effacement est donc replié par défaut, séparé par un filet, et demande deux
  * confirmations. Ce n'est pas de la cérémonie : le mot de passe prouve qu'on est
- * bien là maintenant — une session prouve qu'on y était il y a douze heures —
+ * bien là maintenant (une session prouve qu'on y était il y a douze heures),
  * et la formule recopiée prouve qu'on a lu ce qui va se passer.
  */
 import { useState } from "react";

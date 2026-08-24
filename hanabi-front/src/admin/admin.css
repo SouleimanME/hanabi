@@ -2475,7 +2475,7 @@ textarea {
  * vif. Trois nuances voisines d'une même couleur ne se classent pas : côte à
  * côte elles se lisaient comme une seule, et il fallait comparer deux titres
  * pour deviner lequel venait avant. La teinte est un mauvais canal pour un
- * ordre — elle sait dire « autre », pas « ensuite » — et une direction qui ne
+ * ordre (elle sait dire « autre », pas « ensuite »), et une direction qui ne
  * s'autorise qu'une couleur ne pouvait de toute façon pas en tirer trois.
  *
  * L'ordre passe donc dans la LONGUEUR d'un filet unique, en une seule couleur :

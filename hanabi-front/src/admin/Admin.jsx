@@ -3160,7 +3160,7 @@ function Exploitation() {
                     </span>
                   </td>
                   <td className="num">{m.tentatives}</td>
-                  <td className="expl-motif">{m.erreur || "—"}</td>
+                  <td className="expl-motif">{m.erreur || "-"}</td>
                 </tr>
               ))}
             </tbody>
@@ -3325,7 +3325,7 @@ function Warehouse({ flash }) {
                   à l'œil : hors du podium sportif, rien ne dit lequel vient en
                   premier, et la seule nuance qui les distinguait tenait dans trois
                   vermillons voisins. Un numéro tranche sans rien demander à la
-                  couleur — donc lisible aussi pour qui ne la distingue pas. */}
+                  couleur, donc lisible aussi pour qui ne la distingue pas. */}
               <span className="wh-couche-rang mono" aria-hidden="true">
                 {String(rang + 1).padStart(2, "0")}
               </span>

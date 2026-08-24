@@ -112,8 +112,8 @@ dans la foulée.
 
 Neon sauvegarde en continu, et l'offre gratuite permet de **remonter le temps
 sur les sept derniers jours** (*point-in-time recovery*). C'est un vrai filet,
-mais il ne couvre pas tout — et surtout, il ne se découvre pas le jour où on en
-a besoin.
+mais il ne couvre pas tout, et surtout il ne se découvre pas le jour où on en a
+besoin.
 
 **Ce que Neon couvre.** Une suppression accidentelle, une migration ratée, un
 `UPDATE` sans `WHERE` : on crée une branche à l'instant précédant l'incident,
@@ -143,8 +143,8 @@ de le supposer.
 
 > Sur ce projet, la base est reconstructible : le catalogue vient de `seed.py`
 > et le jeu de démonstration de `demo_data.py`. Les seules données réellement
-> irremplaçables seraient de vraies commandes de vrais clients — il n'y en a
-> pas. La procédure est documentée parce qu'elle devrait exister avant d'en
+> irremplaçables seraient de vraies commandes de vrais clients. Il n'y en a pas.
+> La procédure est documentée parce qu'elle devrait exister avant d'en
 > avoir besoin, pas parce qu'il y a aujourd'hui quelque chose à sauver.
 
 ### Savoir que le site est tombé
@@ -155,7 +155,7 @@ l'interroge.
 
 Le workflow `.github/workflows/surveillance.yml` la sonde toutes les quinze
 minutes. Il échoue si l'API est injoignable, si elle rend autre chose que 200,
-ou si elle rend 200 avec `status: degrade` — ce qui arrive quand la remise des
+ou si elle rend 200 avec `status: degrade`, ce qui arrive quand la remise des
 courriels est en panne alors que le site répond normalement.
 
 Pour l'activer, ajouter un secret de dépôt :
@@ -168,8 +168,8 @@ Sans ce secret, le workflow ne fait rien plutôt que d'échouer : un dépôt clo
 ne doit pas sonner l'alarme faute de configuration. L'alerte arrive par le
 courriel que GitHub envoie à la première exécution en échec.
 
-**Limite assumée** : les tâches planifiées de GitHub ne sont pas ponctuelles —
-plusieurs minutes de retard sont courantes — et se désactivent après soixante
+**Limite assumée** : les tâches planifiées de GitHub ne sont pas ponctuelles
+(plusieurs minutes de retard sont courantes) et se désactivent après soixante
 jours sans activité sur le dépôt. Ce n'est pas de la surveillance à la seconde ;
 c'est la différence entre l'apprendre au réveil et l'apprendre par un visiteur.
 

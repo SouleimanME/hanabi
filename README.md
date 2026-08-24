@@ -129,7 +129,7 @@ assumée : la remise est au-moins-une-fois, jamais exactement-une-fois.
 **Le paiement est simulé, mais ses chemins d'échec sont jouables.** Aucun argent
 ne circule et rien ne saurait l'encaisser. L'étape existe parce qu'elle change
 la nature des garde-fous autour : rejouer une insertion est bénin, rejouer un
-débit ne l'est pas. Le cas intéressant est l'issue **indécise** — un délai
+débit ne l'est pas. Le cas intéressant est l'issue **indécise** : un délai
 dépassé ne dit pas si le débit a eu lieu. On ne peut ni confirmer, ce serait
 livrer un paiement non prouvé, ni annuler, ce serait oublier un débit possible
 et rendre un stock peut-être déjà vendu. La commande reste donc en attente de
@@ -146,7 +146,7 @@ dont le `rowcount` décide, avec une contrainte `CHECK (stock >= 0)` en filet
 dernier. La suite lance de vrais fils d'exécution derrière une barrière de
 départ : douze acheteurs sur un article, une seule commande. Le test qui
 existait auparavant s'appelait « concurrentes » mais envoyait ses requêtes l'une
-après l'autre — il ne mettait jamais deux appels en vol ensemble, ce qui est
+après l'autre. Il ne mettait jamais deux appels en vol ensemble, ce qui est
 précisément là où l'entrelacement se produit.
 
 ### Le compte, et ce qu'on n'y stocke pas
@@ -157,15 +157,15 @@ défendues.
 
 **La table des moyens de paiement ne contient ni numéro ni cryptogramme.**
 Réseau, quatre derniers chiffres, expiration, et un jeton opaque du
-prestataire — exactement ce qu'une intégration réelle conserve. Le numéro est
-réduit dans le navigateur à ce qui sert à reconnaître la carte, et rien d'autre
-n'est construit, donc rien d'autre ne peut partir. Vérifié sur le fil, et un
-test échoue si un jour quelqu'un ajoute le numéro « juste pour déboguer ». On ne
-se fait pas voler ce qu'on ne détient pas : c'est ce qui maintient l'application
-hors du périmètre PCI-DSS.
+prestataire. C'est exactement ce qu'une intégration réelle conserve. Le numéro
+est réduit dans le navigateur à ce qui sert à reconnaître la carte, et rien
+d'autre n'est construit, donc rien d'autre ne peut partir. Vérifié sur le fil, et
+un test échoue si un jour quelqu'un ajoute le numéro « juste pour déboguer ». On
+ne se fait pas voler ce qu'on ne détient pas : c'est ce qui maintient
+l'application hors du périmètre PCI-DSS.
 
 **Deux niveaux d'exigence.** Modifier le contenu du compte demande d'être
-connecté ; modifier ce qui en donne l'accès — mot de passe, e-mail — demande en
+connecté ; modifier ce qui en donne l'accès (mot de passe, e-mail) demande en
 plus le mot de passe courant. Une session prouve qu'on était là il y a douze
 heures, pas qu'on est là maintenant, et un poste laissé ouvert suffirait sinon à
 verrouiller le propriétaire dehors. La nouvelle adresse repart non confirmée,
@@ -178,7 +178,7 @@ valeurs périmées ce qu'un autre onglet vient de modifier.
 
 Aucune de ces routes ne prend d'identifiant de compte : elles agissent sur le
 porteur du jeton. Il n'y a pas de `?user_id=2` à falsifier parce qu'il n'y a pas
-de paramètre. La carte d'un autre rend 404, jamais 403 — un 403 confirmerait son
+de paramètre. La carte d'un autre rend 404, jamais 403 : un 403 confirmerait son
 existence.
 
 ### La bizarrerie qui cassait tout le tunnel d'achat au téléphone
@@ -189,8 +189,8 @@ refusait de rétrécir.
 `<fieldset>` porte un `min-width: min-content` implicite dans tous les
 navigateurs, que rien dans la feuille de style ne laisse deviner et qu'aucun
 autre élément ne partage. Un `<div>` identique se comprime, un `<fieldset>` non.
-Combinée à une piste de grille `1fr` — dont le minimum implicite est
-`min-content`, pas zéro — elle imposait 371 px dans un conteneur de 343.
+Combinée à une piste de grille `1fr` (dont le minimum implicite est
+`min-content`, pas zéro), elle imposait 371 px dans un conteneur de 343.
 
 Deux lignes corrigent les deux causes : `fieldset { min-width: 0 }` et
 `minmax(0, 1fr)`. Le défaut était antérieur à la refonte du compte, et se
@@ -201,12 +201,12 @@ serait vu sur n'importe quel téléphone.
 Huit parcours Playwright, dans un vrai navigateur, contre une vraie API. Les
 tests unitaires vérifient des pièces, les tests d'API vérifient des contrats ;
 aucun des deux ne répond à « est-ce qu'on peut acheter ». Entre les deux vivent
-le câblage, le routage, la sérialisation et l'état partagé — et c'est là que
-casse un tunnel d'achat.
+le câblage, le routage, la sérialisation et l'état partagé. C'est là que casse
+un tunnel d'achat.
 
 L'API démarrée pour ces tests pointe sur un SQLite jetable, jamais sur une base
 réelle : un parcours d'achat **écrit**, il décrémente du stock et crée des
-commandes. Les barrières anti-robots, elles, ne sont pas désactivées — le
+commandes. Les barrières anti-robots, elles, ne sont pas désactivées : le
 parcours les traverse pour de vrai.
 
 Le test le plus intéressant est **le réessai après coupure réseau**.
@@ -218,7 +218,7 @@ chaque appel passerait tous les tests serveur et ne protégerait de rien.
 Le scénario a changé en cours d'écriture, et l'échec du premier était
 instructif : un double-clic littéral est **impossible** par l'interface,
 puisque le bouton se désactive pendant l'envoi puis disparaît avec l'écran. La
-clé ne protège donc pas là où on la croyait — elle protège du réessai après une
+clé ne protège donc pas là où on la croyait : elle protège du réessai après une
 coupure, et c'est ce cas-là qui est reproduit.
 
 ### Le poids ne dérive pas tout seul
@@ -229,9 +229,9 @@ monte de trois kilo-octets par semaine sans qu'aucune journée ne soit fautive.
 
 | lot | transféré (gzip) | plafond |
 | --- | ---: | ---: |
-| `index` — React et le socle | 45,4 ko | 51 ko |
-| `App` — la boutique | 55,9 ko | 63 ko |
-| `Admin` — chargé à la demande | 24,2 ko | 28 ko |
+| `index` (React et le socle) | 45,4 ko | 51 ko |
+| `App` (la boutique) | 55,9 ko | 63 ko |
+| `Admin` (chargé à la demande) | 24,2 ko | 28 ko |
 | CSS | 19,2 ko | 22 ko |
 
 Les plafonds sont mesurés puis arrondis avec environ 12 % de marge. Un budget
@@ -246,7 +246,7 @@ point est plus subtil qu'il n'y paraît, et **ce n'est pas un `DELETE`**.
 Effacer la ligne d'un client détruirait ses commandes, or le Code de commerce
 impose de conserver dix ans les pièces comptables. Le RGPD le prévoit :
 l'article 17-3-b écarte le droit à l'effacement lorsqu'une obligation légale
-s'y oppose. Les deux textes ne se contredisent pas — ils délimitent.
+s'y oppose. Les deux textes ne se contredisent pas : ils délimitent.
 
 On **anonymise** donc. Tout ce qui identifie une personne disparaît, tout ce qui
 fait foi comptablement reste. Une commande conserve sa date, ses montants et ses
@@ -265,14 +265,14 @@ rend le compte inaccessible sans dépendre d'un drapeau que chaque nouvelle rout
 devrait penser à vérifier.
 
 Deux confirmations sont exigées : le mot de passe prouve qu'on est là
-*maintenant* — une session prouve seulement qu'on y était il y a douze heures —
+*maintenant* (une session prouve seulement qu'on y était il y a douze heures),
 et une formule recopiée prouve qu'on a lu ce qui va se passer.
 
 **Le test qui compte procède par balayage.** Il ne coche pas les tables
 auxquelles on a pensé : il parcourt toutes les colonnes textuelles du schéma et
 cherche les valeurs personnelles. Une table ajoutée plus tard et oubliée dans
-`rgpd.anonymiser` le fera échouer sans qu'on ait rien à y ajouter — vérifié en
-retirant volontairement une étape, le test nomme alors la colonne fautive.
+`rgpd.anonymiser` le fera échouer sans qu'on ait rien à y ajouter. Vérifié en
+retirant volontairement une étape : le test nomme alors la colonne fautive.
 
 Limite assumée : le texte des avis reste en ligne sous un auteur anonyme. Un
 avis parle d'un produit et les autres clients s'y fient ; si quelqu'un y a écrit
@@ -288,13 +288,13 @@ aplats vermillon, seize fois.
 
 Le jeton `--on-accent` existait depuis le début et n'était utilisé **nulle
 part**. Sur le vermillon clair du thème sombre, le blanc donne 3,12:1 ; le noir
-de laque donne 6,4:1 — et c'est plus fidèle au negoro, où le vermillon recouvre
-le noir, pas du blanc.
+de laque donne 6,4:1. C'est aussi plus fidèle au negoro, où le vermillon
+recouvre le noir, pas du blanc.
 
 Le thème clair a révélé un second défaut, structurel celui-là : le pied de page
 reste sombre quel que soit le thème, mais son accent, lui, suivait le thème. En
 clair, du vermillon foncé sur du noir donnait 3,79:1. Une surface qui ne change
-pas veut des couleurs qui ne changent pas — d'où un `--footer-accent` constant.
+pas veut des couleurs qui ne changent pas, d'où un `--footer-accent` constant.
 
 Le vermillon du thème clair a été assombri de `#c33a20` à `#ad3116`, valeur
 trouvée en essayant les candidats un par un contre les quatre fonds réellement
@@ -305,7 +305,7 @@ Résultat : **zéro échec sur 164 textes, dans les deux thèmes.**
 
 ### L'acceptation des conditions de vente
 
-Obligatoire en vente à distance, et vérifiée **côté serveur** — une case qui ne
+Obligatoire en vente à distance, et vérifiée **côté serveur** : une case qui ne
 vit que dans le navigateur se contourne depuis la console.
 
 Ce n'est pas un booléen mais une **version** qui est enregistrée sur la
@@ -323,7 +323,7 @@ Chaque requête porte un identifiant, repris du client s'il en fournit un et
 renvoyé dans la réponse. Les journaux sortent en JSON dès que `ENV=prod`, avec
 les champs métier posés par l'appelant plutôt que noyés dans du texte libre :
 on retrouve une commande par une recherche sur un champ, pas par une expression
-régulière. Les adresses IP y sont tronquées à leur préfixe réseau — assez pour
+régulière. Les adresses IP y sont tronquées à leur préfixe réseau : assez pour
 reconnaître une source abusive, pas assez pour suivre une personne.
 
 La sonde `/health` exécute un aller-retour réel jusqu'à la base et répond 503 si
@@ -340,7 +340,7 @@ en-têtes MIME compris, celui-là même qui partirait sur le réseau. Le dépôt
 donc clonable sans identifiants, ce qu'un SMTP par défaut interdirait.
 
 Renseigner `MAIL_BACKEND=smtp` et un hôte bascule sur un vrai relais, sans une
-ligne de code supplémentaire — `smtplib` de la bibliothèque standard suffit.
+ligne de code supplémentaire : `smtplib` de la bibliothèque standard suffit.
 Brevo, Resend et Gmail ont tous une offre gratuite largement suffisante ici.
 Voir `.env.example`, qui donne les trois configurations et le piège du port :
 587 passe en TLS après ouverture, 465 chiffre dès l'ouverture, et les confondre
@@ -577,7 +577,7 @@ signalés parce qu'ils vérifient une **propriété** et non une valeur figée.
   module avertissait déjà en console ; un avertissement se lit s'il est lu, ce
   test bloque.
 - Les frais de port et le seuil de gratuité sont dupliqués entre
-  `lib/constants.js` et `app/pricing.py` — nécessaire pour afficher un total
+  `lib/constants.js` et `app/pricing.py`, nécessaire pour afficher un total
   avant la réponse réseau. Un test lit le fichier Python et compare : la
   duplication reste, la dérive silencieuse non.
 

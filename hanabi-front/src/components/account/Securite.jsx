@@ -3,7 +3,7 @@
  * CES DEUX-LÀ SONT ENSEMBLE, et pas avec les informations personnelles, parce
  * qu'ils ne relèvent pas de la même chose : le nom et l'adresse postale sont le
  * CONTENU du compte, le mot de passe et l'e-mail en sont l'ACCÈS. Les deux
- * exigent donc le mot de passe courant — une session prouve qu'on était là il y
+ * exigent donc le mot de passe courant : une session prouve qu'on était là il y
  * a douze heures, pas qu'on est là maintenant, et un poste laissé ouvert
  * quelques minutes suffirait sinon à verrouiller le propriétaire dehors.
  */

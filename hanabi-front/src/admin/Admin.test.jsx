@@ -1,13 +1,13 @@
 /** Back-office : assemblage, navigation, et l'écran d'exploitation.
  *
  * TESTE PAR LE HAUT, en rendant `<Admin />` entier plutôt que ses morceaux. Ce
- * fichier n'exporte qu'un composant racine — les sous-composants sont internes,
+ * fichier n'exporte qu'un composant racine : les sous-composants sont internes,
  * et les extraire pour les tester changerait le code pour satisfaire le test.
  * Ce qu'on vérifie ici est justement le CÂBLAGE : que l'onglet mène à la bonne
  * vue, que la vue appelle la bonne route, que la réponse arrive à l'écran.
  *
- * `fetch` est remplacé par une table d'itinéraires. Le reste — état, rendu,
- * navigation — est le vrai code.
+ * `fetch` est remplacé par une table d'itinéraires. Le reste (état, rendu,
+ * navigation) est le vrai code.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
