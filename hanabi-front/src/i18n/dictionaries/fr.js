@@ -76,6 +76,9 @@ export default {
   reviewPh: "Ce que tu en penses, en quelques mots",
   publish: "Publier mon avis",
   firstReview: "Aucun avis pour l'instant.",
+  reviewsLoading: "Chargement des avis",
+  ratingSpread: "Répartition des notes",
+  starsCount: { one: "{n} étoile", other: "{n} étoiles" },
   verified: "achat vérifié",
   related: "Dans la même catégorie",
   boughtTogether: "Souvent achetés ensemble",
@@ -187,6 +190,7 @@ export default {
   legalDraft:
     "Informations d'entreprise non renseignées : ce site est un projet personnel et n'exerce aucune activité commerciale.",
   legalUpdated: "Dernière mise à jour : {date}",
+  zoomHint: "Clic, molette ou pincement pour zoomer ; glisser pour se déplacer.",
 
   // En-tete et menu
   skipToContent: "Aller au contenu",

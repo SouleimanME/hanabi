@@ -31,15 +31,24 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Seules les graisses employees sont demandees. Shippori Mincho B1 porte
-         les titres et les noms d'objets, Manrope le corps, Zen Kaku Gothic New
-         les ideogrammes que Manrope ne dessine pas. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Polices servies par le site (src/styles/fonts.css). Les deux fichiers du
+         premier écran partent avant la feuille de style : pas de texte qui saute. -->
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@500&display=swap"
+      rel="preload"
+      href="/fonts/manrope-400-800-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <link
+      rel="preload"
+      href="/fonts/shippori-700-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <!-- Photos du catalogue : la connexion au CDN s'ouvre pendant le chargement du script -->
+    <link rel="preconnect" href="https://images.unsplash.com" />
   </head>
   <body>
     <div id="root"></div>

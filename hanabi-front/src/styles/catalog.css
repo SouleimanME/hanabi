@@ -516,3 +516,11 @@
 .recent-item .price {
   font-size: var(--step--1);
 }
+
+/* Hors du premier écran : calculé à l'approche seulement. La hauteur réelle,
+   une fois connue, remplace l'estimation et le défilement ne saute pas. */
+.triptyque,
+.recent {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}

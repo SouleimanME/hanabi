@@ -218,3 +218,271 @@
   font-size: var(--step--1);
   color: var(--muted);
 }
+
+/* Résumé des avis : la note moyenne en plaque de vermillon, la répartition à côté */
+.review-summary {
+  display: grid;
+  gap: var(--space-s) var(--space-l);
+  align-items: center;
+  margin-block-end: var(--space-m);
+}
+@media (min-width: 40rem) {
+  .review-summary {
+    grid-template-columns: auto minmax(0, 22rem);
+    justify-content: start;
+    column-gap: var(--space-xl);
+  }
+}
+.review-score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+.plaque-note {
+  padding: 0.05em 0.22em 0.1em;
+  border-radius: var(--r-surface);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-5);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.review-score-sub {
+  display: grid;
+  gap: 4px;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.review-spread {
+  display: grid;
+  gap: 6px;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+.review-spread li {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr) 2.5ch;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+.review-spread-bar {
+  block-size: 6px;
+  background: var(--line);
+}
+.review-spread-bar > span {
+  display: block;
+  block-size: 100%;
+  background: var(--accent);
+}
+.review-spread-n {
+  text-align: end;
+}
+
+/* Squelette des avis : la forme exacte d'un avis, sans disque qui tourne */
+.review-ghost {
+  min-block-size: 7.5rem;
+}
+.review-ghost span {
+  display: block;
+  block-size: 12px;
+  inline-size: 40%;
+  background: var(--line);
+}
+.review-ghost span + span {
+  inline-size: 80%;
+}
+
+/* Barre d'achat mobile : glisse depuis le bas quand le bouton principal a défilé */
+.buy-bar {
+  display: none;
+}
+@media (max-width: 55.99rem) {
+  .buy-bar {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-block-start: 1px solid var(--line-strong);
+    background: var(--paper);
+    transform: translateY(110%);
+    transition: transform var(--dur-feedback) var(--ease-out);
+  }
+  .buy-bar[data-visible] {
+    transform: none;
+  }
+  .buy-bar-name {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-voice);
+    font-weight: 700;
+  }
+  .buy-bar .price {
+    margin-inline-start: 8px;
+    padding-inline-start: 10px;
+    border-inline-start: 1px solid color-mix(in srgb, var(--on-accent) 35%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .buy-bar {
+    transition: none;
+  }
+}
+
+/* Scène : plaque de vermillon pleine largeur, identique dans les deux thèmes.
+   L'objet y est découpé en laque, son nom posé à côté, son code gravé en grand. */
+.product.page {
+  padding-block-start: 0;
+}
+.stage {
+  --accent: var(--lacquer);
+  background: var(--vermilion-bright);
+  color: var(--lacquer);
+}
+.stage-inner {
+  display: grid;
+  gap: var(--space-s) var(--space-xl);
+  padding-block: var(--space-s) var(--space-l);
+}
+.stage .back {
+  color: var(--lacquer);
+  justify-self: start;
+}
+.stage .gallery {
+  position: static;
+}
+.stage .gallery-main {
+  background: none;
+  border-radius: 0;
+  max-inline-size: 34rem;
+}
+.stage .thumbs button {
+  border-color: rgb(10 6 5 / 0.35);
+  opacity: 1;
+}
+.stage .thumbs button[aria-checked="true"] {
+  outline-color: var(--lacquer);
+}
+.stage-title {
+  container-type: inline-size;
+  display: grid;
+  align-content: end;
+  gap: var(--space-2xs);
+}
+.stage .product-meta,
+.stage .product-rating {
+  color: var(--lacquer);
+  font-weight: 600;
+}
+.stage .product-name {
+  font-size: var(--step-5);
+  text-wrap: balance;
+}
+.stage .stars .star-empty {
+  opacity: 0.45;
+}
+/* Gravé : le code du catalogue en capitales espacées, à l'échelle d'une enseigne */
+.stage-code {
+  margin-block-start: var(--space-s);
+  font-family: var(--font-voice);
+  font-weight: 800;
+  /* Toujours la largeur de sa colonne, jamais au-delà */
+  font-size: min(20cqi, 8.5rem);
+  line-height: 0.85;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.stage :focus-visible {
+  outline-color: var(--lacquer);
+}
+@media (min-width: 56rem) {
+  .stage-inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    padding-block-end: var(--space-xl);
+  }
+  .stage .back {
+    grid-column: 1 / -1;
+  }
+  .product-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding-block-start: var(--space-l);
+  }
+}
+@media (max-width: 55.99rem) {
+  .product-grid {
+    padding-block-start: var(--space-m);
+  }
+  /* Sur téléphone, le prix doit rester à portée de pouce */
+  .stage .gallery-main {
+    max-inline-size: 13rem;
+    margin-inline: auto;
+  }
+  .stage .thumbs {
+    justify-content: center;
+  }
+  .stage-code {
+    margin-block-start: 0;
+  }
+}
+.product-buy {
+  display: grid;
+  gap: var(--space-s);
+  align-content: start;
+}
+
+/* Avis et suggestions, sous la ligne de flottaison : calculés à l'approche seulement */
+.reviews,
+.suggestions {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 640px;
+}
+
+/* Zoom de la vue principale : au plein cadre, un doigt fait défiler la page ;
+   agrandie, il déplace la photo */
+.zoom {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: zoom-in;
+}
+.zoom[data-zoom="oui"] {
+  touch-action: none;
+  cursor: zoom-out;
+}
+.zoom[data-zoom="oui"]:active {
+  cursor: grabbing;
+}
+.zoom:focus-visible {
+  outline-offset: -3px;
+}
+.zoom-plan {
+  inline-size: 100%;
+  block-size: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.zoom img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.zoom-aide {
+  margin-block-start: 8px;
+  font-size: var(--step--1);
+}
+.stage .zoom-aide {
+  color: var(--lacquer);
+}

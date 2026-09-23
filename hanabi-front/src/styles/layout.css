@@ -96,6 +96,20 @@
   display: none;
 }
 
+/* Sur un téléphone de 375 px, le compteur du panier faisait passer les
+   boutons sous la marque : quelques pixels repris sur les écarts */
+@media (max-width: 39.99rem) {
+  .hd-row {
+    column-gap: 8px;
+  }
+  .brand {
+    gap: 8px;
+  }
+  .hd-actions .icon-btn:has(.count-badge) {
+    padding-inline: 8px 10px;
+  }
+}
+
 @media (min-width: 40rem) {
   .hide-sm {
     display: inline-grid;
@@ -291,4 +305,10 @@
   gap: 6px var(--space-m);
   padding-block: var(--space-s) var(--space-m);
   border-block-start: 1px solid #241511;
+}
+
+/* Pied de page : calculé à l'approche seulement */
+.ft {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 380px;
 }

@@ -19,6 +19,7 @@ import { useAuth } from "./hooks/useAuth.js";
 import { useUrlSync } from "./hooks/useUrlSync.js";
 import { useVerrouDefilement } from "./hooks/useVerrouDefilement.js";
 import { useChangementDEcran } from "./hooks/useChangementDEcran.js";
+import { useFonctionStable } from "./hooks/useFonctionStable.js";
 
 import { Header } from "./components/layout/Header.jsx";
 import { Footer } from "./components/layout/Footer.jsx";
@@ -85,7 +86,8 @@ export default function App() {
   const [view, setView] = useState("home");
   const [accountSection, setAccountSection] = useState(null);
   const [activeProduct, setActiveProduct] = useState(null);
-  const [activeReviews, setActiveReviews] = useState([]);
+  // null tant que les avis ne sont pas arrivés : la fiche ne dit pas « aucun avis » à tort
+  const [activeReviews, setActiveReviews] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -162,7 +164,7 @@ export default function App() {
     async (product) => {
       ficheDemandee.current = product.id;
       setActiveProduct(product);
-      setActiveReviews([]);
+      setActiveReviews(null);
       setView("product");
       window.scrollTo(0, 0);
       setRecentIds((ids) =>
@@ -179,7 +181,8 @@ export default function App() {
         setActiveReviews(reviews);
         remember([detail]);
       } catch {
-        /* la fiche reste affichee avec les donnees de la grille */
+        // La fiche reste affichée avec les données de la grille, sans avis en attente
+        if (ficheDemandee.current === product.id) setActiveReviews((r) => r ?? []);
       }
     },
     [lang, remember, setRecentIds],
@@ -248,14 +251,12 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
-  const addToCart = useCallback(
-    (id, qty = 1) => {
-      const result = cart.add(id, qty);
-      if (result === ADD_RESULT.ADDED) flash(t("tAdded"));
-      else if (result === ADD_RESULT.MAX_STOCK) flash(t("tMaxStock"));
-    },
-    [cart, flash, t],
-  );
+  // Identité fixe : ajouter un article ne fait pas re-rendre toute la grille
+  const addToCart = useFonctionStable((id, qty = 1) => {
+    const result = cart.add(id, qty);
+    if (result === ADD_RESULT.ADDED) flash(t("tAdded"));
+    else if (result === ADD_RESULT.MAX_STOCK) flash(t("tMaxStock"));
+  });
 
   const submitReview = useCallback(
     async (productId, rating, text, antibot) => {

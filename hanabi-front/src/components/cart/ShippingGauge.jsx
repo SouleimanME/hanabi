@@ -31,7 +31,7 @@ export function ShippingGauge({ subtotalCents, discountCents = 0, eur }) {
         aria-valuemax={100}
         aria-label={t("shipGaugeLabel")}
       >
-        <div className="gauge-fill" style={{ width: `${pct}%` }} />
+        <div className="gauge-fill" style={{ transform: `scaleX(${pct / 100})` }} />
       </div>
     </div>
   );

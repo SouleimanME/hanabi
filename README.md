@@ -186,6 +186,30 @@ statut porté par la couleur seule.
 | `Admin` (chargé à la demande) | 25,0 ko | 28 ko |
 | CSS | 14,6 ko | 22 ko |
 
+### Fluidité
+
+Mesures sur le build de production, écran à 165 Hz :
+
+| | avant | après |
+| --- | ---: | ---: |
+| Images au premier affichage | 1 956 ko | 246 ko |
+| Trames perdues pendant un zoom (molette, glisser) | | 0 |
+| Trames perdues au défilement (accueil, fiche) | 0 | 0 |
+| Interaction la plus lente (ajout au panier) | | 24 ms |
+| Premier affichage / plus grand élément | | 128 / 436 ms |
+| Décalage de mise en page cumulé | | 0,002 |
+
+Chaque photo porte un `srcset` : le CDN redimensionne, le navigateur prend la
+largeur affichée. `src` est posé en dernier, sinon React lançait le téléchargement
+en 1 200 px avant de lire `loading` et `srcset`. La vue principale d'un écran part
+en tête de file, les autres vues d'une fiche se préchargent au repos, déjà
+décodées. La photo d'une fiche se zoome au clic, à la molette, au pincement ou au
+clavier ; le cadrage passe par `transform` sans re-rendu React, et une version en
+1 800 ou 2 400 px arrive dès qu'on agrandit. Les sections hors écran (`content-visibility`) ne sont calculées qu'à
+l'approche, la jauge du panier avance par `transform` et non par sa largeur, et
+ajouter un article ne fait plus re-rendre toute la grille. Sur Cloudflare Pages,
+les fichiers à empreinte et les polices sont mis en cache un an (`public/_headers`).
+
 ### Exploitation
 
 Chaque requête porte un identifiant, repris dans la réponse et dans des journaux
@@ -384,6 +408,9 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Photos en base64 dans la base** pour celles qu'on téléverse depuis le
   back-office. La réponse du catalogue grossit avec elles ; la suite logique est un
   stockage objet.
+- **Un seul cliché par objet**, que l'on agrandit à volonté : Unsplash n'a pas
+  d'autre angle de ces objets précis. De vraies prises de vue compléteraient les
+  galeries.
 - **Reconstruction planifiée conditionnée à `DWH_DATABASE_URL`** dans les secrets du
   dépôt. GitHub désactive aussi les tâches planifiées après soixante jours sans
   activité.

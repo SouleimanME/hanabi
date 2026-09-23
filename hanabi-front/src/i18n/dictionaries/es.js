@@ -74,6 +74,9 @@ export default {
   reviewPh: "Lo que opinas, en pocas palabras",
   publish: "Publicar mi reseña",
   firstReview: "Aún no hay reseñas.",
+  reviewsLoading: "Cargando reseñas",
+  ratingSpread: "Reparto de las notas",
+  starsCount: { one: "{n} estrella", other: "{n} estrellas" },
   verified: "compra verificada",
   related: "En la misma categoría",
   boughtTogether: "Comprados juntos a menudo",
@@ -185,6 +188,7 @@ export default {
   legalDraft:
     "Datos de empresa sin cumplimentar: este sitio es un proyecto personal y no ejerce ninguna actividad comercial.",
   legalUpdated: "Última actualización: {date}",
+  zoomHint: "Clic, rueda o pellizco para ampliar; arrastra para desplazarte.",
 
   // En-tete et menu
   skipToContent: "Ir al contenido",

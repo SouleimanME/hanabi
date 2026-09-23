@@ -23,20 +23,20 @@ describe("progression", () => {
   it("part a zero sur un panier vide", () => {
     afficher({ subtotalCents: 0 });
     expect(barre()).toHaveAttribute("aria-valuenow", "0");
-    expect(remplissage()).toHaveStyle({ width: "0%" });
+    expect(remplissage()).toHaveStyle({ transform: "scaleX(0)" });
   });
 
   it("rend la moitie du chemin a la moitie du seuil", () => {
     afficher({ subtotalCents: FREE_SHIPPING_CENTS / 2 });
     expect(barre()).toHaveAttribute("aria-valuenow", "50");
-    expect(remplissage()).toHaveStyle({ width: "50%" });
+    expect(remplissage()).toHaveStyle({ transform: "scaleX(0.5)" });
   });
 
   it("ne depasse jamais cent pour cent", () => {
     // Sans plafonnement, un gros panier etirait la barre hors de sa piste.
     afficher({ subtotalCents: FREE_SHIPPING_CENTS * 4 });
     expect(barre()).toHaveAttribute("aria-valuenow", "100");
-    expect(remplissage()).toHaveStyle({ width: "100%" });
+    expect(remplissage()).toHaveStyle({ transform: "scaleX(1)" });
   });
 
   it("declare des bornes exploitables par un lecteur d'ecran", () => {

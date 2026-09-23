@@ -74,6 +74,9 @@ export default {
   reviewPh: "What you think of it, in a few words",
   publish: "Publish my review",
   firstReview: "No reviews yet.",
+  reviewsLoading: "Loading reviews",
+  ratingSpread: "Rating breakdown",
+  starsCount: { one: "{n} star", other: "{n} stars" },
   verified: "verified purchase",
   related: "In the same category",
   boughtTogether: "Frequently bought together",
@@ -185,6 +188,7 @@ export default {
   legalDraft:
     "Company details are not filled in: this site is a personal project and carries out no commercial activity.",
   legalUpdated: "Last updated: {date}",
+  zoomHint: "Click, scroll or pinch to zoom; drag to move around.",
 
   // En-tete et menu
   skipToContent: "Skip to content",

@@ -1,5 +1,6 @@
 /* Feuille commune a la boutique et au back-office, chargee avant l'aiguillage
  * de route. Chaque interface ajoute ensuite sa propre feuille. */
+@import "./styles/fonts.css";
 @import "./styles/tokens.css";
 
 /* Le fond de <html> est peint avant le premier rendu React : il suit le

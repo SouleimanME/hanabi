@@ -82,7 +82,11 @@ export const Home = forwardRef(function Home(
               <span className="jp">注目</span> · {t("pieceMonth")}
             </span>
             <span className="piece-art">
-              <ProductArt art={featured.art} />
+              <ProductArt
+                art={featured.art}
+                taille="(min-width: 76rem) 33rem, (min-width: 56rem) 42vw, 100vw"
+                priorite
+              />
             </span>
             <span className="piece-caption">
               <span>

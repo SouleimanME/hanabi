@@ -1,5 +1,6 @@
 /** Visuel d'un produit : photo si l'on en a une, blason sinon. */
 import { memo, useId } from "react";
+import { sourcesAdaptees } from "../../lib/images.js";
 
 const KIRI = 2.4;
 
@@ -263,18 +264,49 @@ function Blason({ forme, t, f }) {
 const estPhoto = (art) =>
   typeof art === "string" && (art.startsWith("http") || art.startsWith("data:"));
 
-export const ProductArt = memo(function ProductArt({ art, alt = "" }) {
+/* Scène de la fiche : le blason en laque, découpé à même la plaque de vermillon */
+const SCENE = { trace: "#0A0605", fond: "#F4643F" };
+
+/**
+ * @param taille  valeur de `sizes` : la largeur affichée. Par défaut, une vignette.
+ * @param priorite  image principale de l'écran : chargée tout de suite, en tête de file.
+ */
+export const ProductArt = memo(function ProductArt({
+  art,
+  alt = "",
+  scene = false,
+  taille = "96px",
+  priorite = false,
+}) {
   const idBrut = useId();
 
   if (estPhoto(art)) {
-    return <img src={art} alt={alt} className="art art-photo" loading="lazy" decoding="async" />;
+    // React pose les attributs dans l'ordre écrit : `src` en dernier, sinon le
+    // navigateur télécharge la grande image avant de lire `loading` et `srcset`.
+    return (
+      <img
+        alt={alt}
+        className="art art-photo"
+        width="1200"
+        height="1200"
+        loading={priorite ? "eager" : "lazy"}
+        // React 18 ne connaît pas `fetchPriority` ; en minuscules, l'attribut passe tel quel
+        // eslint-disable-next-line react/no-unknown-property
+        fetchpriority={priorite ? "high" : undefined}
+        decoding="async"
+        sizes={taille}
+        srcSet={sourcesAdaptees(art) ?? undefined}
+        src={art}
+      />
+    );
   }
 
   const [formeBrute = "", c1 = "", c2 = "", option = ""] = String(art || "").split(",");
   const forme = FORMES_ANCIENNES[formeBrute] || formeBrute;
-  const trace = HEX.test(c1) ? c1 : "#E0452A";
-  const fond = HEX.test(c2) ? c2 : "#0A0605";
-  const clair = eclaircir(fond, luminance(fond) > 0.5 ? 0.45 : 0.1);
+  const trace = scene ? SCENE.trace : HEX.test(c1) ? c1 : "#E0452A";
+  const fond = scene ? SCENE.fond : HEX.test(c2) ? c2 : "#0A0605";
+  // Sur la scène, un aplat : le vermillon est une surface, pas un éclairage
+  const clair = scene ? fond : eclaircir(fond, luminance(fond) > 0.5 ? 0.45 : 0.1);
   const id = `blason${idBrut.replace(/:/g, "")}`;
   const cadre = option === "gros-plan" ? "25 25 50 50" : "0 0 100 100";
 

@@ -26,7 +26,7 @@ export const ProductCard = memo(function ProductCard({ p, onOpen, onAdd, wished,
   return (
     <li className={"case" + (epuise ? " is-out" : "")}>
       <div className="case-art">
-        <ProductArt art={p.art} />
+        <ProductArt art={p.art} taille="(min-width: 72rem) 19rem, (min-width: 40rem) 33vw, 50vw" />
       </div>
       {p.is_new && <span className="case-new">{t("neuf")}</span>}
       {onWish && (
