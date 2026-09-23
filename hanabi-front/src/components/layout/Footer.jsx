@@ -4,7 +4,7 @@ import { LogoMark } from "../brand/LogoMark.jsx";
 import { Newsletter } from "./Newsletter.jsx";
 
 const LEGAL_PAGES = ["mentions", "cgv", "confidentialite", "cookies"];
-const SHOP_CATEGORIES = ["Compagnons", "Tradition", "Collection"];
+const SHOP_CATEGORIES = ["Figurines", "Décoration", "Luminaires"];
 
 export function Footer({ lang, onGoCategory, onOpenLegal }) {
   const t = useT();

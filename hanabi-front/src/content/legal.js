@@ -26,7 +26,22 @@ E-mail : contact@hanabi.fr
 Téléphone : [numéro]
 
 **Propriété intellectuelle**
-L'ensemble des contenus de ce site (textes, visuels, motifs, code) est protégé par le droit d'auteur et demeure la propriété exclusive de Hanabi ou de ses ayants droit. Toute reproduction, représentation ou adaptation, totale ou partielle, sans autorisation écrite préalable est interdite et constitue une contrefaçon au sens des articles L335-2 et suivants du Code de la propriété intellectuelle.
+L'ensemble des contenus de ce site (textes, motifs, code, à l'exception des photographies créditées ci-dessous) est protégé par le droit d'auteur et demeure la propriété exclusive de Hanabi ou de ses ayants droit. Toute reproduction, représentation ou adaptation, totale ou partielle, sans autorisation écrite préalable est interdite et constitue une contrefaçon au sens des articles L335-2 et suivants du Code de la propriété intellectuelle.
+
+**Crédits photos**
+Photographies publiées sur Unsplash sous licence Unsplash, qui en autorise l'usage commercial. L'estampe reproduit une œuvre d'Hokusai entrée dans le domaine public.
+Figurine Kitsune : Susann Schuster
+Maneki-neko Doré : Christina Dahl
+Daruma Rouge : Hai Nguyen
+Kokeshi Hana : Geoff Oliver
+Figurine Ryū : Guru Ankam
+Éventail Sensu : Smithsonian
+Masque Kitsune : Se. Tsuchiya
+Masque Hannya : Tasha Kostyuk
+Estampe Grande Vague : The Metropolitan Museum of Art
+Lampe Torii LED : Chandan Chaurasia
+Lampe Lune : Kristine Wook
+Lanterne Ramen : Nanxin Zhao
 
 **Responsabilité**
 Hanabi s'efforce d'assurer l'exactitude des informations publiées. Une erreur ou une omission ne saurait toutefois engager sa responsabilité. Les liens vers des sites tiers ne sauraient engager la responsabilité de Hanabi quant à leur contenu.
@@ -56,7 +71,22 @@ E-mail: contact@hanabi.fr
 [Host company name], [full address], phone: [number]
 
 **Intellectual property**
-All content on this site (text, images, patterns, code) is protected by copyright and remains the exclusive property of Hanabi. Any reproduction without prior written permission is prohibited.
+All content on this site (text, patterns, code, except the photographs credited below) is protected by copyright and remains the exclusive property of Hanabi. Any reproduction without prior written permission is prohibited.
+
+**Photo credits**
+Photographs published on Unsplash under the Unsplash license, which allows commercial use. The print reproduces a Hokusai work in the public domain.
+Kitsune Figure: Susann Schuster
+Golden Maneki-neko: Christina Dahl
+Red Daruma: Hai Nguyen
+Hana Kokeshi: Geoff Oliver
+Ryū Dragon Figure: Guru Ankam
+Sensu Folding Fan: Smithsonian
+Kitsune Mask: Se. Tsuchiya
+Hannya Mask: Tasha Kostyuk
+Great Wave Print: The Metropolitan Museum of Art
+Torii LED Lamp: Chandan Chaurasia
+Moon Lamp: Kristine Wook
+Ramen Lantern: Nanxin Zhao
 
 **Liability**
 Hanabi strives to keep the published information accurate but cannot be held liable for errors or omissions.
@@ -85,7 +115,22 @@ Correo: contact@hanabi.fr
 [Denominación del proveedor], [dirección completa], teléfono: [número]
 
 **Propiedad intelectual**
-Todo el contenido de este sitio está protegido por derechos de autor y es propiedad exclusiva de Hanabi. Queda prohibida su reproducción sin autorización escrita previa.
+Todo el contenido de este sitio (textos, motivos, código, salvo las fotografías acreditadas abajo) está protegido por derechos de autor y es propiedad exclusiva de Hanabi. Queda prohibida su reproducción sin autorización escrita previa.
+
+**Créditos fotográficos**
+Fotografías publicadas en Unsplash con la licencia Unsplash, que permite el uso comercial. La estampa reproduce una obra de Hokusai de dominio público.
+Figura Kitsune: Susann Schuster
+Maneki-neko Dorado: Christina Dahl
+Daruma Rojo: Hai Nguyen
+Kokeshi Hana: Geoff Oliver
+Figura Ryū: Guru Ankam
+Abanico Sensu: Smithsonian
+Máscara Kitsune: Se. Tsuchiya
+Máscara Hannya: Tasha Kostyuk
+Estampa La Gran Ola: The Metropolitan Museum of Art
+Lámpara Torii LED: Chandan Chaurasia
+Lámpara Luna: Kristine Wook
+Farol Ramen: Nanxin Zhao
 
 **Accesibilidad**
 Este sitio está diseñado para poder usarse con teclado y lector de pantalla, y respeta la preferencia del sistema de reducción de animaciones.

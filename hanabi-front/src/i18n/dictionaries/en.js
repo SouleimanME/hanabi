@@ -3,12 +3,13 @@ export default {
   // Catalogue
   search: "Search an object",
   cat_Tout: "All",
-  cat_Compagnons: "Companions",
-  cat_Tradition: "Tradition",
-  cat_Collection: "Collection",
+  cat_Figurines: "Figures",
+  cat_Décoration: "Decor",
+  cat_Luminaires: "Lighting",
   limited: "Small batches",
   heroTitle: "Twelve Japanese objects, [chosen one by one.]",
-  heroSub: "For your cat, your table and your shelves. The selection changes in small batches.",
+  heroSub:
+    "Figures, masks and lights drawn from yokai, woodblock prints and anime. The selection changes in small batches.",
   heroCta: "See the selection",
   freeShip: "Free shipping over €80",
   warranty: "2-year warranty",
@@ -30,13 +31,13 @@ export default {
   houseTitle: "How we choose",
   houseMatter: "Material",
   houseMatterText:
-    "Turned wood, lacquer, cast iron, paper. Materials that catch the light and age well, rather than painted plastic.",
+    "Turned wood, papier-mâché, hand-painted resin, washi paper. Materials that catch the light and stay on a shelf for years.",
   houseWorkshop: "Workshop",
   houseWorkshopText:
     "Runs are short, and every object is ordered workshop by workshop. When a run ends, it does not always come back.",
   houseUse: "Use",
   houseUseText:
-    "A lamp gets switched on, chopsticks get washed, a bowl gets scratched. Nothing here is meant to stay in its box.",
+    "A lamp gets switched on, a mask goes up on the wall, a daruma waits for its second eye. Nothing here is meant to stay in its box.",
   neuf: "New",
   add: "Add",
   added: "Added",
@@ -165,7 +166,7 @@ export default {
   shipFrom: "Shipping {price}, free over {free}",
 
   // Pied de page
-  ftTag: "Japanese objects for the home and for pets, in small batches.",
+  ftTag: "Japanese figures and home decor, in small batches.",
   ftFiction: "Demo shop: no payment is ever captured.",
   shop: "Shop",
   information: "Information",

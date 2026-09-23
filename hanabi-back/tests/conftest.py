@@ -98,7 +98,7 @@ def product(db_session):
     p = Product(
         code="TST-001",
         name="Bol de test",
-        category="Tradition",
+        category="Décoration",
         blurb="Un bol pour les tests.",
         price_cents=2000,
         stock=5,
@@ -117,7 +117,7 @@ def expensive_product(db_session):
     p = Product(
         code="TST-002",
         name="Katana de test",
-        category="Collection",
+        category="Figurines",
         blurb="Cher, pour tester la franchise de port.",
         price_cents=9000,
         stock=3,

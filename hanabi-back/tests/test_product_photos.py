@@ -12,7 +12,7 @@ def fiche(**extra):
     data = {
         "code": "TST-PH",
         "name": "Fiche photo",
-        "category": "Collection",
+        "category": "Figurines",
         "blurb": "Fiche de test.",
         "price_cents": 1000,
         "stock": 3,

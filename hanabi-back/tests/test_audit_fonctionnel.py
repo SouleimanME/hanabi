@@ -376,26 +376,26 @@ class TestRechercheDesCommandes:
 
 
 class TestRechercheDuCatalogue:
-    """En anglais, « chopsticks » ne trouvait rien : la recherche lisait le nom français."""
+    """En anglais, « mask » ne trouvait rien : la recherche lisait le nom français."""
 
     @pytest.fixture
-    def baguettes(self, db_session):
+    def masque(self, db_session):
         p = models.Product(
-            code="HNB-033", name="Baguettes Laquées", category="Tradition",
-            blurb="Paire, laque urushi", price_cents=2200, stock=5, art="baguettes,#E0452A,#0A0605",
+            code="HNB-061", name="Masque Kitsune", category="Décoration",
+            blurb="Résine peinte main", price_cents=3900, stock=5, art="kitsune,#E0452A,#0A0605",
         )
         eventail = models.Product(
-            code="HNB-037", name="Éventail Sensu", category="Tradition",
+            code="HNB-037", name="Éventail Sensu", category="Décoration",
             blurb="Bambou et washi", price_cents=2800, stock=5, art="fan,#0A0605,#D8452B",
         )
         db_session.add_all([p, eventail])
         db_session.commit()
         return p
 
-    def test_le_nom_traduit_est_cherche(self, client, baguettes):
-        noms = [p["name"] for p in client.get("/products?q=chopsticks&lang=en").json()]
-        assert noms == ["Lacquered Chopsticks"]
+    def test_le_nom_traduit_est_cherche(self, client, masque):
+        noms = [p["name"] for p in client.get("/products?q=mask&lang=en").json()]
+        assert noms == ["Kitsune Mask"]
 
-    def test_les_accents_ne_comptent_pas(self, client, baguettes):
+    def test_les_accents_ne_comptent_pas(self, client, masque):
         noms = [p["name"] for p in client.get("/products?q=eventail").json()]
         assert noms == ["Éventail Sensu"]

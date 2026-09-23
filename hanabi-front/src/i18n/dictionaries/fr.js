@@ -4,13 +4,14 @@ export default {
   // Catalogue
   search: "Rechercher un objet",
   cat_Tout: "Tout",
-  cat_Compagnons: "Compagnons",
-  cat_Tradition: "Tradition",
-  cat_Collection: "Collection",
+  cat_Figurines: "Figurines",
+  cat_Décoration: "Décoration",
+  cat_Luminaires: "Luminaires",
   limited: "Petites séries",
   // Les crochets marquent le bout de phrase posé sur la plaque de vermillon
   heroTitle: "Douze objets japonais, [choisis un par un.]",
-  heroSub: "Pour ton chat, ta table et tes étagères. La sélection change par petites séries.",
+  heroSub:
+    "Figurines, masques et lumières venus des yokai, des estampes et des animés. La sélection change par petites séries.",
   heroCta: "Voir la sélection",
   freeShip: "Livraison offerte dès 80 €",
   warranty: "Garantie 2 ans",
@@ -32,13 +33,13 @@ export default {
   houseTitle: "Comment on choisit",
   houseMatter: "Matière",
   houseMatterText:
-    "Du bois tourné, de la laque, de la fonte, du papier. Des matières qui prennent la lumière et qui vieillissent bien, plutôt que du plastique peint.",
+    "Du bois tourné, du papier mâché, de la résine peinte à la main, du washi. Des matières qui prennent la lumière et que l'on garde longtemps sur une étagère.",
   houseWorkshop: "Atelier",
   houseWorkshopText:
     "Les séries sont courtes, et chaque objet est commandé atelier par atelier. Quand une série se termine, elle ne revient pas toujours.",
   houseUse: "Usage",
   houseUseText:
-    "Une lampe s'allume, des baguettes se lavent, un bol se raye. Rien ici n'est fait pour rester dans sa boîte.",
+    "Une lampe s'allume, un masque se pend au mur, un daruma attend son second œil. Rien ici n'est fait pour rester dans sa boîte.",
   neuf: "Nouveau",
   add: "Ajouter",
   added: "Ajouté",
@@ -167,7 +168,7 @@ export default {
   shipFrom: "Livraison {price}, offerte dès {free}",
 
   // Pied de page
-  ftTag: "Objets japonais pour la maison et les animaux, en petites séries.",
+  ftTag: "Figurines et décoration japonaises, en petites séries.",
   ftFiction: "Boutique de démonstration : aucun paiement n'est encaissé.",
   shop: "Boutique",
   information: "Informations",

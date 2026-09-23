@@ -21,21 +21,58 @@ DEMO_EMAIL = "demo@hanabi.fr"
 DEMO_ADMIN_EMAIL = "hanabi@atelier.fr"
 DEMO_ADMIN_PASSWORD = "hanabi-logs2026"
 
-# code, nom, catégorie, accroche, prix, stock, nouveau, blason "forme,tracé,fond"
-# Blasons dessinés dans ProductArt.jsx, aux couleurs de la charte.
+# Photos Unsplash (licence libre, usage commercial), servies recadrées au carré
+# par leur CDN. Chacune a été regardée en grand avant d'être retenue ; auteurs
+# et pages sources dans CREDITS_PHOTOS.
+_U = "https://images.unsplash.com/"
+_CARRE = "?w=1200&h=1200&q=80&auto=format&fit=crop"
+PHOTOS = {
+    "HNB-052": _U + "photo-1615961482046-1645fd0c9920" + _CARRE,
+    "HNB-018": _U + "photo-1630929927781-cf12ebc522d6" + _CARRE + "&crop=focalpoint&fp-x=0.5&fp-y=0.36&fp-z=1",
+    "HNB-067": _U + "photo-1761296123620-1c756e3f6104" + _CARRE,
+    "HNB-071": _U + "photo-1640906631464-cc7bebc39d9f" + _CARRE + "&crop=focalpoint&fp-x=0.45&fp-y=0.5&fp-z=1",
+    "HNB-074": _U + "photo-1761501156501-d6e4fd7cde5f" + _CARRE + "&crop=focalpoint&fp-x=0.6&fp-y=0.55&fp-z=1",
+    "HNB-037": _U + "photo-1777563878028-7ff03f169216" + _CARRE,
+    "HNB-061": _U + "photo-1681632973091-1e2725d00da3" + _CARRE + "&crop=focalpoint&fp-x=0.5&fp-y=0.42&fp-z=1",
+    "HNB-064": _U + "photo-1746987443790-79b01cd6a83f" + _CARRE + "&crop=focalpoint&fp-x=0.5&fp-y=0.5&fp-z=1.7",
+    "HNB-078": _U + "photo-1783958384742-b316026f543c" + _CARRE + "&crop=focalpoint&fp-x=0.33&fp-y=0.5&fp-z=1",
+    "HNB-021": _U + "photo-1538590586149-5fa9291f0de0" + _CARRE,
+    "HNB-026": _U + "photo-1632712535563-c30adb9a9e2e" + _CARRE,
+    "HNB-083": _U + "photo-1557404756-2896e84ca347" + _CARRE + "&crop=focalpoint&fp-x=0.33&fp-y=0.5&fp-z=1",
+}
+
+# code : (auteur, page Unsplash), repris dans les mentions légales
+CREDITS_PHOTOS = {
+    "HNB-052": ("Susann Schuster", "https://unsplash.com/photos/TrB4UA1rDeQ"),
+    "HNB-018": ("Christina Dahl", "https://unsplash.com/photos/qChnG1YtIEQ"),
+    "HNB-067": ("Hai Nguyen", "https://unsplash.com/photos/gBrxnwjjzr8"),
+    "HNB-071": ("Geoff Oliver", "https://unsplash.com/photos/C9VcRCTdjdM"),
+    "HNB-074": ("Guru Ankam", "https://unsplash.com/photos/kWC71Qo-0x4"),
+    "HNB-037": ("Smithsonian", "https://unsplash.com/photos/FgVqMnm1IMY"),
+    "HNB-061": ("Se. Tsuchiya", "https://unsplash.com/photos/NvgvBXf4Mpw"),
+    "HNB-064": ("Tasha Kostyuk", "https://unsplash.com/photos/_eoQ8_ASlvM"),
+    "HNB-078": ("The Metropolitan Museum of Art", "https://unsplash.com/photos/ZBH-w0cjl6E"),
+    "HNB-021": ("Chandan Chaurasia", "https://unsplash.com/photos/8HfAcN5DdpY"),
+    "HNB-026": ("Kristine Wook", "https://unsplash.com/photos/j9iRNNL7W5A"),
+    "HNB-083": ("Nanxin Zhao", "https://unsplash.com/photos/1crJ5KxPw5s"),
+}
+
+# code, nom, catégorie, accroche, prix, stock, nouveau
+# Figurines et décoration venues des yokai, des estampes et des animés, sans
+# personnage sous licence.
 PRODUCTS = [
-    ("HNB-014", "Collier Maneki-neko", "Compagnons", "Collier chat, grelot laiton, cuir souple",     2400, 12, False, "suzu,#E0452A,#0A0605"),
-    ("HNB-021", "Lampe Torii LED",     "Collection", "Veilleuse torii, USB, trois intensités",        6400, 5,  True,  "torii,#E0452A,#0A0605"),
-    ("HNB-008", "Bandana Sushi",       "Compagnons", "Bandana chien, coton, taille réglable",         1800, 25, False, "bandana,#0A0605,#D8452B"),
-    ("HNB-015", "Gamelle Sakura",      "Compagnons", "Gamelle céramique, motif fleur de cerisier",    3200, 9,  False, "sakura,#E0452A,#EFE7D6"),
-    ("HNB-033", "Baguettes Laquées",   "Tradition",  "Paire, laque urushi, repose-baguettes inclus",  2200, 40, False, "baguettes,#E0452A,#0A0605"),
-    ("HNB-037", "Éventail Sensu",      "Tradition",  "Éventail pliant, bambou et papier washi",       2800, 18, True,  "fan,#0A0605,#D8452B"),
-    ("HNB-041", "Bol à Ramen",         "Tradition",  "Céramique 1 L, motif vague seigaiha",           2600, 22, False, "bol,#0A0605,#D8452B"),
-    ("HNB-009", "Coussin Futon Néko",  "Compagnons", "Couchage chat, futon coton matelassé",          5800, 6,  False, "futon,#0A0605,#EFE7D6"),
-    ("HNB-052", "Figurine Kitsune",    "Collection", "Renard en résine, peinte main, 18 cm",          4800, 4,  True,  "kitsune,#E0452A,#0A0605"),
-    ("HNB-045", "Tenugui Seigaiha",    "Tradition",  "Serviette coton, teinture traditionnelle",      1600, 50, False, "seigaiha,#0A0605,#A83019"),
-    ("HNB-026", "Lampe Lune",          "Collection", "Lampe lune, 16 couleurs, télécommande",         7200, 7,  False, "moon,#0A0605,#EFE7D6"),
-    ("HNB-018", "Maneki-neko Doré",    "Collection", "Chat porte-bonheur, bras motorisé solaire",     3800, 14, False, "neko,#0A0605,#D8452B"),
+    ("HNB-052", "Figurine Kitsune",     "Figurines",  "Renard en résine, peinte main, 18 cm",                 4800, 4,  False),
+    ("HNB-018", "Maneki-neko Doré",     "Figurines",  "Chat porte-bonheur, bras motorisé solaire",            3800, 14, False),
+    ("HNB-067", "Daruma Rouge",         "Figurines",  "Papier mâché, yeux à peindre, 12 cm",                  2400, 30, False),
+    ("HNB-071", "Kokeshi Hana",         "Figurines",  "Bois tourné, fleurs peintes main, 10 cm",              3400, 12, False),
+    ("HNB-074", "Figurine Ryū",         "Figurines",  "Dragon en résine laquée, perle de cristal, 15 cm",     5600, 6,  True),
+    ("HNB-037", "Éventail Sensu",       "Décoration", "Bambou et papier washi, support mural inclus",         2800, 18, False),
+    ("HNB-061", "Masque Kitsune",       "Décoration", "Résine peinte main, cordon de soie, à suspendre",      3900, 10, True),
+    ("HNB-064", "Masque Hannya",        "Décoration", "Masque mural en résine, cornes dorées, 22 cm",         6200, 5,  False),
+    ("HNB-078", "Estampe Grande Vague", "Décoration", "D'après Hokusai, impression sur papier washi, 30 × 40 cm", 4500, 20, False),
+    ("HNB-021", "Lampe Torii LED",      "Luminaires", "Veilleuse torii, USB, trois intensités",               6400, 5,  True),
+    ("HNB-026", "Lampe Lune",           "Luminaires", "Lampe lune, 16 couleurs, télécommande",                7200, 7,  False),
+    ("HNB-083", "Lanterne Ramen",       "Luminaires", "Chōchin en papier et bambou, LED chaude, 45 cm",       4200, 9,  False),
 ]
 
 # Coût d'achat unitaire en centimes, volontairement hétérogène : le classement
@@ -44,21 +81,16 @@ COUTS = {
     "HNB-021": 2900,  # Lampe Torii : 55 % de marge, plus gros volume
     "HNB-026": 4300,  # Lampe Lune : chère à l'achat, marge faible
     "HNB-052": 2100,  # Figurine Kitsune
-    "HNB-014": 900,   # Collier Maneki-neko
+    "HNB-061": 1400,  # Masque Kitsune
     "HNB-037": 1050,  # Éventail Sensu
-    "HNB-033": 700,   # Baguettes : meilleure marge du catalogue
-    "HNB-041": 1000,  # Bol à Ramen
-    "HNB-045": 550,   # Tenugui : petit prix, marge élevée, forte rotation
-    "HNB-008": 780,   # Bandana Sushi
-    "HNB-015": 1600,  # Gamelle Sakura
+    "HNB-067": 700,   # Daruma : petit prix, meilleure marge du catalogue
+    "HNB-078": 1200,  # Estampe : marge élevée, forte rotation
+    "HNB-083": 1800,  # Lanterne Ramen
+    "HNB-071": 1500,  # Kokeshi Hana
+    "HNB-074": 3100,  # Figurine Ryū
     "HNB-018": 2400,  # Maneki-neko Doré : marge la plus faible
-    "HNB-009": 3500,  # Coussin Futon : cher, peu vendu, peu rentable
+    "HNB-064": 3000,  # Masque Hannya : cher, peu vendu, peu rentable
 }
-
-def gallery(art: str) -> list[str]:
-    """Trois vues du blason : tel quel, matières inversées, gros plan."""
-    forme, trace, fond = art.split(",")
-    return [art, f"{forme},{fond},{trace}", f"{art},gros-plan"]
 
 
 PROMOS = [
@@ -70,13 +102,13 @@ PROMOS = [
 REVIEWS = {
     "HNB-021": [("Yuki M.", 5, "Lumière parfaite pour la chambre, le rouge du torii est superbe la nuit."),
                 ("Sofiane B.", 4, "Trois intensités bien pensées, câble un peu court.")],
-    "HNB-014": [("Camille R.", 5, "Mon chat le porte sans broncher, le grelot est discret.")],
-    "HNB-033": [("Léa F.", 5, "La laque est magnifique, et elles sont bien équilibrées en main."),
-                ("Marc D.", 4, "Le repose-baguettes est un vrai plus."),
+    "HNB-061": [("Camille R.", 5, "Plus fin qu'attendu, le cordon tient bien au mur.")],
+    "HNB-067": [("Léa F.", 5, "J'ai peint le premier œil le jour même. Le rouge est superbe."),
+                ("Marc D.", 4, "Un peu plus petit qu'imaginé, mais très bien fait."),
                 ("Inès P.", 5, "Qualité au-dessus du prix.")],
     "HNB-037": [("Théo L.", 5, "Bois solide, papier épais, se déplie sans accroc.")],
-    "HNB-041": [("Sarah K.", 5, "Taille généreuse, le motif vague est très net."),
-                ("Paul V.", 4, "Passe au lave-vaisselle, RAS.")],
+    "HNB-078": [("Sarah K.", 5, "Papier épais, bleus profonds, encadrée en dix minutes."),
+                ("Paul V.", 4, "Belle reproduction, prévoir un cadre aux dimensions exactes.")],
     "HNB-052": [("Nina T.", 5, "Peinture nette, aucune bavure, socle stable.")],
     "HNB-026": [("Adam C.", 5, "Les enfants adorent, la télécommande marche bien."),
                 ("Lou R.", 4, "Rendu lune réaliste, batterie correcte.")],
@@ -88,11 +120,12 @@ def seed(db: Session) -> None:
         return
 
     code_to_id: dict[str, int] = {}
-    for code, name, cat, blurb, price, stock, is_new, art in PRODUCTS:
+    for code, name, cat, blurb, price, stock, is_new in PRODUCTS:
+        art = PHOTOS[code]
         p = models.Product(code=code, name=name, category=cat, blurb=blurb,
                             price_cents=price, cost_cents=COUTS.get(code, 0),
                             stock=stock, is_new=is_new, art=art,
-                            images=json.dumps(gallery(art)))
+                            images=json.dumps([art]))
         db.add(p)
         db.flush()
         code_to_id[code] = p.id

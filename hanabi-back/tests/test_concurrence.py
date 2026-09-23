@@ -78,7 +78,7 @@ def client(fabrique):
 def _ajouter(fabrique, **champs):
     session = fabrique()
     produit = models.Product(
-        category="Collection", blurb="Article de test", active=True,
+        category="Figurines", blurb="Article de test", active=True,
         art="enso,#224A3F,#E4D7BF", **champs,
     )
     session.add(produit)

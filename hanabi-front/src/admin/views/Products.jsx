@@ -8,7 +8,7 @@ import { MAIN_SIZE, toCanonicalMain, toGalleryImage } from "../image.js";
 import { ProductArt } from "../../components/brand/ProductArt.jsx";
 import { FORMES, MATIERES, NOMS_FORMES } from "../../components/brand/formes.js";
 
-const CATS = ["Compagnons", "Tradition", "Collection"];
+const CATS = ["Figurines", "Décoration", "Luminaires"];
 const ART_DEFAUT = "torii,#E0452A,#0A0605";
 
 const estPhoto = (v) => Boolean(v) && (v.startsWith("http") || v.startsWith("data:"));
@@ -177,7 +177,7 @@ function ProductForm({ item, onSave, onCancel, saving }) {
     id: item?.id,
     code: item?.code || "",
     name: item?.name || "",
-    category: item?.category || "Collection",
+    category: item?.category || "Figurines",
     blurb: item?.blurb || "",
     price_cents: item?.price_cents ?? 0,
     stock: item?.stock ?? 0,

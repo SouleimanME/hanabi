@@ -23,9 +23,11 @@ Conçu et développé par Souleiman MECHERI.
 ## Aperçu
 
 **Direction artistique.** Deux matières, la laque noire et le vermillon, plus le
-papier washi pour le thème clair. Chaque objet est représenté par un blason
-dessiné en SVG, sur la grammaire des kamon : même grille, même épaisseur de coupe.
-Titres en Shippori Mincho, texte en Manrope.
+papier washi pour le thème clair. Le catalogue réunit figurines, décoration et
+luminaires venus des yokai, des estampes et des animés, sans personnage sous
+licence. Chaque objet est photographié (photos Unsplash, crédits dans les
+mentions légales) ; un objet sans photo reçoit un blason dessiné en SVG, sur la
+grammaire des kamon. Titres en Shippori Mincho, texte en Manrope.
 
 Panier en tiroir, avec code promo, jauge de livraison offerte, date de livraison
 estimée et total recalculé par le serveur.
@@ -238,7 +240,7 @@ source.
 | Domaine | Réalisations |
 | --- | --- |
 | Données | Médaillon dbt sur PostgreSQL, 27 modèles, 111 tests, orchestration Dagster par partitions, console SQL bridée |
-| Interface | Charte laque et vermillon, blasons SVG, thème clair et sombre, 3 langues, menu en tiroir |
+| Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
 | Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation |
 | Sécurité | Anti-robots (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, en-têtes durcis |
@@ -379,8 +381,9 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Paiement non branché.** La carte est validée (Luhn, réseau) mais rien ne
   quitte le navigateur ; un vrai branchement passerait par les composants du
   prestataire.
-- **Photos en base64 dans la base.** La réponse du catalogue grossit avec elles ;
-  la suite logique est un stockage objet.
+- **Photos en base64 dans la base** pour celles qu'on téléverse depuis le
+  back-office. La réponse du catalogue grossit avec elles ; la suite logique est un
+  stockage objet.
 - **Reconstruction planifiée conditionnée à `DWH_DATABASE_URL`** dans les secrets du
   dépôt. GitHub désactive aussi les tâches planifiées après soixante jours sans
   activité.

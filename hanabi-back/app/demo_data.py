@@ -120,21 +120,21 @@ DOMAINES = [
 ]
 
 # Poids d'audience et d'achat par produit, décorrélés : une lampe chère se
-# regarde beaucoup et s'achète peu, un tenugui convertit bien.
+# regarde beaucoup et s'achète peu, une estampe convertit bien.
 POPULARITE = {
     # code       vues  achats
     "HNB-021": (100, 78),   # Lampe Torii : la vedette, forte sur les deux axes
     "HNB-026": (88, 21),    # Lampe Lune : très regardée, chère, convertit mal
-    "HNB-052": (74, 40),    # Figurine Kitsune : nouveaute qui marche
-    "HNB-014": (62, 55),    # Collier Maneki-neko : petit prix, bonne conversion
-    "HNB-037": (55, 44),    # Eventail Sensu
-    "HNB-033": (48, 62),    # Baguettes : peu regardees, achetees en complement
-    "HNB-041": (44, 38),    # Bol a Ramen
-    "HNB-045": (30, 52),    # Tenugui : le meilleur taux de transformation
-    "HNB-008": (28, 24),    # Bandana Sushi
-    "HNB-015": (24, 18),    # Gamelle Sakura
-    "HNB-018": (16, 7),     # Maneki-neko dore : le fond de catalogue
-    "HNB-009": (12, 4),     # Coussin Futon : cher et peu vu, invendu type
+    "HNB-052": (74, 40),    # Figurine Kitsune
+    "HNB-061": (66, 50),    # Masque Kitsune : nouveauté qui marche
+    "HNB-037": (55, 44),    # Éventail Sensu
+    "HNB-067": (40, 62),    # Daruma : peu regardé, acheté en complément
+    "HNB-083": (48, 36),    # Lanterne Ramen
+    "HNB-078": (32, 52),    # Estampe : le meilleur taux de transformation
+    "HNB-071": (28, 24),    # Kokeshi Hana
+    "HNB-074": (30, 12),    # Figurine Ryū : chère, regardée plus qu'achetée
+    "HNB-018": (16, 7),     # Maneki-neko doré : le fond de catalogue
+    "HNB-064": (14, 4),     # Masque Hannya : cher et peu vu, invendu type
 }
 POPULARITE_DEFAUT = (20, 15)
 
@@ -142,10 +142,10 @@ POPULARITE_DEFAUT = (20, 15)
 # des affinités (sinon tous les lifts restent proches de 1). Ils suivent des
 # intentions d'achat plutôt que les catégories.
 AFFINITES = [
-    ["HNB-033", "HNB-041", "HNB-045"],            # le repas
-    ["HNB-014", "HNB-008", "HNB-015", "HNB-009"],  # le compagnon
-    ["HNB-021", "HNB-026", "HNB-052", "HNB-018"],  # l'ambiance
-    ["HNB-037", "HNB-021", "HNB-045"],             # le cadeau, toutes categories
+    ["HNB-067", "HNB-018", "HNB-071"],             # les porte-bonheur
+    ["HNB-061", "HNB-064", "HNB-052", "HNB-074"],  # les yokai
+    ["HNB-021", "HNB-026", "HNB-083"],             # la lumière du soir
+    ["HNB-037", "HNB-078", "HNB-021"],             # le mur et le cadeau, toutes catégories
 ]
 
 # Part des articles complémentaires tirés dans le même ensemble ; le reste
@@ -579,7 +579,10 @@ def ensure_demo_dataset(db: Session) -> None:
     if existants >= cible:
         return
 
-    produits = list(db.scalars(select(models.Product).order_by(models.Product.id)))
+    # Vitrine seulement : une série retirée ne reçoit plus de commandes
+    produits = list(db.scalars(
+        select(models.Product).where(models.Product.active.is_(True)).order_by(models.Product.id)
+    ))
     if not produits:
         # Sans catalogue (`seed`), rien à générer
         log.warning("Catalogue vide : jeu de données de démonstration ignoré.")

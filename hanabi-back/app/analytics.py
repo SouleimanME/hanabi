@@ -297,6 +297,9 @@ def catalogue(db: Session) -> list[dict]:
     for p in db.scalars(select(models.Product).order_by(models.Product.id)):
         v = vues.get(p.id, 0)
         s = ventes.get(p.id, vide)
+        # Une série retirée sans vente n'a rien à dire ; vendue, elle reste dans l'historique
+        if not p.active and not s["units"]:
+            continue
         note, nb_avis = notes.get(p.id, (0.0, 0))
 
         marge_unitaire = p.price_cents - p.cost_cents

@@ -3,12 +3,13 @@ export default {
   // Catalogue
   search: "Buscar un objeto",
   cat_Tout: "Todo",
-  cat_Compagnons: "Compañeros",
-  cat_Tradition: "Tradición",
-  cat_Collection: "Colección",
+  cat_Figurines: "Figuras",
+  cat_Décoration: "Decoración",
+  cat_Luminaires: "Iluminación",
   limited: "Pequeñas series",
   heroTitle: "Doce objetos japoneses, [elegidos uno a uno.]",
-  heroSub: "Para tu gato, tu mesa y tus estanterías. La selección cambia en pequeñas series.",
+  heroSub:
+    "Figuras, máscaras y luces nacidas de los yokai, las estampas y el anime. La selección cambia en pequeñas series.",
   heroCta: "Ver la selección",
   freeShip: "Envío gratis desde 80 €",
   warranty: "Garantía de 2 años",
@@ -30,13 +31,13 @@ export default {
   houseTitle: "Cómo elegimos",
   houseMatter: "Materia",
   houseMatterText:
-    "Madera torneada, laca, hierro fundido, papel. Materias que recogen la luz y envejecen bien, en lugar de plástico pintado.",
+    "Madera torneada, papel maché, resina pintada a mano, papel washi. Materias que recogen la luz y se quedan años en una estantería.",
   houseWorkshop: "Taller",
   houseWorkshopText:
     "Las series son cortas y cada objeto se encarga taller por taller. Cuando una serie se acaba, no siempre vuelve.",
   houseUse: "Uso",
   houseUseText:
-    "Una lámpara se enciende, unos palillos se lavan, un cuenco se raya. Aquí nada está hecho para quedarse en su caja.",
+    "Una lámpara se enciende, una máscara se cuelga en la pared, un daruma espera su segundo ojo. Aquí nada está hecho para quedarse en su caja.",
   neuf: "Nuevo",
   add: "Añadir",
   added: "Añadido",
@@ -165,7 +166,7 @@ export default {
   shipFrom: "Envío {price}, gratis desde {free}",
 
   // Pied de page
-  ftTag: "Objetos japoneses para la casa y los animales, en pequeñas series.",
+  ftTag: "Figuras y decoración japonesas, en pequeñas series.",
   ftFiction: "Tienda de demostración: no se cobra ningún pago.",
   shop: "Tienda",
   information: "Información",

@@ -13,17 +13,17 @@ def catalogue(db_session):
     produits = {
         # prix 100,00 EUR / cout 40,00 EUR -> 60 % de marge
         "forte": Product(
-            code="MRG-1", name="Forte marge", category="Tradition", blurb="x",
+            code="MRG-1", name="Forte marge", category="Décoration", blurb="x",
             price_cents=10000, cost_cents=4000, stock=100, art="enso,#000,#fff",
         ),
         # prix 100,00 EUR / cout 90,00 EUR -> 10 % de marge
         "faible": Product(
-            code="MRG-2", name="Faible marge", category="Tradition", blurb="x",
+            code="MRG-2", name="Faible marge", category="Décoration", blurb="x",
             price_cents=10000, cost_cents=9000, stock=100, art="wave,#000,#fff",
         ),
         # cout non renseigne
         "inconnue": Product(
-            code="MRG-3", name="Cout inconnu", category="Collection", blurb="x",
+            code="MRG-3", name="Cout inconnu", category="Figurines", blurb="x",
             price_cents=5000, cost_cents=0, stock=10, art="fan,#000,#fff",
         ),
     }
@@ -50,6 +50,26 @@ def _commande(db_session, produit, qty, numero, jours=1):
         unit_price_cents=produit.price_cents, unit_cost_cents=produit.cost_cents, qty=qty,
     ))
     db_session.commit()
+
+
+class TestSeriesRetirees:
+    """Un objet retiré de la vitrine ne pollue pas l'analyse, sauf s'il a vendu."""
+
+    def test_une_serie_retiree_sans_vente_disparait(self, db_session, catalogue):
+        catalogue["inconnue"].active = False
+        db_session.commit()
+
+        codes = {p["code"] for p in analytics.catalogue(db_session)}
+        assert codes == {"MRG-1", "MRG-2"}
+        assert "Figurines" not in {c["category"] for c in analytics.categories(db_session, analytics.catalogue(db_session))}
+
+    def test_une_serie_retiree_qui_a_vendu_reste_dans_l_historique(self, db_session, catalogue):
+        _commande(db_session, catalogue["inconnue"], qty=2, numero="R1")
+        catalogue["inconnue"].active = False
+        db_session.commit()
+
+        fiche = next(p for p in analytics.catalogue(db_session) if p["code"] == "MRG-3")
+        assert (fiche["active"], fiche["units"]) == (False, 2)
 
 
 class TestMarge:

@@ -117,7 +117,7 @@ class TestFormat:
         piege = Product(
             code="TST-003",
             name="Bol ; special",
-            category="Tradition",
+            category="Décoration",
             blurb="Nom piege.",
             price_cents=1500,
             stock=5,

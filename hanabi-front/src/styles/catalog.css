@@ -368,7 +368,7 @@
   border: 0;
   border-radius: var(--r-control);
   /* Laque pleine sur tous les visuels : un noir translucide virait au gris sale
-     sur le papier (Gamelle Sakura, Lampe Lune) */
+     sur les photos claires (Kokeshi Hana, Estampe Grande Vague) */
   background: var(--lacquer);
   color: var(--ivory);
   transition:

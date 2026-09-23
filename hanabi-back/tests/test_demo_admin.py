@@ -74,7 +74,7 @@ class TestLectureSeule:
         "methode,route,corps",
         [
             ("post", "/admin/products", {
-                "code": "PIRATE", "name": "Injecte", "category": "Tradition",
+                "code": "PIRATE", "name": "Injecte", "category": "Décoration",
                 "blurb": "Ne doit pas exister", "price_cents": 100, "stock": 1,
             }),
             ("patch", "/admin/products/1", {"price_cents": 1}),

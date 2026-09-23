@@ -7,4 +7,4 @@ export const SHIPPING_CENTS = 690;
 export const FREE_SHIPPING_CENTS = 8000;
 
 /** Categories du catalogue. "Tout" est un filtre, pas une categorie en base. */
-export const CATEGORIES = ["Tout", "Compagnons", "Tradition", "Collection"];
+export const CATEGORIES = ["Tout", "Figurines", "Décoration", "Luminaires"];
