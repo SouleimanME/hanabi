@@ -131,6 +131,12 @@ puis `DATABASE_URL=postgresql://postgres:hanabi@localhost:5433/hanabi`.
 - `dbt-core` est plafonné par `dagster-dbt` : les deux se mettent à jour ensemble.
 - `actifs_dbt.py` et `actifs_externes.py` n'importent pas
   `from __future__ import annotations` : Dagster lit l'annotation de `context`.
+- Un modèle incrémental qui emploie une fonction de fenêtrage (`lag`, `avg over`)
+  la calcule sur un contexte plus large que sa fenêtre de rattrapage, puis n'écrit
+  que la fenêtre (voir `gold_ca_quotidien.sql`). La CI construit deux fois : le
+  second passage, incrémental, doit redonner les mêmes chiffres.
+- Une table incrémentale mal écrite par le passé se répare par une reconstruction
+  complète : lancement manuel du workflow Entrepot, case cochée.
 
 ## Pièges
 

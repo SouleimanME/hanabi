@@ -52,8 +52,8 @@ class TraducteurHanabi(DagsterDbtTranslator):
         return couche or super().get_group_name(props)
 
 
-# 95 des 111 assertions deviennent des contrôles d'actifs ; les 16 autres (sources
-# et tests singuliers) restent jouées par `dbt build` sans actif de rattachement.
+# 101 des 117 assertions deviennent des contrôles d'actifs ; les 16 autres (sources
+# et réconciliations entre modèles) restent jouées par `dbt build` sans actif de rattachement.
 TRADUCTEUR = TraducteurHanabi(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
 )
@@ -78,11 +78,22 @@ def specs_sources_applicatives() -> list[dg.AssetSpec]:
     ]
 
 
+class ConfigConstruction(dg.Config):
+    """Réglages d'une exécution, passés par `--config-json`."""
+
+    # Reconstruit aussi les modèles incrémentaux depuis zéro : répare une table
+    # dont les jours hors fenêtre de rattrapage ont été mal écrits
+    reconstruction_complete: bool = False
+
+
 @dbt_assets(
     manifest=PROJET.manifest_path,
     dagster_dbt_translator=TRADUCTEUR,
     name="entrepot_dbt",
 )
-def actifs_dbt(context: AssetExecutionContext, dbt: DbtCliResource):
+def actifs_dbt(
+    context: AssetExecutionContext, dbt: DbtCliResource, config: ConfigConstruction
+):
     """`build` : construit et teste dans l'ordre du graphe ; un test en échec bloque l'aval."""
-    yield from dbt.cli(["build"], context=context).stream()
+    commande = ["build", "--full-refresh"] if config.reconstruction_complete else ["build"]
+    yield from dbt.cli(commande, context=context).stream()

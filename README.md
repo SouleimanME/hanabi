@@ -62,7 +62,7 @@ externe                │   transformation    écrites une fois   question
 BCE et jours fériés                                     back-office + boutique
 ```
 
-27 modèles dbt, 111 tests, déclarés comme un graphe d'actifs Dagster et
+27 modèles dbt, 117 tests, déclarés comme un graphe d'actifs Dagster et
 reconstruits chaque jour. Le détail est dans
 [hanabi-dwh/README.md](hanabi-dwh/README.md).
 
@@ -83,12 +83,14 @@ commande : un nouveau tarif fournisseur ne réécrit pas les mois clos.
 lieu de disparaître de la courbe.
 
 `dbt build` construit et teste dans l'ordre du graphe : un test en échec bloque
-l'aval. Les 111 assertions couvrent unicité, non-nullité, intégrité
+l'aval. Les 117 assertions couvrent unicité, non-nullité, intégrité
 référentielle, valeurs acceptées et intervalles. Deux sont des réconciliations :
 trois calculs du chiffre d'affaires doivent donner le même nombre, et la table
-des segments doit totaliser celle des clients.
+des segments doit totaliser celle des clients. Une autre vérifie qu'une
+construction incrémentale redonne les chiffres d'une construction complète ; la
+CI construit l'entrepôt deux fois sur un PostgreSQL jetable pour la jouer.
 
-### Un défaut que les tests laissaient passer
+### Deux défauts que les tests laissaient passer
 
 Les scores RFM classaient les valeurs distinctes au lieu de la population. Avec
 679 anciennetés sur deux ans, « récence 5 » voulait dire « dans les 136
@@ -102,6 +104,14 @@ Toutes les assertions passaient.
 
 Chaque valeur est désormais notée au rang médian de son groupe d'ex aequo,
 exprimé en part de population.
+
+La référence de `gold_ca_quotidien`, moyenne des quatre jours précédents de même
+nature, se calculait en incrémental dans les seuls 30 jours reconstruits. Le premier
+jour de chaque nature sortait sans référence, les suivants avec une moyenne sur trop
+peu de jours (4 083 € au lieu de 3 606 €), et chaque jour sorti de la fenêtre
+restait faux. La construction complète était juste : seule une seconde construction,
+incrémentale, le montre. La CI construit désormais deux fois, et un test recalcule
+la référence sur la table entière.
 
 ### Réseau, concurrence, paiement
 
@@ -301,7 +311,7 @@ source.
 
 | Domaine | Réalisations |
 | --- | --- |
-| Données | Médaillon dbt sur PostgreSQL, 27 modèles, 111 tests, orchestration Dagster par partitions, console SQL bridée |
+| Données | Médaillon dbt sur PostgreSQL, 27 modèles, 117 tests, orchestration Dagster par partitions, console SQL bridée |
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
 | Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation |
@@ -309,7 +319,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 471 tests API, 256 tests d'interface, 18 parcours e2e, 111 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 471 tests API, 256 tests d'interface, 18 parcours e2e, 117 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 

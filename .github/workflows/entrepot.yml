@@ -15,6 +15,11 @@ on:
     # 5 h UTC, comme orchestration/planification.py
     - cron: "0 5 * * *"
   workflow_dispatch:
+    inputs:
+      reconstruction_complete:
+        description: "Reconstruire aussi les modèles incrémentaux depuis zéro"
+        type: boolean
+        default: false
 
 # Pas deux constructions simultanées sur les mêmes tables
 concurrency:
@@ -85,15 +90,22 @@ jobs:
 
       # Deux extractions puis les 27 modèles construits et testés dans l'ordre du
       # graphe. La partition du mois en cours rattrape les cotations manquantes.
+      # Reconstruction complète seulement à la demande (lancement manuel, case cochée)
       - name: Materialiser le graphe
         if: steps.garde.outputs.configure == 'true'
         env:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
+          RECONSTRUCTION_COMPLETE: ${{ inputs.reconstruction_complete == true }}
         run: |
+          config='{}'
+          if [ "$RECONSTRUCTION_COMPLETE" = "true" ]; then
+            config='{"ops": {"entrepot_dbt": {"config": {"reconstruction_complete": true}}}}'
+          fi
           dagster asset materialize \
             --module-name orchestration \
             --select '*' \
-            --partition "$(date -u +%Y-%m-01)"
+            --partition "$(date -u +%Y-%m-01)" \
+            --config-json "$config"
 
       # Conservés même en cas d'échec, pour lire le résultat de chaque nœud
       - name: Conserver les artefacts dbt

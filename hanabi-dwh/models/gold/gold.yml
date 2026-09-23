@@ -14,6 +14,23 @@ models:
       - name: commandes
         tests: [not_null]
 
+  - name: gold_ca_quotidien
+    description: >
+      Une ligne par jour jusqu'à aujourd'hui : chiffre d'affaires, marge, effet de
+      change, nature du jour et référence (moyenne des quatre jours précédents de
+      même nature).
+    columns:
+      - name: jour
+        tests: [unique, not_null]
+      - name: nature_jour
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["ouvre", "week-end", "ferie"]
+      - name: ca_cents
+        tests: [not_null]
+
   - name: gold_performance_produit
     description: >
       Une ligne par référence : audience, ventes, marge, conversion, couverture

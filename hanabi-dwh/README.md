@@ -230,9 +230,9 @@ Ce que le graphe apporte aussi :
 - **Rattrapage par partitions mensuelles.** Relancer un mois se fait depuis
   l'interface ; l'`INSERT … ON CONFLICT` de `ingestion/sources.py` rend l'opération
   sûre. Un mois coûte un appel à la source, contre trente au jour.
-- **Tests attachés aux modèles.** 95 des 111 assertions deviennent des contrôles
-  d'actifs avec historique ; les 16 autres (14 sur des sources, 2 singuliers)
-  tournent dans `dbt build`.
+- **Tests attachés aux modèles.** 101 des 117 assertions deviennent des contrôles
+  d'actifs avec historique ; les 16 autres (14 sur des sources, 2 réconciliations
+  entre plusieurs modèles) tournent dans `dbt build`.
 - **Lignage de bout en bout**, depuis les tables de `public`.
 
 Ce qu'il n'apporte pas :
@@ -248,14 +248,15 @@ Ce qu'il n'apporte pas :
 
 ```
 29 actifs matérialisés
-99 contrôles joués, 0 en échec
-dbt : PASS=139 WARN=0 ERROR=0 SKIP=0
+105 contrôles joués, 0 en échec
+dbt : PASS=145 WARN=0 ERROR=0 SKIP=0
 ```
 
-99 contrôles : 95 assertions dbt et les 4 contrôles de volume et de fraîcheur.
-139 nœuds dbt : 27 modèles, 111 assertions et le crochet qui repose les droits. La
+105 contrôles : 101 assertions dbt et les 4 contrôles de volume et de fraîcheur.
+145 nœuds dbt : 27 modèles, 117 assertions et le crochet qui repose les droits. La
 somme des commandes facturées de `public.orders` et le total de `gold_kpi_mensuel`
-tombent au centime près.
+tombent au centime près. Une construction dure une trentaine de secondes sur un
+PostgreSQL local rempli de 20 000 comptes.
 
 ### Contrôles de volume et de fraîcheur
 
@@ -295,6 +296,14 @@ compile le projet, joue `dbt source freshness` (non bloquant) et matérialise le
 actifs sur la partition du mois en cours. `manifest.json` et `run_results.json` sont
 conservés 30 jours.
 
+Lancé à la main, il propose une case « Reconstruire aussi les modèles incrémentaux
+depuis zéro » (`dbt build --full-refresh`). Elle répare une table dont les jours
+sortis de la fenêtre de rattrapage ont été mal écrits.
+
+L'intégration continue construit l'entrepôt sur un PostgreSQL jetable, rempli par
+l'API avec 20 000 comptes de démonstration, puis le reconstruit : ce second passage
+incrémental doit tenir les mêmes 117 assertions.
+
 Le workflow ne fait rien tant que le secret `DWH_DATABASE_URL` n'est pas posé : la
 tâche s'arrête avec une note, sans échec. Ce secret confie une chaîne de connexion
 en écriture à GitHub Actions ; sur des données réelles, on créerait un rôle limité à
@@ -315,8 +324,9 @@ Dagster ne réimplémente pas dbt : il lance `dbt build` et lit son flux d'évé
 
 ## Tests
 
-`dbt build` joue 111 assertions : unicité, non-nullité, intégrité référentielle,
-valeurs acceptées, intervalles, unicité de combinaisons et deux réconciliations.
+`dbt build` joue 117 assertions : unicité, non-nullité, intégrité référentielle,
+valeurs acceptées, intervalles, unicité de combinaisons, deux réconciliations et
+une équivalence entre construction incrémentale et construction complète.
 
 `macros/tests.sql` définit `intervalle` et `combinaison_unique` au lieu d'ajouter
 `dbt_utils`. `combinaison_unique` couvre les clés composées des tables d'agrégats,
@@ -336,6 +346,32 @@ Vérification à la main :
 ```sql
 select (select sum(total_cents) from orders where status in ('paid','shipped','delivered')) as source, (select sum(ca_cents) from gold.gold_kpi_mensuel) as entrepot;
 ```
+
+### Incrémental et complet
+
+`gold_ca_quotidien` compare chaque jour à la moyenne des quatre jours précédents de
+même nature. En incrémental, la moyenne se calculait dans la fenêtre de 30 jours
+reconstruite, sans voir les jours d'avant : le premier jour de chaque nature sortait
+sans référence, les trois suivants avec une moyenne sur trop peu de jours. Chaque
+nuit, le jour le plus ancien de la fenêtre était réécrit ainsi une dernière fois,
+puis figé : tout jour sorti de la fenêtre gardait une référence fausse. La
+construction complète, elle, était juste, et aucune assertion ne portait sur cette
+colonne.
+
+Relevé sur une base de démonstration, après un seul passage incrémental :
+
+| jour | nature | écrit | attendu |
+| --- | --- | ---: | ---: |
+| 24 août 2026 | ouvré | vide | 3 639,25 € |
+| 25 août 2026 | ouvré | 4 083,20 € | 3 605,68 € |
+| 29 août 2026 | week-end | vide | 2 995,53 € |
+| 30 août 2026 | week-end | 3 181,10 € | 3 283,93 € |
+
+La moyenne se calcule désormais sur un an de contexte, puis seule la fenêtre est
+écrite. `tests/assert_reference_quotidienne.sql` recalcule la référence sur la table
+entière et exige la même valeur ; la CI le joue après une construction complète puis
+une construction incrémentale. Une table déjà faussée ne se répare pas par
+l'incrémental, qui ne réécrit que sa fenêtre : il faut une reconstruction complète.
 
 ---
 

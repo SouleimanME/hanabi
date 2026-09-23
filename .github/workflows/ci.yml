@@ -35,11 +35,29 @@ jobs:
         run: python -m pytest tests/ -q
 
   entrepot:
-    name: Entrepot (dbt parse + graphe Dagster)
+    name: Entrepot (construit deux fois sur PostgreSQL)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: hanabi-dwh
+
+    # PostgreSQL jetable : l'API y écrit son jeu de démonstration, l'entrepôt s'y construit
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: hanabi
+          POSTGRES_DB: hanabi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DWH_DATABASE_URL: postgresql://postgres:hanabi@localhost:5432/hanabi
 
     steps:
       - uses: actions/checkout@v7
@@ -48,12 +66,14 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: hanabi-dwh/requirements.txt
+          cache-dependency-path: |
+            hanabi-dwh/requirements.txt
+            hanabi-back/requirements.txt
 
       - name: Installer les dependances
         run: pip install -r requirements.txt
 
-      # Compile le Jinja et résout le graphe, sans connexion
+      # Compile le Jinja et résout le graphe
       - name: Verification du projet dbt
         run: dbt parse --profiles-dir . --project-dir .
 
@@ -64,6 +84,49 @@ jobs:
       # Verdicts des contrôles de volume et de fraîcheur, sans base
       - name: Tests des controles
         run: python -m unittest discover -s tests/orchestration
+
+      # Dépendances de l'API à part, comme en local
+      - name: Installer l'API
+        run: |
+          python -m venv "$RUNNER_TEMP/api"
+          "$RUNNER_TEMP/api/bin/pip" install -r ../hanabi-back/requirements.txt
+
+      # Démarrage de l'API sans serveur : migrations, catalogue et jeu de démonstration
+      - name: Remplir la base
+        working-directory: hanabi-back
+        env:
+          DATABASE_URL: postgresql://postgres:hanabi@localhost:5432/hanabi
+          SECRET_KEY: cle-de-test-sans-valeur-en-production
+          ENV: dev
+          DEMO_USERS: "20000"
+          OUTBOX_INTERVALLE_SECONDES: "0"
+        run: |
+          "$RUNNER_TEMP/api/bin/python" - <<'EOF'
+          import asyncio
+          from app.main import app, lifespan
+
+          async def demarrer():
+              async with lifespan(app):
+                  pass
+
+          asyncio.run(demarrer())
+          EOF
+
+      # Tout l'historique ; la construction planifiée ne recharge que le mois en cours
+      - name: Charger les sources externes
+        run: python -m ingestion.sources tout
+
+      - name: Construction complete
+        run: |
+          dagster asset materialize --module-name orchestration --select '*' \
+            --partition "$(date -u +%Y-%m-01)"
+
+      # Second passage sur les tables construites : les modèles incrémentaux ne
+      # recalculent que leur fenêtre, et chaque test doit passer de nouveau
+      - name: Construction incrementale
+        run: |
+          dagster asset materialize --module-name orchestration --select '*' \
+            --partition "$(date -u +%Y-%m-01)"
 
   front:
     name: Interface (lint + tests + build)
