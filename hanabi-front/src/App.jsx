@@ -1,5 +1,5 @@
 /** Coquille de la boutique : etat partage, cablage des hooks, choix de l'ecran. */
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Suspense, lazy, useState, useCallback, useRef, useEffect, useMemo } from "react";
 
 import { translator } from "./i18n/index.js";
 import { I18nProvider } from "./i18n/context.jsx";
@@ -37,11 +37,15 @@ import ProductPage from "./pages/ProductPage.jsx";
 import Wishlist from "./pages/Wishlist.jsx";
 import Saved from "./pages/Saved.jsx";
 import Account from "./pages/Account.jsx";
-import Checkout from "./pages/Checkout.jsx";
 import Confirmation from "./pages/Confirmation.jsx";
 import ConfirmerAdresse from "./pages/ConfirmerAdresse.jsx";
 import NouveauMotDePasse from "./pages/NouveauMotDePasse.jsx";
 import Desinscription from "./pages/Desinscription.jsx";
+
+// Le paiement (formulaire, adresses, logos des cartes) ne pèse pas sur
+// l'accueil : il se charge à l'ouverture du panier, avant le clic qui y mène
+const chargerPaiement = () => import("./pages/Checkout.jsx");
+const Checkout = lazy(chargerPaiement);
 
 import "./styles/index.css";
 
@@ -92,6 +96,9 @@ export default function App() {
   // null tant que les avis ne sont pas arrivés : la fiche ne dit pas « aucun avis » à tort
   const [activeReviews, setActiveReviews] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
+  useEffect(() => {
+    if (cartOpen) chargerPaiement();
+  }, [cartOpen]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [legalPage, setLegalPage] = useState(null);
@@ -634,21 +641,23 @@ export default function App() {
             ))}
 
           {view === "checkout" && (
-            <Checkout
-              lines={cart.lines}
-              disp={pricing}
-              promo={promo}
-              promoLabel={pricing.promo?.label ?? null}
-              onApplyPromo={applyPromo}
-              onClearPromo={() => setPromo(null)}
-              user={user}
-              onBack={goHome}
-              onPay={placeOrder}
-              onOpenLegal={setLegalPage}
-              empty={cart.lines.length === 0}
-              lang={lang}
-              eur={eur}
-            />
+            <Suspense fallback={<main id="contenu" className="wrap page" aria-busy="true" />}>
+              <Checkout
+                lines={cart.lines}
+                disp={pricing}
+                promo={promo}
+                promoLabel={pricing.promo?.label ?? null}
+                onApplyPromo={applyPromo}
+                onClearPromo={() => setPromo(null)}
+                user={user}
+                onBack={goHome}
+                onPay={placeOrder}
+                onOpenLegal={setLegalPage}
+                empty={cart.lines.length === 0}
+                lang={lang}
+                eur={eur}
+              />
+            </Suspense>
           )}
 
           {view === "done" && lastOrder && (

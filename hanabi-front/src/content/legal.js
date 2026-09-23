@@ -43,6 +43,11 @@ Lampe Torii LED : Chandan Chaurasia
 Lampe Lune : Kristine Wook
 Lanterne Ramen : Nanxin Zhao
 
+**Autres contenus tiers**
+Logos Visa, Mastercard et American Express : jeu datatrans/payment-logos, licence CC BY-SA 4.0, fichiers reproduits sans modification. Ces marques appartiennent à leurs titulaires et indiquent les cartes acceptées.
+Banque émettrice affichée au paiement : table tirée de bin-list-data (venelinkochev), licence CC BY 4.0, réduite aux banques connues des clients. Donnée indicative, non officielle.
+Adresses proposées au paiement : Base Adresse Nationale, sous Licence Ouverte 2.0, servie par la Géoplateforme de l'IGN.
+
 **Responsabilité**
 Hanabi s'efforce d'assurer l'exactitude des informations publiées. Une erreur ou une omission ne saurait toutefois engager sa responsabilité. Les liens vers des sites tiers ne sauraient engager la responsabilité de Hanabi quant à leur contenu.
 
@@ -88,6 +93,11 @@ Torii LED Lamp: Chandan Chaurasia
 Moon Lamp: Kristine Wook
 Ramen Lantern: Nanxin Zhao
 
+**Other third-party content**
+Visa, Mastercard and American Express logos: datatrans/payment-logos set, CC BY-SA 4.0 license, files reproduced unchanged. These marks belong to their owners and show the accepted cards.
+Issuing bank shown at checkout: table drawn from bin-list-data (venelinkochev), CC BY 4.0 license, limited to banks customers know. Indicative, unofficial data.
+Addresses suggested at checkout: Base Adresse Nationale, under Licence Ouverte 2.0, served by the IGN Géoplateforme.
+
 **Liability**
 Hanabi strives to keep the published information accurate but cannot be held liable for errors or omissions.
 
@@ -132,6 +142,11 @@ Lámpara Torii LED: Chandan Chaurasia
 Lámpara Luna: Kristine Wook
 Farol Ramen: Nanxin Zhao
 
+**Otros contenidos de terceros**
+Logotipos Visa, Mastercard y American Express: conjunto datatrans/payment-logos, licencia CC BY-SA 4.0, archivos reproducidos sin modificación. Estas marcas pertenecen a sus titulares e indican las tarjetas aceptadas.
+Banco emisor mostrado en el pago: tabla extraída de bin-list-data (venelinkochev), licencia CC BY 4.0, reducida a los bancos que conocen los clientes. Dato indicativo, no oficial.
+Direcciones sugeridas en el pago: Base Adresse Nationale, bajo Licence Ouverte 2.0, servida por la Géoplateforme del IGN.
+
 **Accesibilidad**
 Este sitio está diseñado para poder usarse con teclado y lector de pantalla, y respeta la preferencia del sistema de reducción de animaciones.
 
@@ -157,7 +172,7 @@ L'Acheteur sélectionne ses produits, vérifie le récapitulatif (contenu, prix 
 Le paiement est exigible immédiatement à la commande. Moyens acceptés : [liste des moyens de paiement acceptés]. Les paiements sont traités par [prestataire de paiement], via une connexion chiffrée ; le Vendeur n'a jamais accès aux données bancaires complètes de l'Acheteur.
 
 **Article 6. Livraison**
-Les produits sont livrés à l'adresse indiquée par l'Acheteur. Les commandes sont préparées sous 48 heures ouvrées. Les frais de livraison sont offerts à partir de 80 € d'achat.
+Les produits sont livrés en France, outre-mer compris, à l'adresse indiquée par l'Acheteur. Les commandes sont préparées sous 48 heures ouvrées. Les frais de livraison sont offerts à partir de 80 € d'achat.
 Conformément à l'article L216-1 du Code de la consommation, la livraison intervient au plus tard trente (30) jours après la conclusion du contrat. À défaut, l'Acheteur peut mettre le Vendeur en demeure de livrer dans un délai supplémentaire raisonnable, puis résoudre le contrat si la livraison n'intervient pas. Les sommes versées lui sont alors remboursées au plus tard dans les quatorze (14) jours suivant la résolution.
 Le risque de perte ou d'endommagement est transféré à l'Acheteur au moment où il prend physiquement possession du produit.
 
@@ -217,7 +232,7 @@ Prices are stated in euros including VAT, excluding delivery costs. Delivery cos
 Payment is due immediately upon ordering. The order becomes final once payment is confirmed. A confirmation e-mail is sent to the Buyer.
 
 **Article 4. Delivery**
-Orders are prepared within 48 working hours. Delivery is free from €80. In accordance with French law, delivery takes place no later than thirty (30) days after the contract is concluded. Risk of loss passes to the Buyer upon physical possession.
+Products are delivered in France, overseas departments included. Orders are prepared within 48 working hours. Delivery is free from €80. In accordance with French law, delivery takes place no later than thirty (30) days after the contract is concluded. Risk of loss passes to the Buyer upon physical possession.
 
 **Article 5. Right of withdrawal**
 The Buyer has fourteen (14) days from receipt to withdraw, without giving reasons and without penalty, by any unambiguous statement sent to contact@hanabi.fr. Goods must be returned within fourteen (14) days of that notice, in resaleable condition. Direct return costs are borne by the Buyer unless the item is faulty or non-conforming. Refunds are issued within fourteen (14) days of recovering the goods or receiving proof of dispatch, using the original payment method.
@@ -248,7 +263,7 @@ Los precios se indican en euros con impuestos incluidos, sin gastos de envío. L
 El pago es exigible en el momento del pedido. El pedido es firme una vez confirmado el pago, con envío de un correo de confirmación.
 
 **Artículo 4. Entrega**
-Los pedidos se preparan en 48 horas laborables. Envío gratuito a partir de 80 €. La entrega se realiza como máximo treinta (30) días después de la celebración del contrato. El riesgo se transmite al Comprador al tomar posesión física del producto.
+Los productos se entregan en Francia, departamentos de ultramar incluidos. Los pedidos se preparan en 48 horas laborables. Envío gratuito a partir de 80 €. La entrega se realiza como máximo treinta (30) días después de la celebración del contrato. El riesgo se transmite al Comprador al tomar posesión física del producto.
 
 **Artículo 5. Derecho de desistimiento**
 El Comprador dispone de catorce (14) días desde la recepción para desistir, sin motivación ni penalización, mediante declaración inequívoca a contact@hanabi.fr. Los productos deben devolverse en un plazo de catorce (14) días, en estado revendible. Los gastos directos de devolución corren a cargo del Comprador, salvo producto defectuoso o no conforme. El reembolso se efectúa en un plazo de catorce (14) días.
@@ -300,6 +315,7 @@ Délégué à la protection des données : [nom et contact du DPO, ou « aucun D
 **Destinataires**
 Les données sont accessibles au personnel habilité de Hanabi et à ses sous-traitants, agissant sur instruction et liés par une obligation de confidentialité : hébergeur, prestataire de paiement, transporteur, service d'envoi de courriers électroniques. Aucune donnée n'est vendue, louée ou cédée à des tiers à des fins publicitaires.
 Les photographies du catalogue sont servies par Unsplash, société établie aux États-Unis : l'adresse IP de votre navigateur lui parvient à chaque affichage d'une photo, sans autre donnée.
+Au paiement, l'adresse en cours de saisie et le code postal sont envoyés à la Géoplateforme de l'Institut national de l'information géographique et forestière (IGN, France), qui renvoie des adresses complètes à proposer. La banque de votre carte, elle, est cherchée dans une table enregistrée dans votre navigateur : aucun chiffre de la carte ne quitte votre appareil pour l'afficher.
 
 **Transferts hors Union européenne**
 Les données sont hébergées au sein de l'Union européenne. Seule l'adresse IP transmise à Unsplash pour afficher les photographies quitte l'Union (voir Destinataires). Si un sous-traitant conduisait un transfert vers un pays tiers, celui-ci serait encadré par une décision d'adéquation de la Commission européenne ou par les clauses contractuelles types, assorties des mesures complémentaires nécessaires.
@@ -346,6 +362,7 @@ Order and after-sales management, account management: performance of the contrac
 
 **Recipients**
 Authorised Hanabi staff and processors bound by confidentiality: hosting provider, payment provider, carrier, e-mail service. Data is never sold or rented to third parties. Catalogue photographs are served by Unsplash, a company based in the United States: your browser's IP address reaches it each time a photo is displayed, with no other data.
+At checkout, the address being typed and the postcode are sent to the Géoplateforme of the French National Institute of Geographic and Forest Information (IGN, France), which returns complete addresses to suggest. Your card's bank is looked up in a table stored in your browser: no card digit leaves your device to display it.
 
 **Transfers outside the EU**
 Data is hosted within the European Union. Only the IP address sent to Unsplash to display photographs leaves the Union (see Recipients). Any transfer to a third country would be covered by an adequacy decision or the standard contractual clauses.
@@ -383,6 +400,7 @@ Gestión de pedidos, entrega y posventa, y gestión de la cuenta: ejecución del
 
 **Destinatarios**
 Personal autorizado de Hanabi y encargados sujetos a confidencialidad: proveedor de alojamiento, de pago, transportista y servicio de correo. Los datos nunca se venden ni alquilan a terceros. Las fotografías del catálogo las sirve Unsplash, empresa establecida en Estados Unidos: la dirección IP de su navegador le llega cada vez que se muestra una foto, sin ningún otro dato.
+En el pago, la dirección que se está escribiendo y el código postal se envían a la Géoplateforme del Instituto nacional de información geográfica y forestal (IGN, Francia), que devuelve direcciones completas para sugerir. El banco de su tarjeta se busca en una tabla guardada en su navegador: ningún dígito de la tarjeta sale de su dispositivo para mostrarlo.
 
 **Transferencias fuera de la UE**
 Los datos se alojan en la Unión Europea. Solo la dirección IP enviada a Unsplash para mostrar las fotografías sale de la Unión (véase Destinatarios). Cualquier transferencia a un tercer país estaría amparada por una decisión de adecuación o por las cláusulas contractuales tipo.
@@ -421,7 +439,7 @@ Chaque ouverture d'une fiche produit est comptée par notre serveur, sans cookie
 Votre choix est demandé au premier passage par un bandeau, où refuser est aussi simple qu'accepter. Il est conservé six mois, puis redemandé. Vous pouvez le modifier à tout moment depuis le lien « Gérer mes cookies » en pied de page.
 
 **Contenus chargés depuis un tiers**
-Les photographies du catalogue sont servies par le réseau de diffusion d'Unsplash (images.unsplash.com). Pour les afficher, votre navigateur transmet à ce service votre adresse IP, comme pour toute image hébergée ailleurs. Ces requêtes ne déposent aucun cookie. Les polices de caractères sont hébergées par le site lui-même : aucune requête n'est faite à Google.
+Les photographies du catalogue sont servies par le réseau de diffusion d'Unsplash (images.unsplash.com). Pour les afficher, votre navigateur transmet à ce service votre adresse IP, comme pour toute image hébergée ailleurs. Ces requêtes ne déposent aucun cookie. Les polices de caractères sont hébergées par le site lui-même : aucune requête n'est faite à Google. Au paiement, les adresses proposées viennent de la Géoplateforme de l'IGN (data.geopf.fr), sans cookie non plus.
 
 **Durée de conservation**
 Les informations du stockage local restent dans votre navigateur jusqu'à ce que vous les supprimiez. Le jeton de session est effacé à la déconnexion.
@@ -447,7 +465,7 @@ Each product page opened is counted by our server, without cookies. With your co
 Your choice is asked on your first visit through a banner, where rejecting is as easy as accepting. It is kept for six months, then asked again. You can change it at any time from the "Manage cookies" link in the footer.
 
 **Content loaded from a third party**
-Catalogue photographs are served by Unsplash's delivery network (images.unsplash.com). To display them, your browser sends your IP address to that service, as with any image hosted elsewhere. These requests set no cookies. Fonts are hosted by the site itself: no request is made to Google.
+Catalogue photographs are served by Unsplash's delivery network (images.unsplash.com). To display them, your browser sends your IP address to that service, as with any image hosted elsewhere. These requests set no cookies. Fonts are hosted by the site itself: no request is made to Google. At checkout, suggested addresses come from the IGN Géoplateforme (data.geopf.fr), which sets no cookies either.
 
 **Retention and deletion**
 Local storage stays in your browser until you delete it; the session token is erased when you sign out. You can clear local storage and cookies at any time from your browser's privacy settings; the site will return to its default settings and ask for your audience choice again.
@@ -472,7 +490,7 @@ Cada ficha de producto abierta la cuenta nuestro servidor, sin cookies. Con su c
 Su elección se pide en la primera visita mediante un banner, donde rechazar es tan sencillo como aceptar. Se conserva seis meses y después se vuelve a pedir. Puede cambiarla en cualquier momento desde el enlace «Gestionar cookies» del pie de página.
 
 **Contenidos cargados desde un tercero**
-Las fotografías del catálogo las sirve la red de distribución de Unsplash (images.unsplash.com). Para mostrarlas, su navegador transmite a ese servicio su dirección IP, como con cualquier imagen alojada en otro sitio. Estas solicitudes no instalan cookies. Las fuentes tipográficas están alojadas en el propio sitio: no se hace ninguna solicitud a Google.
+Las fotografías del catálogo las sirve la red de distribución de Unsplash (images.unsplash.com). Para mostrarlas, su navegador transmite a ese servicio su dirección IP, como con cualquier imagen alojada en otro sitio. Estas solicitudes no instalan cookies. Las fuentes tipográficas están alojadas en el propio sitio: no se hace ninguna solicitud a Google. En el pago, las direcciones sugeridas proceden de la Géoplateforme del IGN (data.geopf.fr), que tampoco instala cookies.
 
 **Conservación y eliminación**
 El almacenamiento local permanece en su navegador hasta que usted lo borre; el token de sesión se borra al cerrar sesión. Puede borrar el almacenamiento local y las cookies en cualquier momento desde los ajustes de privacidad de su navegador; el sitio volverá a sus ajustes por defecto y le pedirá de nuevo su elección sobre la medición de audiencia.

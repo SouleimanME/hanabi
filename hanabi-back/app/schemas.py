@@ -292,6 +292,14 @@ class ShippingIn(BaseModel):
             raise ValueError("champ vide")
         return propre
 
+    @field_validator("cp")
+    @classmethod
+    def _code_postal_francais(cls, valeur: str) -> str:
+        # La boutique livre en France, outre-mer compris : cinq chiffres
+        if not (len(valeur) == 5 and valeur.isascii() and valeur.isdigit()):
+            raise ValueError("code postal à cinq chiffres")
+        return valeur
+
 
 class CheckoutIn(BaseModel):
     items: list[CartLineIn] = Field(max_length=PANIER_MAX_LIGNES)

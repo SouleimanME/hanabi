@@ -1,15 +1,19 @@
 /** Paiement. */
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { ArrowLeft, Lock, RotateCcw } from "lucide-react";
 import { useT } from "../i18n/context.jsx";
 import { ProductArt } from "../components/brand/ProductArt.jsx";
 import { PromoField } from "../components/cart/PromoField.jsx";
 import { ShippingGauge } from "../components/cart/ShippingGauge.jsx";
 import { Totals } from "../components/cart/Totals.jsx";
+import { ChampAdresse } from "../components/ui/ChampAdresse.jsx";
 import { DeliveryNote } from "../components/ui/DeliveryNote.jsx";
+import { LogoReseau, RESEAUX_ACCEPTES } from "../components/ui/LogoReseau.jsx";
+import { villesDuCodePostal } from "../lib/adresses.js";
 import { Compte } from "../lib/api.js";
+import { CARTE_DE_TEST, banqueDe, chargerBanques, nomDeBanque } from "../lib/banques.js";
 import {
-  cardNumberValid,
   cvcLength,
   cvcValid,
   detectBrand,
@@ -18,6 +22,8 @@ import {
   formatCardNumber,
   formatExpiry,
   jetonDePaiement,
+  longueurUsuelle,
+  problemeCarte,
 } from "../lib/card.js";
 
 const NOMS_RESEAU = { visa: "Visa", mastercard: "Mastercard", amex: "American Express" };
@@ -26,6 +32,8 @@ const NOMS_RESEAU = { visa: "Visa", mastercard: "Mastercard", amex: "American Ex
 const ORDRE = ["email", "prenom", "nom", "adresse", "cp", "ville", "carte", "exp", "cvc", "cgv"];
 
 const ADRESSE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// La boutique livre en France : cinq chiffres, outre-mer compris
+const CODE_POSTAL = /^\d{5}$/;
 
 /** Champ avec son libellé, et son erreur sous le champ, reliée par `aria-describedby`. */
 function Champ({ label, erreur, children, id }) {
@@ -42,10 +50,10 @@ function Champ({ label, erreur, children, id }) {
   );
 }
 
-/** Attributs d'accessibilité d'un champ selon son erreur. */
-const etatChamp = (id, erreur) => ({
+/** Attributs d'accessibilité d'un champ selon son erreur, et son aide éventuelle. */
+const etatChamp = (id, erreur, aide) => ({
   "aria-invalid": erreur ? true : undefined,
-  "aria-describedby": erreur ? `${id}-err` : undefined,
+  "aria-describedby": [aide, erreur && `${id}-err`].filter(Boolean).join(" ") || undefined,
 });
 
 export function Checkout({
@@ -136,6 +144,36 @@ export function Checkout({
 
   const brand = detectBrand(f.carte);
 
+  // La banque se cherche dans une table locale, dès le sixième chiffre
+  const bin = digitsOnly(f.carte).slice(0, 6);
+  const [emetteur, setEmetteur] = useState({ bin: "", nom: null });
+  useEffect(() => {
+    if (bin.length < 6) return undefined;
+    let annule = false;
+    banqueDe(bin).then((nom) => !annule && setEmetteur({ bin, nom }));
+    return () => {
+      annule = true;
+    };
+  }, [bin]);
+  const banque = emetteur.bin === bin ? emetteur.nom : null;
+
+  // Un code postal complet propose ses communes, et remplit la ville s'il n'y en a qu'une
+  const [communes, setCommunes] = useState({ cp: "", noms: [] });
+  useEffect(() => {
+    if (!CODE_POSTAL.test(f.cp)) return undefined;
+    const controle = new AbortController();
+    villesDuCodePostal(f.cp, controle.signal)
+      .then((noms) => {
+        setCommunes({ cp: f.cp, noms });
+        if (noms.length === 1) {
+          setF((s) => (s.ville.trim() || s.cp !== f.cp ? s : { ...s, ville: noms[0] }));
+        }
+      })
+      .catch(() => {});
+    return () => controle.abort();
+  }, [f.cp]);
+  const villes = communes.cp === f.cp ? communes.noms : [];
+
   /** Contrôles d'un champ, ou de tous ; rend les messages par champ. */
   const controler = (seul) => {
     const e = {};
@@ -144,10 +182,14 @@ export function Checkout({
     for (const k of ["prenom", "nom", "adresse", "cp", "ville"]) {
       if (vise(k) && !f[k].trim()) e[k] = t("fieldRequired");
     }
+    if (vise("cp") && f.cp.trim() && !CODE_POSTAL.test(f.cp.trim())) e.cp = t("errCp");
     // Une carte enregistree ne repasse pas par ces controles : ses champs ne
     // sont pas affiches.
     if (carteChoisie === null) {
-      if (vise("carte") && !cardNumberValid(f.carte)) e.carte = t("errCard");
+      const probleme = problemeCarte(f.carte);
+      if (vise("carte") && probleme) {
+        e.carte = probleme === "invalide" ? t("errCardInvalid") : t("errCard");
+      }
       if (vise("exp") && !expiryValid(f.exp)) e.exp = t("errExp");
       if (vise("cvc") && !cvcValid(f.cvc, f.carte)) e.cvc = t("errCvc");
     }
@@ -155,11 +197,51 @@ export function Checkout({
     return e;
   };
 
-  // Un champ de carte se vérifie en le quittant, s'il n'est pas vide
+  // Un champ se vérifie en le quittant, s'il n'est pas vide
   const verifierEnSortant = (k) => () => {
     if (!f[k]) return;
     setErreurs((e) => ({ ...e, [k]: controler(k)[k] }));
   };
+
+  /** Passe au champ suivant une fois la saisie enregistrée : déplacé avant,
+   *  le focus faisait juger le champ quitté sur sa valeur d'avant la frappe
+   *  (un numéro à quinze chiffres, donc « incomplet »). */
+  const passerA = (id) => document.getElementById(id)?.focus();
+
+  /** Numéro saisi en entier : une faute se signale tout de suite, un bon
+   *  numéro passe la main à l'expiration, comme sur un terminal de paiement. */
+  const saisirCarte = (valeur) => {
+    const carte = formatCardNumber(valeur);
+    const complet = digitsOnly(carte).length === longueurUsuelle(carte);
+    const probleme = complet ? problemeCarte(carte) : null;
+    flushSync(() => {
+      setF((s) => ({ ...s, carte }));
+      setErreurs((e) => ({
+        ...e,
+        carte: probleme === "invalide" ? t("errCardInvalid") : undefined,
+      }));
+    });
+    if (complet && !probleme) passerA("co-exp");
+  };
+
+  const saisirExpiration = (valeur) => {
+    const exp = formatExpiry(valeur);
+    flushSync(() => {
+      setF((s) => ({ ...s, exp }));
+      effacerErreur("exp");
+    });
+    if (expiryValid(exp)) passerA("co-cvc");
+  };
+
+  const choisirAdresse = ({ adresse, cp, ville }) => {
+    setF((s) => ({ ...s, adresse, cp, ville }));
+    setErreurs((e) => ({ ...e, adresse: undefined, cp: undefined, ville: undefined }));
+  };
+
+  const texteEmetteur =
+    banque === CARTE_DE_TEST ? t("cardTest") : banque && nomDeBanque(banque, lang);
+  const phraseEmetteur =
+    banque && banque !== CARTE_DE_TEST ? `${t("cardIssuer")} ${texteEmetteur}` : texteEmetteur;
 
   if (empty) {
     return (
@@ -254,11 +336,14 @@ export function Checkout({
               </Champ>
             </div>
             <Champ label={t("adresse")} id="co-adresse" erreur={erreurs.adresse}>
-              <input
+              <ChampAdresse
                 id="co-adresse"
                 value={f.adresse}
-                onChange={set("adresse")}
-                autoComplete="street-address"
+                onChange={(adresse) => {
+                  setF((s) => ({ ...s, adresse }));
+                  effacerErreur("adresse");
+                }}
+                onChoisir={choisirAdresse}
                 maxLength={255}
                 {...etatChamp("co-adresse", erreurs.adresse)}
               />
@@ -268,10 +353,13 @@ export function Checkout({
                 <input
                   id="co-cp"
                   value={f.cp}
-                  onChange={set("cp")}
+                  onChange={(e) => {
+                    setF((s) => ({ ...s, cp: digitsOnly(e.target.value).slice(0, 5) }));
+                    effacerErreur("cp");
+                  }}
+                  onBlur={verifierEnSortant("cp")}
                   inputMode="numeric"
                   autoComplete="postal-code"
-                  maxLength={10}
                   {...etatChamp("co-cp", erreurs.cp)}
                 />
               </Champ>
@@ -281,9 +369,15 @@ export function Checkout({
                   value={f.ville}
                   onChange={set("ville")}
                   autoComplete="address-level2"
+                  list={villes.length > 1 ? "co-villes" : undefined}
                   maxLength={120}
                   {...etatChamp("co-ville", erreurs.ville)}
                 />
+                <datalist id="co-villes">
+                  {villes.map((v) => (
+                    <option key={v} value={v} />
+                  ))}
+                </datalist>
               </Champ>
             </div>
           </fieldset>
@@ -302,6 +396,7 @@ export function Checkout({
                       onChange={() => setCarteChoisie(m.id)}
                     />
                     <span className="choice-main">
+                      <LogoReseau reseau={m.reseau} />
                       {NOMS_RESEAU[m.reseau] || t("payCard")}
                       <span className="code"> •••• {m.quatre_derniers}</span>
                     </span>
@@ -326,32 +421,50 @@ export function Checkout({
             {carteChoisie === null && (
               <>
                 <Champ label={t("cardNo")} id="co-carte" erreur={erreurs.carte}>
-                  <div className="card-input">
+                  <div className="card-input" data-reseau={brand.id}>
                     <input
                       id="co-carte"
                       value={f.carte}
-                      onChange={(e) => {
-                        setF((s) => ({ ...s, carte: formatCardNumber(e.target.value) }));
-                        effacerErreur("carte");
-                      }}
+                      onChange={(e) => saisirCarte(e.target.value)}
+                      onFocus={chargerBanques}
                       onBlur={verifierEnSortant("carte")}
                       placeholder="4242 4242 4242 4242"
                       inputMode="numeric"
                       autoComplete="cc-number"
-                      {...etatChamp("co-carte", erreurs.carte)}
+                      {...etatChamp("co-carte", erreurs.carte, "co-carte-reseau")}
                     />
-                    {brand.label && <span className="card-brand">{brand.label}</span>}
+                    {/* Réseau inconnu : les cartes acceptées. Reconnu : la sienne seule */}
+                    <span className="card-logos" aria-hidden="true">
+                      {RESEAUX_ACCEPTES.filter((r) => brand.id === "unknown" || r === brand.id).map(
+                        (r) => (
+                          <LogoReseau key={r} reseau={r} />
+                        ),
+                      )}
+                    </span>
+                    <span className="sr-only" id="co-carte-reseau" aria-live="polite">
+                      {brand.label
+                        ? [brand.label, phraseEmetteur].filter(Boolean).join(". ")
+                        : t("cardsAccepted")}
+                    </span>
                   </div>
+                  {texteEmetteur && (
+                    <span className="field-hint card-issuer" aria-hidden="true">
+                      {banque === CARTE_DE_TEST ? (
+                        texteEmetteur
+                      ) : (
+                        <>
+                          {t("cardIssuer")} <strong>{texteEmetteur}</strong>
+                        </>
+                      )}
+                    </span>
+                  )}
                 </Champ>
                 <div className="field-row">
                   <Champ label={t("exp")} id="co-exp" erreur={erreurs.exp}>
                     <input
                       id="co-exp"
                       value={f.exp}
-                      onChange={(e) => {
-                        setF((s) => ({ ...s, exp: formatExpiry(e.target.value) }));
-                        effacerErreur("exp");
-                      }}
+                      onChange={(e) => saisirExpiration(e.target.value)}
                       onBlur={verifierEnSortant("exp")}
                       placeholder={t("expPh")}
                       inputMode="numeric"

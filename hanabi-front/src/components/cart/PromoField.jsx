@@ -4,6 +4,13 @@ import { useId, useState } from "react";
 import { Tag } from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
 
+// Les codes de la démonstration (hanabi-back/app/seed.py), et ce qu'ils offrent
+const CODES_DU_MOMENT = [
+  { code: "BIENVENUE10", key: "promoBienvenue" },
+  { code: "DROP5", key: "promoDrop" },
+  { code: "PORTOFFERT", key: "promoPort" },
+];
+
 export function PromoField({ promo, promoLabel, onApply, onClear }) {
   const t = useT();
   const id = useId();
@@ -11,13 +18,17 @@ export function PromoField({ promo, promoLabel, onApply, onClear }) {
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
 
-  const appliquer = async (e) => {
-    e.preventDefault();
+  const essayer = async (valeur) => {
     setEnvoi(true);
-    const message = await onApply(code);
+    const message = await onApply(valeur);
     setEnvoi(false);
     setErreur(message);
     if (!message) setCode("");
+  };
+
+  const appliquer = (e) => {
+    e.preventDefault();
+    essayer(code);
   };
 
   if (promo) {
@@ -49,19 +60,35 @@ export function PromoField({ promo, promoLabel, onApply, onClear }) {
           autoComplete="off"
           spellCheck="false"
           aria-invalid={erreur ? true : undefined}
-          aria-describedby={`${id}-aide`}
+          aria-describedby={erreur ? `${id}-err` : undefined}
         />
         <button className="btn btn-quiet" type="submit" disabled={envoi || !code.trim()}>
           {t("apply")}
         </button>
       </div>
-      <p
-        className={erreur ? "field-error" : "field-hint"}
-        id={`${id}-aide`}
-        role={erreur ? "alert" : undefined}
-      >
-        {erreur || t("promoHint")}
-      </p>
+      {erreur && (
+        <p className="field-error" id={`${id}-err`} role="alert">
+          {erreur}
+        </p>
+      )}
+      {/* Un code se tape rarement de mémoire : un clic l'applique */}
+      <div className="promo-codes" role="group" aria-labelledby={`${id}-codes`}>
+        <span className="promo-codes-titre" id={`${id}-codes`}>
+          {t("promoTry")}
+        </span>
+        {CODES_DU_MOMENT.map(({ code: valeur, key }) => (
+          <button
+            key={valeur}
+            type="button"
+            className="promo-code"
+            disabled={envoi}
+            onClick={() => essayer(valeur)}
+          >
+            <span className="code">{valeur}</span>
+            <span>{t(key)}</span>
+          </button>
+        ))}
+      </div>
     </form>
   );
 }

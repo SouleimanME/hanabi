@@ -124,6 +124,23 @@ possible.
 `CHECK (stock >= 0)`. Le test lance douze fils d'exécution derrière une barrière
 de départ sur le même article : une seule commande passe.
 
+### Le formulaire de paiement
+
+**La carte se reconnaît sans rien envoyer.** Le réseau se lit aux premiers
+chiffres et s'affiche par sa marque ; la banque sort d'une table de 2 379 BIN tirée
+de bin-list-data (CC BY 4.0, `scripts/banques.js`), chargée au premier focus du
+champ (6 ko). Elle ne garde que les 32 banques que les clients connaissent sous ce
+nom : un sous-traitant technique affiché à la place de la banque inquiéterait. Le
+service gratuit en ligne (binlist.net) plafonne à cinq requêtes par heure et ne
+connaissait pas le BIN français essayé. Seize chiffres dont la clé de Luhn est
+fausse sont annoncés comme une faute de frappe, et non comme un numéro incomplet.
+
+**L'adresse se propose.** Les suggestions viennent de la Base Adresse Nationale
+(Géoplateforme de l'IGN, gratuite, sans clé) ; en cas de panne, le champ redevient
+un champ ordinaire. Le code postal n'accepte que cinq chiffres, sans longueur
+maximale sur le champ : elle tronquait un code collé avec une espace avant que le
+filtre ne passe. Un code qui ne désigne qu'une commune remplit la ville.
+
 ### Le compte
 
 Informations, cartes enregistrées, mot de passe et adresse de connexion.
@@ -155,13 +172,15 @@ dans `rgpd.anonymiser` le fait échouer.
 
 ### Parcours de bout en bout
 
-Quatorze parcours Playwright contre une vraie API sur un SQLite jetable, barrières
+Dix-huit parcours Playwright contre une vraie API sur un SQLite jetable, barrières
 anti-robots actives. Le plus utile vérifie qu'après une coupure réseau, le réessai
 porte la même clé d'idempotence que la première tentative. Un autre paie avec la
 carte de test `4000 0000 0000 0002` et attend le refus de la banque : le numéro
 reste dans le navigateur, seul le jeton qu'il désigne part au paiement simulé.
-Deux derniers surveillent le bandeau cookies : un refus tient au rechargement, et
-sans accord la fiche consultée part sans jeton, même pour un client connecté.
+Deux surveillent le bandeau cookies : un refus tient au rechargement, et sans
+accord la fiche consultée part sans jeton, même pour un client connecté. Quatre
+couvrent le formulaire de paiement ; le service d'adresses y répond par une
+réponse fixe, pour qu'aucun parcours ne dépende du réseau.
 
 ### Cookies et mesure d'audience
 
@@ -175,7 +194,8 @@ treize mois ; l'entrepôt n'utilise que les totaux par produit et par mois.
 Les polices sont servies par le site (107 ko, sous-ensembles latin et les six
 idéogrammes affichés) : plus aucune requête vers Google. Les photos passent par le
 CDN d'Unsplash, qui ne dépose pas de cookie ; la politique de confidentialité le
-déclare comme destinataire de l'adresse IP.
+déclare comme destinataire de l'adresse IP, comme la Géoplateforme de l'IGN qui
+reçoit l'adresse en cours de saisie au paiement.
 
 ### Courriels promis, courriels envoyés
 
@@ -198,9 +218,11 @@ statut porté par la couleur seule.
 | lot | transféré (gzip) | plafond |
 | --- | ---: | ---: |
 | `index` (React et le socle) | 45,4 ko | 51 ko |
-| `App` (la boutique) | 53,1 ko | 63 ko |
+| `App` (la boutique) | 60,4 ko | 63 ko |
 | `Admin` (chargé à la demande) | 25,0 ko | 28 ko |
-| CSS | 14,6 ko | 22 ko |
+| CSS | 16,5 ko | 22 ko |
+
+Le paiement (5 ko) se charge à l'ouverture du panier, avant le clic qui y mène.
 
 ### Fluidité
 
@@ -287,7 +309,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 452 tests API, 198 tests d'interface, 12 parcours e2e, 111 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 471 tests API, 256 tests d'interface, 18 parcours e2e, 111 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -421,6 +443,8 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Paiement non branché.** La carte est validée (Luhn, réseau) mais rien ne
   quitte le navigateur ; un vrai branchement passerait par les composants du
   prestataire.
+- **Banque indicative.** La table des BIN n'est pas officielle et date de février
+  2025 ; sur un BIN qu'elle ne connaît pas, elle n'affiche rien plutôt que de deviner.
 - **Photos en base64 dans la base** pour celles qu'on téléverse depuis le
   back-office. La réponse du catalogue grossit avec elles ; la suite logique est un
   stockage objet.

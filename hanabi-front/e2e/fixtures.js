@@ -1,7 +1,18 @@
 /** Aides communes aux parcours de bout en bout. */
-import { test, expect } from "@playwright/test";
+import { test as base, expect } from "@playwright/test";
 
-export { test, expect };
+/** Adresses renvoyées par défaut : aucune. Les parcours ne dépendent pas du
+ *  service de l'IGN ; un test qui veut des propositions pose les siennes. */
+export const test = base.extend({
+  page: async ({ page }, use) => {
+    await page.route("https://data.geopf.fr/**", (route) =>
+      route.fulfill({ json: { type: "FeatureCollection", features: [] } }),
+    );
+    await use(page);
+  },
+});
+
+export { expect };
 
 /** Ajoute au panier le premier objet du plateau et rend son nom. */
 export async function ajouterPremierArticle(page) {

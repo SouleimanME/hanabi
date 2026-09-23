@@ -70,10 +70,23 @@ export function luhnValid(value) {
   return sum % 10 === 0;
 }
 
+/** Ce qui cloche dans un numero : `incomplet` tant qu'il manque des chiffres,
+ *  `invalide` quand la longueur est bonne mais la cle de Luhn fausse (une
+ *  faute de frappe, le plus souvent), `null` s'il est bon. */
+export function problemeCarte(value) {
+  const { lengths } = detectBrand(value);
+  if (!lengths.includes(digitsOnly(value).length)) return "incomplet";
+  return luhnValid(value) ? null : "invalide";
+}
+
 /** Numero complet, de longueur plausible et cle de Luhn correcte. */
-export function cardNumberValid(value) {
-  const brand = detectBrand(value);
-  return brand.lengths.includes(digitsOnly(value).length) && luhnValid(value);
+export const cardNumberValid = (value) => problemeCarte(value) === null;
+
+/** Longueur d'une carte ordinaire du reseau : seize chiffres, quinze chez Amex.
+ *  Atteinte, la saisie est finie et peut etre jugee sans attendre la sortie du champ. */
+export function longueurUsuelle(value) {
+  const { lengths } = detectBrand(value);
+  return lengths.includes(16) ? 16 : lengths[0];
 }
 
 /** Met l'expiration en forme : « 1226 » devient « 12/26 ». */

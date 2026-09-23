@@ -7,6 +7,8 @@ import {
   formatCardNumber,
   luhnValid,
   cardNumberValid,
+  problemeCarte,
+  longueurUsuelle,
   formatExpiry,
   expiryValid,
   cvcLength,
@@ -133,6 +135,30 @@ describe("cardNumberValid", () => {
 
   it("accepte la saisie mise en forme, espaces compris", () => {
     expect(cardNumberValid("4242 4242 4242 4242")).toBe(true);
+  });
+});
+
+describe("problemeCarte", () => {
+  it("distingue un numero inacheve d'un numero faux", () => {
+    // Seize chiffres ne sont pas « incomplets » : la cle de Luhn est fausse
+    expect(problemeCarte("4213 7213 8213 9821")).toBe("invalide");
+    expect(problemeCarte("4242 4242 4242")).toBe("incomplet");
+    expect(problemeCarte(VISA)).toBeNull();
+  });
+
+  it("juge la longueur selon le reseau", () => {
+    // Quinze chiffres suffisent a American Express, pas a Visa
+    expect(problemeCarte(AMEX)).toBeNull();
+    expect(problemeCarte("424242424242424")).toBe("incomplet");
+  });
+});
+
+describe("longueurUsuelle", () => {
+  it("vaut seize chiffres, quinze chez American Express", () => {
+    expect(longueurUsuelle("4")).toBe(16);
+    expect(longueurUsuelle("51")).toBe(16);
+    expect(longueurUsuelle("37")).toBe(15);
+    expect(longueurUsuelle("")).toBe(16);
   });
 });
 

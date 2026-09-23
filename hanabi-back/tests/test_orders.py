@@ -1,4 +1,6 @@
 """Commande : decrement de stock, integrite des montants, cloisonnement."""
+import pytest
+
 from app import models
 
 
@@ -87,6 +89,26 @@ class TestCheckout:
         headers, user = auth_header()
 
         res = client.post("/orders/checkout", json=checkout_payload(product.id), headers=headers)
+
+        assert res.status_code == 201
+
+
+class TestCodePostal:
+    """La boutique livre en France : le formulaire filtre, le serveur tranche."""
+
+    @pytest.mark.parametrize("cp", ["7500", "750011", "75O01", "SW1A 1AA", "７５００１"])
+    def test_un_code_postal_non_francais_est_refuse(self, client, db_session, product, cp):
+        charge = checkout_payload(product.id)
+        charge["shipping"]["cp"] = cp
+
+        assert client.post("/orders/checkout", json=charge).status_code == 422
+        assert db_session.query(models.Order).count() == 0
+
+    def test_les_espaces_autour_sont_retires(self, client, product):
+        charge = checkout_payload(product.id)
+        charge["shipping"]["cp"] = " 97400 "
+
+        res = client.post("/orders/checkout", json=charge)
 
         assert res.status_code == 201
 

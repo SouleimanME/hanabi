@@ -30,16 +30,17 @@ async function remplirLivraison(page, email = "ada@hanabi.fr") {
     .fill(LIVRAISON.ville);
 }
 
+/** Tapée touche par touche, comme une personne : un remplissage d'un bloc
+ *  masquait le passage au champ suivant, qui jugeait le numéro à quinze chiffres. */
 async function remplirCarte(page, numero = "4242 4242 4242 4242") {
   await formulaire(page)
     .getByLabel(/Numéro de carte/i)
-    .fill(numero);
-  await formulaire(page)
-    .getByLabel(/^Expiration$/i)
-    .fill("12/30");
-  await formulaire(page)
-    .getByLabel(/^Cryptogramme$/i)
-    .fill("123");
+    .pressSequentially(numero.replace(/\s/g, ""));
+  await expect(formulaire(page).getByLabel(/^Expiration$/i)).toBeFocused();
+  await page.keyboard.type("1230");
+  await expect(formulaire(page).getByLabel(/^Cryptogramme$/i)).toBeFocused();
+  await page.keyboard.type("123");
+  await expect(formulaire(page).locator(".field-error")).toHaveCount(0);
 }
 
 // Case jamais pré-cochée : on la coche comme une personne le ferait
@@ -178,6 +179,71 @@ test.describe("Tunnel d'achat", () => {
 
     await expect(page.locator(".notice-error")).toContainText(/refusée/i);
     await expect(page).toHaveURL(/\/commande/);
+  });
+});
+
+test.describe("Formulaire de paiement", () => {
+  async function allerAuPaiement(page) {
+    await ouvrirBoutique(page);
+    await ajouterPremierArticle(page);
+    await (await ouvrirPanier(page)).getByRole("button", { name: /passer la commande/i }).click();
+    await expect(page).toHaveURL(/\/commande/);
+  }
+
+  test("une adresse proposée remplit rue, code postal et ville", async ({ page }) => {
+    await page.route("https://data.geopf.fr/**", (route) =>
+      route.fulfill({
+        json: {
+          features: [
+            {
+              properties: {
+                id: "69382_1",
+                type: "housenumber",
+                name: "8 Rue Mercière",
+                postcode: "69002",
+                city: "Lyon",
+              },
+            },
+          ],
+        },
+      }),
+    );
+    await allerAuPaiement(page);
+
+    const adresse = formulaire(page).getByRole("combobox", { name: /^Adresse$/i });
+    await adresse.pressSequentially("8 rue merc");
+    await page.getByRole("option", { name: /8 Rue Mercière/ }).click();
+
+    await expect(adresse).toHaveValue("8 Rue Mercière");
+    await expect(formulaire(page).getByLabel(/^Code postal$/i)).toHaveValue("69002");
+    await expect(formulaire(page).getByLabel(/^Ville$/i)).toHaveValue("Lyon");
+  });
+
+  test("le code postal refuse les lettres", async ({ page }) => {
+    await allerAuPaiement(page);
+    const cp = formulaire(page).getByLabel(/^Code postal$/i);
+    await cp.pressSequentially("75a01b1");
+    await expect(cp).toHaveValue("75011");
+  });
+
+  test("seize chiffres faux sont signalés comme invalides, pas incomplets", async ({ page }) => {
+    await allerAuPaiement(page);
+    await formulaire(page)
+      .getByLabel(/Numéro de carte/i)
+      .fill("4213 7213 8213 9821");
+    await expect(formulaire(page).locator(".field-error")).toHaveText(/Numéro invalide/);
+  });
+
+  test("le logo du réseau remplace les cartes acceptées", async ({ page }) => {
+    await allerAuPaiement(page);
+    const logos = formulaire(page).locator(".card-logos img");
+    await expect(logos).toHaveCount(3);
+    await formulaire(page)
+      .getByLabel(/Numéro de carte/i)
+      .fill("5555 5555 5555 4444");
+    await expect(logos).toHaveCount(1);
+    await expect(logos).toHaveAttribute("src", "/cartes/mastercard.svg");
+    await expect(formulaire(page).locator(".card-issuer")).toHaveText("Carte de test");
   });
 });
 

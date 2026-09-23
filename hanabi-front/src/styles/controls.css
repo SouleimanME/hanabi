@@ -290,6 +290,12 @@
   position: relative;
   display: block;
 }
+/* La liste qui s'ouvre prend le fond de son champ ; sans fond (sélecteur de
+   langue), elle tombait au blanc du système sous un texte clair */
+.shop option {
+  background-color: var(--field);
+  color: var(--ink);
+}
 .shop .select select {
   appearance: none;
   padding-inline-end: 36px;
@@ -349,15 +355,83 @@
   position: relative;
   display: block;
 }
-.card-brand {
+/* Le numéro ne passe jamais sous les logos : trois tant que le réseau est
+   inconnu, un seul ensuite */
+.card-input input {
+  padding-inline-end: 52px;
+}
+.card-input[data-reseau="unknown"] input {
+  padding-inline-end: 120px;
+}
+.card-logos {
   position: absolute;
   inset-inline-end: 12px;
   inset-block-start: 50%;
   translate: 0 -50%;
-  font-size: var(--step--1);
-  font-weight: 700;
-  color: var(--muted);
+  display: flex;
+  gap: 4px;
   pointer-events: none;
+}
+.logo-reseau {
+  display: inline-block;
+  flex: none;
+  inline-size: 30px;
+  block-size: 20px;
+  vertical-align: middle;
+  border-radius: var(--r-surface);
+  /* Fond blanc des marques : un filet le détache du papier clair */
+  box-shadow: 0 0 0 1px var(--line);
+}
+.choice-main .logo-reseau {
+  margin-inline-end: 8px;
+}
+.card-issuer strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Propositions d'adresse, posées sous le champ */
+.adresse {
+  position: relative;
+}
+.adresse-liste {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + 4px);
+  z-index: 5;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  background: var(--panel);
+  box-shadow: var(--shadow-sheet);
+}
+.adresse-liste[hidden] {
+  display: none;
+}
+.adresse-liste [role="option"] {
+  display: grid;
+  gap: 2px;
+  min-block-size: 44px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.adresse-liste [aria-selected="true"] {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+@media (hover: hover) {
+  .adresse-liste [role="option"]:hover {
+    background: var(--accent-soft);
+  }
+}
+.adresse-rue {
+  font-weight: 600;
+}
+.adresse-ville {
+  font-size: var(--step--1);
+  color: var(--muted);
 }
 
 .phone-row {
@@ -559,6 +633,60 @@
   grid-template-columns: 1fr auto;
   gap: 8px;
 }
+/* Les codes du moment : un pointillé de bon à découper, un clic les applique */
+.promo-codes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
+  margin-block-start: 4px;
+}
+.promo-codes-titre {
+  flex-basis: 100%;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.promo-code {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 36px;
+  padding: 4px 8px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--r-control);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--step--1);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    scale var(--dur-feedback) var(--ease-out);
+}
+/* 36 px à l'œil, 44 px sous le doigt : la cible déborde dans l'interligne */
+.promo-code::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+.promo-code .code {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+@media (hover: hover) {
+  .promo-code:hover {
+    background: var(--accent-soft);
+  }
+}
+.promo-code:active {
+  scale: 0.96;
+}
+.promo-code:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
 .promo-on {
   display: flex;
   align-items: center;

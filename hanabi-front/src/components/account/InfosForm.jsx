@@ -101,7 +101,13 @@ export function InfosForm({ user, onEnregistre, onAnnuler }) {
       <div className="field-row">
         <label className="field">
           <span>{t("cp")}</span>
-          <input value={valeurs.cp} onChange={poser("cp")} autoComplete="postal-code" />
+          <input
+            value={valeurs.cp}
+            // Comme au paiement : cinq chiffres, rien d'autre
+            onChange={(e) => poser("cp")(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            inputMode="numeric"
+            autoComplete="postal-code"
+          />
         </label>
         <label className="field">
           <span>{t("ville")}</span>

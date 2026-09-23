@@ -4,6 +4,7 @@ import { CreditCard, Plus, Trash2 } from "lucide-react";
 
 import { useT } from "../../i18n/context.jsx";
 import { Compte } from "../../lib/api.js";
+import { LogoReseau, RESEAUX_ACCEPTES } from "../ui/LogoReseau.jsx";
 import {
   detectBrand,
   digitsOnly,
@@ -52,7 +53,11 @@ export function Paiements({ flash }) {
         <ul className="cards-list">
           {liste.map((m) => (
             <li key={m.id} className="saved-card">
-              <CreditCard size={20} aria-hidden="true" />
+              {RESEAUX_ACCEPTES.includes(m.reseau) ? (
+                <LogoReseau reseau={m.reseau} />
+              ) : (
+                <CreditCard size={20} aria-hidden="true" />
+              )}
               <div className="saved-card-main">
                 <span>
                   {NOMS_RESEAU[m.reseau] || t("payCard")}
@@ -154,7 +159,7 @@ function FormulaireCarte({ onAjoute, onAnnuler }) {
     <form className="form-stack" onSubmit={envoyer} noValidate>
       <label className="field">
         <span>{t("cardNumber")}</span>
-        <span className="card-input">
+        <span className="card-input" data-reseau={reseau.id}>
           <input
             value={formatCardNumber(numero)}
             onChange={(e) => setNumero(e.target.value)}
@@ -162,7 +167,11 @@ function FormulaireCarte({ onAjoute, onAnnuler }) {
             inputMode="numeric"
             autoComplete="cc-number"
           />
-          {reseau.label && <span className="card-brand">{reseau.label}</span>}
+          <span className="card-logos" aria-hidden="true">
+            {RESEAUX_ACCEPTES.filter((r) => reseau.id === "unknown" || r === reseau.id).map((r) => (
+              <LogoReseau key={r} reseau={r} />
+            ))}
+          </span>
         </span>
       </label>
 
