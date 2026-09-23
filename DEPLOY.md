@@ -10,13 +10,9 @@ Hanabi se compose de deux projets à héberger séparément :
 | `hanabi-front` | build statique (Vite) | Cloudflare Pages | `hanabi-front/public/_redirects` |
 | `hanabi-back` | service Python (FastAPI) | Render | `render.yaml` |
 
-Ce découpage tient à la nature des deux : un build statique se diffuse depuis un
-réseau de cache, sans mise en veille ni temps de démarrage, alors que l'API a
-besoin d'un processus vivant.
-
-Tout ce qui peut l'être est déclaré dans ces deux fichiers. Restent quelques
-valeurs à saisir à la main, parce qu'elles ne peuvent pas figurer dans un dépôt
-ou ne sont connues qu'après le premier déploiement.
+Le build statique part sur un réseau de cache, sans mise en veille ; l'API a
+besoin d'un processus. Le reste de la configuration vit dans ces deux fichiers,
+sauf les valeurs secrètes ou connues après le premier déploiement.
 
 ---
 
@@ -57,9 +53,8 @@ Les deux hébergeurs déploient la branche principale, il n'y a donc rien à
 fusionner : `main` est la seule branche publiée.
 
 L'intégration continue (`.github/workflows/ci.yml`) se déclenche au premier
-envoi : elle joue la suite de tests de l'API, le lint et le build de
-l'interface, puis l'analyse du projet dbt. L'onglet **Actions** du dépôt doit
-afficher trois coches vertes.
+envoi : tests de l'API, lint, tests et build de l'interface, analyse du projet
+dbt. L'onglet **Actions** doit afficher trois tâches en vert.
 
 ---
 
@@ -70,20 +65,16 @@ suivante.
 
 1. Créer un compte sur [neon.com](https://neon.com).
 2. **Create project**. Choisir une région proche de celle du service Render
-   (`aws-eu-central-1` pour Francfort) : chaque requête traverse le réseau, et
-   deux continents ajoutent une centaine de millisecondes à chacune.
+   (`aws-eu-central-1` pour Francfort) : un autre continent ajoute une centaine de
+   millisecondes par requête.
 3. Dans le panneau **Connect**, copier la chaîne de connexion **directe** :
    celle du format « Connection string », dont le nom d'hôte ne comporte pas
    `-pooler`. L'option **Connection pooling** doit être désactivée, sinon c'est
    la variante mise en commun qui est proposée.
 
-   Le gestionnaire de connexions de Neon travaille en mode transaction et ne
-   conserve pas l'état de session. Or l'API fixe le fuseau de sa session à UTC
-   (`options: -c timezone=utc` dans `database.py`), sans quoi une commande
-   passée en fin de mois basculerait dans le mois suivant au moment du
-   regroupement, et les séries mensuelles du tableau de bord seraient fausses.
-   Ce réglage serait perdu derrière le pooler. L'API gérant déjà son propre
-   pool SQLAlchemy, celui de Neon n'apporterait de toute façon rien.
+   Le pooler de Neon travaille en mode transaction et perd le réglage de
+   session `timezone=utc` posé par `database.py` ; les commandes de fin de mois
+   changeraient alors de mois dans les séries. L'API a déjà son propre pool.
 
 La chaîne ressemble à ceci, le mot de passe en clair au milieu :
 
@@ -91,9 +82,8 @@ La chaîne ressemble à ceci, le mot de passe en clair au milieu :
 postgresql://neondb_owner:MOT_DE_PASSE@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
 ```
 
-Elle ne doit apparaître ni dans le dépôt, ni dans une capture, ni dans un
-message. Elle se colle directement dans le tableau de bord Render, et nulle part
-ailleurs.
+Elle se colle dans le tableau de bord Render, et nulle part ailleurs : ni dépôt,
+ni capture, ni message.
 
 **Rien à créer côté schéma.** Les tables et les index sont posés par Alembic au
 premier démarrage de l'API, puis le jeu de données de démonstration est généré
@@ -101,8 +91,7 @@ dans la foulée.
 
 ### Ce qu'implique l'offre gratuite de Neon
 
-- 0,5 Go de stockage et 100 CU-heures de calcul par mois. Le jeu de données
-  complet, dix mille comptes compris, pèse moins de 100 Mo : la marge est large.
+- 0,5 Go de stockage et 100 CU-heures de calcul par mois.
 - **Mise en veille au bout de cinq minutes** sans requête, non désactivable. Le
   réveil prend quelques centaines de millisecondes, et le pool est configuré
   pour le supporter (`pool_pre_ping`).
@@ -111,9 +100,7 @@ dans la foulée.
 ### Sauvegardes et restauration
 
 Neon sauvegarde en continu, et l'offre gratuite permet de **remonter le temps
-sur les sept derniers jours** (*point-in-time recovery*). C'est un vrai filet,
-mais il ne couvre pas tout, et surtout il ne se découvre pas le jour où on en a
-besoin.
+sur les sept derniers jours** (*point-in-time recovery*).
 
 **Ce que Neon couvre.** Une suppression accidentelle, une migration ratée, un
 `UPDATE` sans `WHERE` : on crée une branche à l'instant précédant l'incident,
@@ -136,24 +123,16 @@ Restauration dans une base vide :
 pg_restore --dbname="$URL_CIBLE" --no-owner --clean --if-exists hanabi-2026-08-16.dump
 ```
 
-**Une sauvegarde jamais restaurée n'est pas une sauvegarde.** La seule façon de
-savoir qu'un fichier `.dump` est exploitable est de le restaurer ailleurs et de
-compter les lignes. À faire une fois, sur une branche Neon jetable, plutôt que
-de le supposer.
+Tester une fois la restauration sur une branche Neon jetable, en comptant les
+lignes.
 
-> Sur ce projet, la base est reconstructible : le catalogue vient de `seed.py`
-> et le jeu de démonstration de `demo_data.py`. Les seules données réellement
-> irremplaçables seraient de vraies commandes de vrais clients. Il n'y en a pas.
-> La procédure est documentée parce qu'elle devrait exister avant d'en
-> avoir besoin, pas parce qu'il y a aujourd'hui quelque chose à sauver.
+> Ici la base se reconstruit : catalogue dans `seed.py`, jeu de démonstration
+> dans `demo_data.py`. Seules de vraies commandes seraient irremplaçables.
 
 ### Savoir que le site est tombé
 
-`/health` exécute un aller-retour réel jusqu'à la base et rend **503** si elle
-ne répond pas. C'est correct, et parfaitement inutile tant que personne ne
-l'interroge.
-
-Le workflow `.github/workflows/surveillance.yml` la sonde toutes les quinze
+`/health` fait un aller-retour jusqu'à la base et rend **503** si elle ne répond
+pas. Le workflow `.github/workflows/surveillance.yml` la sonde toutes les quinze
 minutes. Il échoue si l'API est injoignable, si elle rend autre chose que 200,
 ou si elle rend 200 avec `status: degrade`, ce qui arrive quand la remise des
 courriels est en panne alors que le site répond normalement.
@@ -164,14 +143,11 @@ Pour l'activer, ajouter un secret de dépôt :
 | --- | --- |
 | `API_HEALTH_URL` | `https://ton-api.onrender.com/health` |
 
-Sans ce secret, le workflow ne fait rien plutôt que d'échouer : un dépôt cloné
-ne doit pas sonner l'alarme faute de configuration. L'alerte arrive par le
+Sans ce secret, le workflow s'arrête sans échouer. L'alerte arrive par le
 courriel que GitHub envoie à la première exécution en échec.
 
-**Limite assumée** : les tâches planifiées de GitHub ne sont pas ponctuelles
-(plusieurs minutes de retard sont courantes) et se désactivent après soixante
-jours sans activité sur le dépôt. Ce n'est pas de la surveillance à la seconde ;
-c'est la différence entre l'apprendre au réveil et l'apprendre par un visiteur.
+Limite : les tâches planifiées de GitHub prennent souvent plusieurs minutes de
+retard et se désactivent après soixante jours sans activité sur le dépôt.
 
 ---
 
@@ -199,18 +175,16 @@ c'est la différence entre l'apprendre au réveil et l'apprendre par un visiteur
 **Vérifier :** ouvrir `https://hanabi-api-myk8.onrender.com/health`. La réponse doit
 être `{"status":"ok"}`.
 
-Le tout premier démarrage est plus long que les suivants : Alembic crée le
-schéma, puis dix mille comptes et leur historique sont générés. Compter une
-poignée de secondes supplémentaires, une seule fois.
+Le premier démarrage est plus long : Alembic crée le schéma, puis le jeu de
+démonstration est généré (`DEMO_USERS`, 100 000 comptes par défaut).
 
 ### Ce qu'implique l'offre gratuite de Render
 
 - **Mise en veille après inactivité.** La première visite après une pause
   réveille le service et peut demander une minute. Les suivantes sont normales.
   Ouvre le lien une fois avant de le montrer à quelqu'un.
-- **Disque non persistant.** Sans conséquence désormais : les données vivent
-  dans PostgreSQL, pas dans le conteneur. Rien ne doit être écrit sur le disque
-  avec l'espoir de le retrouver au redémarrage.
+- **Disque non persistant.** Les données vivent dans PostgreSQL ; rien d'écrit
+  sur le disque du conteneur ne survit à un redémarrage.
 
 ---
 
@@ -228,8 +202,7 @@ poignée de secondes supplémentaires, une seule fois.
    | Build output directory | `dist` |
    | Root directory (advanced) | `hanabi-front` |
 
-   Le répertoire racine est le piège de ce dépôt : il contient deux projets, et
-   sans cette valeur Cloudflare construit la racine et échoue.
+   Sans ce répertoire racine, Cloudflare construit la racine du dépôt et échoue.
 
 4. Toujours dans la section avancée, ajouter les variables d'environnement :
 
@@ -244,15 +217,13 @@ poignée de secondes supplémentaires, une seule fois.
 
 5. **Save and Deploy**, puis noter l'URL obtenue. Comme Render, Cloudflare
    ajoute un suffixe quand le nom du projet est déjà pris : celle de ce
-   déploiement est `https://hanabi-6x9.pages.dev`. C'est cette URL exacte, et
-   pas celle qu'on avait prévue, qui doit être reportée dans `CORS_ORIGINS` à
-   l'étape suivante.
+   déploiement est `https://hanabi-6x9.pages.dev`. C'est cette URL exacte qui va
+   dans `CORS_ORIGINS` à l'étape suivante.
 
 Le repli SPA vient de `hanabi-front/public/_redirects`, recopié tel quel dans
 `dist` par Vite. Sans lui, ouvrir directement `/produit/5` renverrait 404.
 
-Le palier gratuit couvre 500 builds par mois et ne facture pas la bande
-passante, ce qui laisse de la marge pour un projet de portfolio.
+Le palier gratuit couvre 500 builds par mois, bande passante non facturée.
 
 ---
 
@@ -289,22 +260,21 @@ ordinateur, sans réseau local ni configuration.
 ## Vérifications après mise en ligne
 
 - [ ] La grille affiche les douze produits.
-- [ ] `/produit/5` ouvre directement la fiche - c'est la règle de repli SPA.
+- [ ] `/produit/5` ouvre directement la fiche (repli SPA).
 - [ ] Le bouton Retour du navigateur parcourt les écrans.
 - [ ] Le thème suit celui du système, et le bouton le change.
 - [ ] La connexion fonctionne avec le compte d'essai affiché.
 - [ ] `/admin` **refuse** ce compte d'essai et accepte `ADMIN_EMAIL`.
-- [ ] Sur téléphone : la barre du bas remplace les actions de l'en-tête.
-- [ ] L'onglet **Actions** de GitHub affiche deux coches vertes.
+- [ ] Sur téléphone : le menu en tiroir s'ouvre depuis l'en-tête.
+- [ ] L'onglet **Actions** de GitHub affiche les trois tâches de CI en vert.
 
 ---
 
 ## Bon à savoir avant de partager le lien
 
 - **Aucun paiement n'est encaissé.** Le tunnel valide le format de la carte mais
-  ne transmet aucune donnée bancaire, et la mention sous le bouton de paiement
-  le dit au visiteur. Elle doit rester : sans elle, quelqu'un pourrait saisir une
-  vraie carte sur un site qui n'a pas de prestataire de paiement.
+  ne transmet aucune donnée bancaire. La mention sous le bouton de paiement le
+  dit au visiteur et doit rester.
 - **Les mentions légales comportent des champs entre crochets.** Aucune identité
   d'entreprise n'a été inventée. Un bandeau explique que le site est un projet
   personnel sans activité commerciale.
@@ -325,8 +295,5 @@ git add -A && git commit -m "..." && git push
 
 ## Notes
 
-- Les schémas de configuration des hébergeurs évoluent. Render valide
-  `render.yaml` avant de créer les services et signale toute clé obsolète ;
-  Cloudflare Pages reconstruit de même a chaque poussee sur `main`.
-- Les deux fichiers sont commentés : chaque réglage explique ce qu'il fait et ce
-  qui casse en son absence.
+- Render valide `render.yaml` avant de créer les services et signale toute clé
+  obsolète.

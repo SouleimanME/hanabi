@@ -1,46 +1,33 @@
 # Politique de sécurité
 
-Hanabi est une boutique **fictive**, sans activité commerciale. Aucun paiement
-n'est encaissé, aucune donnée bancaire ne quitte le navigateur, et les comptes
-clients sont générés par le jeu de données de démonstration.
+Hanabi est une boutique **fictive**. Aucun paiement n'est encaissé, aucune donnée
+bancaire ne quitte le navigateur, et les comptes clients sont générés.
 
-Cela réduit l'enjeu d'une faille, mais ne la rend pas moins intéressante à
-signaler : le projet existe précisément pour montrer comment ces sujets sont
-traités.
+Une faille reste bonne à signaler : le projet sert justement à montrer comment ces
+sujets sont traités.
 
 ## Signaler une faille
 
-Ouvre une **[security advisory privée](https://github.com/SouleimanME/hanabi-boutique/security/advisories/new)**
-plutôt qu'une issue publique - une issue expose le problème avant qu'il soit
-corrigé, et c'est vrai même sur un projet de démonstration.
+Ouvre une **[security advisory privée](https://github.com/SouleimanME/hanabi/security/advisories/new)**
+plutôt qu'une issue publique, qui exposerait le problème avant sa correction.
 
-Décris le chemin d'exploitation, pas seulement le symptôme : ce qui est utile,
-c'est ce qu'un attaquant obtient au bout.
+Décris le chemin d'exploitation et ce qu'il permet d'obtenir, pas seulement le
+symptôme. Réponse sous quelques jours : c'est un projet personnel, sans astreinte.
 
-Je réponds sous quelques jours. Ce dépôt est un projet personnel, sans astreinte.
+## Comportements voulus
 
-## Ce qui n'en est pas une
+- **Les identifiants du back-office sont publics.** `hanabi@atelier.fr` est affiché
+  dans la fenêtre de connexion pour que chacun puisse ouvrir le back-office. Le
+  compte est bridé en lecture seule côté serveur (`DEMO_ADMIN_READONLY`) ;
+  l'administrateur réel vient de variables d'environnement hors dépôt.
+- **Le jeton d'authentification vit en `localStorage`.** Un script injecté peut le
+  lire. Choix assumé pour garder une API sans session, compensé par une durée de vie
+  courte.
+- **Les compteurs anti-robots sont en mémoire du processus.** Ils ne survivent pas à
+  un redémarrage et ne se partagent pas entre instances ; plusieurs répliques
+  demanderaient Redis.
 
-Trois comportements ressemblent à des failles et sont documentés comme des
-choix. Les signaler ne dérange pas, mais autant le dire d'avance :
-
-- **Les identifiants du back-office sont publics.** `hanabi@atelier.fr` est
-  affiché dans la fenêtre de connexion, à dessein : n'importe qui doit pouvoir
-  ouvrir le back-office. Ce compte est bridé en lecture seule côté serveur par
-  `DEMO_ADMIN_READONLY`, et le compte administrateur réel est provisionné
-  séparément par des variables d'environnement qui n'apparaissent jamais dans le
-  dépôt.
-- **Le jeton d'authentification vit en `localStorage`.** Il est donc lisible par
-  un script injecté. Le choix est assumé pour garder une API sans état de
-  session ; la contrepartie est une durée de vie courte.
-- **Les compteurs anti-robots sont en mémoire du processus.** Ils ne survivent
-  pas à un redémarrage et ne sont pas partagés entre instances. Derrière
-  plusieurs répliques, il faudrait les déplacer dans Redis. C'est une limite
-  connue, écrite dans `AGENTS.md`.
-
-## Ce qui est réellement défendu
-
-Si tu cherches où creuser, c'est ici que le code prend position :
+## Ce qui est défendu
 
 | Sujet | Où |
 | --- | --- |
@@ -50,17 +37,16 @@ Si tu cherches où creuser, c'est ici que le code prend position :
 | Cloisonnement du back-office | `hanabi-back/app/deps.py` |
 | Recalcul des montants côté serveur | `hanabi-back/app/pricing.py` |
 | Jetons JWT, hachage bcrypt | `hanabi-back/app/security.py` |
+| Console SQL en lecture seule | `hanabi-back/app/warehouse.py` |
 
-Deux invariants valent d'être testés en priorité, parce que les casser aurait
-des conséquences réelles : **un prix envoyé par le client n'est jamais cru**, et
-**le stock se décrémente par `UPDATE … WHERE stock >= qty`** - deux acheteurs
-simultanés sur le dernier article ne doivent pas passer tous les deux.
+Deux invariants à tester en priorité : **un prix envoyé par le client n'est jamais
+cru**, et **le stock se décrémente par `UPDATE … WHERE stock >= qty`**, pour que deux
+acheteurs simultanés du dernier article ne passent pas tous les deux.
 
 ## Secrets
 
 Aucun secret n'est versionné. `SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` et
-`DATABASE_URL` viennent de l'environnement. En `ENV=prod`, l'absence de
-`SECRET_KEY` **empêche le démarrage** plutôt que de laisser signer des jetons
-avec une clé connue.
+`DATABASE_URL` viennent de l'environnement. En `ENV=prod`, l'API refuse de démarrer
+sans `SECRET_KEY`.
 
-Si tu trouves un secret dans l'historique git, c'est une vraie faille : signale-la.
+Un secret retrouvé dans l'historique git est une vraie faille : signale-la.
