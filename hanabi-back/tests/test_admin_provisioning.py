@@ -1,9 +1,4 @@
-"""Provisionnement du compte administrateur, et cloisonnement du compte demo.
-
-Enjeu : les identifiants du compte de demonstration sont affiches dans la
-fenetre de connexion. S'il portait les droits d'administration, toute personne
-visitant le site en ligne aurait acces au back-office.
-"""
+"""Provisionnement du compte administrateur, et cloisonnement du compte demo."""
 import pytest
 
 from app.config import settings
@@ -45,9 +40,7 @@ class TestCompteDemo:
 
 
 class TestRetrogradationDesBasesAnciennes:
-    """`seed` s'interrompt si le catalogue existe : une base deja en service
-    garderait un administrateur aux identifiants publics. La retrogradation
-    tourne a chaque demarrage pour rattraper ce cas."""
+    """`seed` s'interrompt si le catalogue existe."""
 
     def test_le_compte_demo_administrateur_est_retrograde(
         self, db_session, sans_admin_configure, user_factory

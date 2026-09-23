@@ -1,18 +1,19 @@
-"""Inscription aux annonces de series, et offre de bienvenue associee."""
+"""Inscription à la lettre d'information, code de bienvenue et désinscription."""
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .. import emails, models, outbox, schemas
+from .. import abonnement, emails, models, outbox, schemas
 from ..antibot import verify as verify_antibot
 from ..database import get_db
+from ..pii import masquer_email
 from ..ratelimit import limiter
 
 router = APIRouter(prefix="/newsletter", tags=["newsletter"])
 
-#: Code remis en echange de l'inscription. Il doit exister en base (voir
-#: seed.py) : sa validite reelle est verifiee avant d'etre annoncee.
+#: Code de bienvenue, annoncé seulement s'il est actif en base (voir seed.py)
 WELCOME_CODE = "BIENVENUE10"
 
 
@@ -20,7 +21,8 @@ def _welcome_code(db: Session) -> str | None:
     promo = db.query(models.Promo).filter(models.Promo.code == WELCOME_CODE).first()
     if promo is None or not promo.active:
         return None
-    if promo.expires_at is not None and promo.expires_at < datetime.now(timezone.utc):
+    # SQLite relit les dates sans fuseau : comparer tel quel lèverait un TypeError
+    if promo.expires_at is not None and models.as_utc(promo.expires_at) < datetime.now(timezone.utc):
         return None
     return promo.code
 
@@ -28,44 +30,63 @@ def _welcome_code(db: Session) -> str | None:
 @router.post("/subscribe", response_model=schemas.SubscribeOut, status_code=201)
 @limiter.limit("5/minute")
 def subscribe(request: Request, data: schemas.SubscribeIn, db: Session = Depends(get_db)):
-    """Enregistre une adresse et renvoie le code de bienvenue.
+    """Enregistre une adresse et rend le code de bienvenue.
 
-    Formulaire ouvert, donc soumis aux memes barrieres que l'alerte de stock :
-    sans elles, il sert a inscrire des tiers a leur insu et a inonder la base.
-
-    Une adresse deja connue recoit le meme code sans erreur : lui repondre
-    « deja inscrite » revelerait a un visiteur quelconque qu'une adresse
-    donnee figure dans la base. Une reinscription apres desinscription est en
-    revanche un nouveau consentement, et leve le drapeau.
+    Formulaire public, protégé par les barrières anti-robots. Une adresse connue
+    reçoit la même réponse, pour ne rien révéler ; une réinscription après
+    désinscription vaut nouveau consentement.
     """
     verify_antibot(data.antibot, "subscribe")
 
-    email = str(data.email).lower()
+    email = data.email
     code = _welcome_code(db)
 
-    existing = db.query(models.Subscriber).filter(models.Subscriber.email == email).first()
-    nouveau = existing is None or existing.unsubscribed
+    inscription = (
+        db.query(models.Subscriber).filter(func.lower(models.Subscriber.email) == email).first()
+    )
+    nouveau = inscription is None or inscription.unsubscribed
 
-    if existing is None:
-        db.add(models.Subscriber(email=email, lang=data.lang))
-    elif existing.unsubscribed:
-        existing.unsubscribed = False
-        existing.lang = data.lang
+    if inscription is None:
+        inscription = models.Subscriber(email=email, lang=data.lang)
+        db.add(inscription)
+        # Le numéro signe le lien de désinscription du courriel
+        db.flush()
+    elif inscription.unsubscribed:
+        inscription.unsubscribed = False
+        inscription.lang = data.lang
 
-    # Le courriel n'est ecrit QUE pour une inscription reelle. Le renvoyer a
-    # chaque soumission ferait de ce formulaire ouvert un moyen d'inonder la
-    # boite de n'importe qui : il suffirait de reposter la meme adresse.
-    #
-    # Il est inscrit dans la meme transaction que l'inscription elle-meme, comme
-    # la confirmation de commande : promettre une remise puis perdre le courriel
-    # qui la porte serait la pire des issues.
+    # Courriel pour une nouvelle inscription seulement, sinon le formulaire
+    # servirait à inonder une boîte ; même transaction que l'inscription
     if nouveau:
-        sujet, texte, html = emails.bienvenue_newsletter(code, data.lang)
+        sujet, texte, html = emails.bienvenue_newsletter(inscription.id, code, data.lang)
         outbox.deposer(db, email, sujet, texte, html)
 
     db.commit()
 
-    # Le code reste dans la reponse : il s'affiche a l'ecran dans la foulee, et
-    # attendre son courrier pour l'obtenir serait une regression. Le courriel
-    # est un DOUBLE, pour le retrouver apres avoir ferme l'onglet.
+    # Code affiché tout de suite ; le courriel sert à le retrouver
     return schemas.SubscribeOut(ok=True, code=code)
+
+
+@router.post("/unsubscribe")
+@limiter.limit("10/minute")
+def unsubscribe(request: Request, data: schemas.UnsubscribeIn, db: Session = Depends(get_db)):
+    """Désinscription depuis le lien du courriel : la signature prouve la réception.
+
+    La ligne reste, marquée : le retrait du consentement est lui-même une trace
+    à conserver. Rend l'adresse masquée, pour que la page dise laquelle.
+    """
+    if not abonnement.signature_valide(data.id, data.signature):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Ce lien de désinscription n'est pas valable. Écris-nous et nous retirerons l'adresse.",
+        )
+
+    inscrit = db.get(models.Subscriber, data.id)
+    # Ligne effacée depuis (compte supprimé) : plus rien à désinscrire
+    if inscrit is None:
+        return {"ok": True, "deja": True, "email": None}
+    deja = inscrit.unsubscribed
+    if not deja:
+        inscrit.unsubscribed = True
+        db.commit()
+    return {"ok": True, "deja": deja, "email": masquer_email(inscrit.email)}

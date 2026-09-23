@@ -1,72 +1,40 @@
-"""Droits des personnes : portabilite (art. 20) et effacement (art. 17).
+"""Droits des personnes : portabilité (art. 20) et effacement (art. 17).
 
-POURQUOI CE N'EST PAS UN `DELETE`.
+L'effacement anonymise au lieu de supprimer : le Code de commerce impose de
+garder dix ans les pièces comptables, ce que prévoit l'article 17-3-b. Les
+commandes gardent date, montants et lignes, sans nom, adresse ni courriel.
 
-Effacer la ligne d'un client detruirait aussi ses commandes, or le Code de
-commerce impose de conserver dix ans les pieces comptables. Le RGPD le prevoit
-explicitement : l'article 17-3-b ecarte le droit a l'effacement lorsqu'un
-traitement est necessaire au respect d'une obligation legale. Les deux textes ne
-s'opposent donc pas - ils delimitent ce qu'il faut effacer et ce qu'il faut
-garder.
-
-On ANONYMISE : tout ce qui identifie une personne disparait, tout ce qui fait
-foi comptablement reste. Une commande conserve sa date, ses montants et ses
-lignes ; elle ne conserve plus de nom, d'adresse ni de courriel. Ce qui subsiste
-n'est plus une donnee personnelle, et sort donc du champ du reglement.
-
-CE QUI DISPARAIT VRAIMENT, en revanche, est tout ce qu'aucune loi n'oblige a
-garder : moyens de paiement, jetons, alertes de stock, inscription aux annonces,
-courriels en file. Rien de tout cela n'a de valeur probante.
-
-L'OPERATION EST IRREVERSIBLE, et c'est le but. Une « corbeille » d'ou l'on
-pourrait restaurer un compte ne serait pas un effacement.
-
-LIMITE ASSUMEE : le TEXTE des avis est conserve, seul l'auteur est anonymise.
-Un avis parle d'un produit et les autres clients s'y fient ; le supprimer
-appauvrirait une information collective. Si quelqu'un y a ecrit son nom, aucune
-analyse automatique ne peut le savoir - la suppression sur demande reste alors
-la voie, et c'est ce que dit le message rendu a l'appelant.
+Supprimés : moyens de paiement, jetons, alertes de stock, abonnement, courriels
+en file. Le texte des avis reste en ligne sous un auteur anonyme ; un nom écrit
+dans un avis se retire sur demande.
 """
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import models
 
 log = logging.getLogger("hanabi.rgpd")
 
-#: Domaine reserve par la RFC 2606 : il ne peut etre attribue a personne, donc
-#: aucune adresse anonymisee ne risque de joindre un vrai destinataire.
+#: Domaine réservé (RFC 2606), jamais attribué
 DOMAINE_ANONYME = "anonyme.invalid"
 
-#: Nom affiche a la place du vrai, sur les avis conserves.
-NOM_ANONYME = "Client supprime"
+#: Auteur affiché sur les avis conservés
+NOM_ANONYME = "Client supprimé"
 
-#: Valeur mise a la place du condensat. Elle ne peut correspondre a aucun mot de
-#: passe : bcrypt ne produit jamais cette chaine, donc `verify_password` echoue
-#: toujours. Le compte devient inaccessible sans qu'on ait a ajouter un drapeau
-#: que chaque route devrait ensuite penser a verifier.
+#: Valeur que bcrypt ne produit jamais : `verify_password` échoue toujours
 CONDENSAT_INUTILISABLE = "!compte-anonymise"
 
-#: Formule a recopier pour confirmer un effacement. En francais et en
-#: majuscules : elle doit etre lue, pas devinee, et un simple « OUI » se tape
-#: sans y penser.
+#: Formule à recopier pour confirmer l'effacement
 FORMULE_CONFIRMATION = "SUPPRIMER MON COMPTE"
 
 
 def exporter(db: Session, user: models.User) -> dict:
-    """Rassemble tout ce que la boutique detient sur une personne.
+    """Tout ce que la boutique détient sur la personne, en JSON lisible.
 
-    Format JSON, lisible par une machine ET par un humain : l'article 20 exige
-    un format « structure, couramment utilise et lisible par machine », et la
-    personne doit pouvoir comprendre ce qu'elle recoit sans outil.
-
-    Les moyens de paiement figurent dans l'export sous la forme qu'ils ont en
-    base - reseau, quatre derniers chiffres, expiration. Le jeton du prestataire
-    en est exclu : il n'est pas une donnee sur la personne mais un moyen de
-    debiter, et l'exporter reviendrait a le mettre en circulation.
+    Les moyens de paiement sortent tels qu'en base, sans le jeton du prestataire.
     """
     commandes = db.scalars(
         select(models.Order)
@@ -95,15 +63,19 @@ def exporter(db: Session, user: models.User) -> dict:
     )
 
     abonnement = db.scalar(
-        select(models.Subscriber).where(models.Subscriber.email == user.email.lower())
+        select(models.Subscriber).where(func.lower(models.Subscriber.email) == user.email.lower())
     )
+
+    alertes = db.scalars(
+        select(models.StockAlert).where(func.lower(models.StockAlert.email) == user.email.lower())
+    ).all()
 
     return {
         "_a_propos": {
             "genere_le": datetime.now(timezone.utc).isoformat(),
-            "fondement": "Article 20 du RGPD - droit a la portabilite des donnees",
+            "fondement": "Article 20 du RGPD : droit à la portabilité des données",
             "contenu": (
-                "L'integralite des donnees que la boutique detient sur ce compte. "
+                "L'intégralité des données que la boutique détient sur ce compte. "
                 "Les montants sont en centimes."
             ),
         },
@@ -132,6 +104,12 @@ def exporter(db: Session, user: models.User) -> dict:
                 "livraison_cents": c.shipping_cents,
                 "total_cents": c.total_cents,
                 "code_promo": c.promo_code,
+                "livraison": {
+                    "nom": c.ship_name,
+                    "adresse": c.ship_addr,
+                    "code_postal": c.ship_cp,
+                    "ville": c.ship_city,
+                },
                 "articles": [
                     {
                         "produit": a.name,
@@ -160,17 +138,15 @@ def exporter(db: Session, user: models.User) -> dict:
                 "expiration": f"{m.exp_mois:02d}/{m.exp_annee}",
                 "libelle": m.libelle,
                 "par_defaut": m.defaut,
-                # Le numero complet n'est PAS ici parce qu'il n'est nulle part :
-                # la boutique ne l'a jamais detenu.
-                "note": "La boutique ne conserve ni numero complet ni cryptogramme.",
+                "note": "La boutique ne conserve ni numéro complet ni cryptogramme.",
             }
             for m in moyens
         ],
         "navigation": {
             "fiches_consultees": nb_vues,
             "note": (
-                "Seul le nombre est donne : chaque consultation est un horodatage "
-                "associe a un produit, sans autre contenu."
+                "Seul le nombre est donné : chaque consultation est un horodatage "
+                "associé à un produit, sans autre contenu."
             ),
         },
         "annonces": {
@@ -179,72 +155,71 @@ def exporter(db: Session, user: models.User) -> dict:
                 models.as_utc(abonnement.created_at).isoformat() if abonnement else None
             ),
         },
+        "alertes_de_retour_en_stock": [
+            {
+                "produit_id": a.product_id,
+                "demandee_le": models.as_utc(a.created_at).isoformat(),
+                "envoyee": a.notified,
+            }
+            for a in alertes
+        ],
     }
 
 
 def anonymiser(db: Session, user: models.User) -> dict:
-    """Efface tout ce qui identifie la personne. NE VALIDE PAS la transaction.
+    """Efface ce qui identifie la personne et rend le bilan. Ne valide pas la transaction.
 
-    L'appelant valide, pour que l'operation soit tout ou rien : une
-    anonymisation a moitie faite laisserait des donnees personnelles derriere un
-    compte declare supprime, ce qui est pire que de n'avoir rien fait.
-
-    Rend le detail de ce qui a ete touche - l'article 17 demande de pouvoir
-    rendre compte de l'effacement, et un simple « c'est fait » ne s'audite pas.
+    L'appelant valide, pour une opération tout ou rien.
     """
     identifiant = user.id
     ancienne_adresse = user.email.lower()
     bilan = {}
 
-    # --- Ce qui disparait sans condition -------------------------------
-    # Aucun de ces enregistrements n'a de valeur probante ni d'obligation de
-    # conservation.
+    # --- Supprimé ---
     bilan["moyens_de_paiement"] = db.execute(
         delete(models.PaymentMethod).where(models.PaymentMethod.user_id == identifiant)
     ).rowcount
     bilan["jetons"] = db.execute(
         delete(models.Token).where(models.Token.user_id == identifiant)
     ).rowcount
+    # Comparaisons insensibles à la casse : des adresses ont été enregistrées
+    # telles que saisies avant la mise en minuscules
     bilan["alertes_de_stock"] = db.execute(
-        delete(models.StockAlert).where(models.StockAlert.email == ancienne_adresse)
+        delete(models.StockAlert).where(func.lower(models.StockAlert.email) == ancienne_adresse)
     ).rowcount
     bilan["inscriptions_annonces"] = db.execute(
-        delete(models.Subscriber).where(models.Subscriber.email == ancienne_adresse)
+        delete(models.Subscriber).where(func.lower(models.Subscriber.email) == ancienne_adresse)
     ).rowcount
-    # Les courriels en file portent l'adresse ET souvent le detail d'une
-    # commande. Ceux deja partis ne sont plus rattrapables ; ceux qui restent
-    # n'ont plus de destinataire legitime.
     bilan["courriels_en_file"] = db.execute(
-        delete(models.OutboxEmail).where(models.OutboxEmail.destinataire == ancienne_adresse)
+        delete(models.OutboxEmail).where(
+            func.lower(models.OutboxEmail.destinataire) == ancienne_adresse
+        )
     ).rowcount
 
-    # --- Ce qui reste, prive de tout lien avec une personne ------------
-    # Les commandes sont conservees pour l'obligation comptable, mais elles ne
-    # portent plus d'adresse.
+    # --- Conservé, délié ---
     bilan["commandes_anonymisees"] = db.execute(
         update(models.Order)
         .where(models.Order.user_id == identifiant)
-        .values(email=_adresse_anonyme(identifiant))
+        .values(
+            email=_adresse_anonyme(identifiant),
+            ship_name=None, ship_addr=None, ship_cp=None, ship_city=None,
+        )
     ).rowcount
 
-    # Les avis gardent leur texte - il parle d'un produit, et les autres clients
-    # s'y fient - mais plus leur auteur.
     bilan["avis_anonymises"] = db.execute(
         update(models.Review)
         .where(models.Review.user_id == identifiant)
         .values(author_name=NOM_ANONYME)
     ).rowcount
 
-    # Les consultations deviennent anonymes plutot que de disparaitre : leur
-    # volume nourrit l'audience du tableau de bord, et une fois deliees d'un
-    # compte elles ne designent plus personne.
+    # Le volume d'audience reste, sans lien avec le compte
     bilan["consultations_deliees"] = db.execute(
         update(models.ProductView)
         .where(models.ProductView.user_id == identifiant)
         .values(user_id=None)
     ).rowcount
 
-    # --- Le compte lui-meme --------------------------------------------
+    # --- Le compte ---
     user.name = NOM_ANONYME
     user.email = _adresse_anonyme(identifiant)
     user.password_hash = CONDENSAT_INUTILISABLE
@@ -257,19 +232,14 @@ def anonymiser(db: Session, user: models.User) -> dict:
     user.city = None
     user.email_verified = False
     user.anonymise_le = models.now_utc()
+    # Révoque aussi les jetons déjà émis
+    user.token_version = int(user.token_version or 0) + 1
 
-    # L'ancienne adresse n'apparait PAS dans le journal : consigner ce qu'on
-    # vient d'effacer viderait l'operation de son sens.
+    # L'ancienne adresse n'est pas journalisée
     log.warning("compte anonymise", extra={"compte": identifiant, **bilan})
     return bilan
 
 
 def _adresse_anonyme(identifiant: int) -> str:
-    """Adresse de remplacement, unique et non routable.
-
-    Unique parce que la colonne l'exige : deux comptes anonymises entreraient
-    sinon en collision. Non routable parce que `.invalid` est reserve par la
-    RFC 2606 et ne sera jamais attribue - un courriel envoye par erreur ne
-    partira nulle part.
-    """
+    """Adresse de remplacement unique (contrainte de colonne) et non routable."""
     return f"supprime-{identifiant}@{DOMAINE_ANONYME}"

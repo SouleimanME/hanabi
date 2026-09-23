@@ -1,10 +1,4 @@
-"""Cohortes, segmentation RFM et regles d'association.
-
-Ces analyses se pretent mal a un test « sur donnees reelles » : leur resultat
-depend du jeu de donnees. On verifie donc leurs proprietes structurelles et
-leurs cas limites, plus quelques scenarios construits a la main dont on connait
-la reponse a l'avance.
-"""
+"""Cohortes, segmentation RFM et regles d'association."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -15,18 +9,13 @@ from app.security import hash_password
 
 
 def _mois(offset: int) -> str:
-    """Cle « AAAA-MM » decalee de `offset` mois par rapport a aujourd'hui."""
+    """Cle « aaaa-MM » decalee de `offset` mois par rapport a aujourd'hui."""
     return analytics._last_months(abs(offset) + 1)[0] if offset <= 0 else ""
 
 
 @pytest.fixture
 def acheteurs(db_session, product):
-    """Construit un historique connu : trois clients aux profils distincts.
-
-    - `fidele` : six commandes, la derniere hier ;
-    - `unique` : une seule commande, hier ;
-    - `perdu`  : deux commandes, la derniere il y a plus d'un an.
-    """
+    """Construit un historique connu : trois clients aux profils distincts."""
     maintenant = datetime.now(timezone.utc)
     profils = {
         "fidele": (6, 1),
@@ -69,12 +58,7 @@ def acheteurs(db_session, product):
 
 
 def _segments_par_email(db_session) -> dict[str, str]:
-    """Segment attribue a chaque client, indexe par adresse.
-
-    `rfm_segments` ne renvoie que les trois meilleurs clients par segment ; on
-    rejoue donc le classement sur l'ensemble pour pouvoir interroger un compte
-    precis.
-    """
+    """Segment attribue a chaque client, indexe par adresse."""
     resultat = analytics.rfm_segments(db_session)
     par_email = {e["email"]: e["segment"] for e in resultat["examples"]}
     return par_email
@@ -82,12 +66,7 @@ def _segments_par_email(db_session) -> dict[str, str]:
 
 @pytest.fixture
 def population(db_session, product):
-    """Une clientele assez fournie pour que les quintiles separent quelque chose.
-
-    Les scores RFM sont des rangs : ils n'ont de sens que compares a une
-    population. Quatre profils sont poses volontairement aux extremes, le reste
-    remplit la distribution entre les deux.
-    """
+    """Une clientele assez fournie pour que les quintiles separent quelque chose."""
     maintenant = datetime.now(timezone.utc)
     numero = [5000]
 
@@ -185,11 +164,7 @@ class TestCohortes:
         assert all(ligne["size"] == 0 for ligne in res["rows"])
 
     def test_le_futur_d_une_cohorte_reste_indetermine(self, db_session, acheteurs):
-        """Une cohorte de ce mois-ci n'a pas de M+3 : la case vaut None, pas 0.
-
-        Afficher zero ferait passer pour un echec une periode qui n'a pas encore
-        eu lieu.
-        """
+        """Une cohorte de ce mois-ci n'a pas de M+3 : la case vaut None, pas 0."""
         res = analytics.cohorts(db_session, 12)
 
         recente = res["rows"][-1]
@@ -230,10 +205,7 @@ class TestSegmentationRFM:
         assert res["non_buyers"] == 1
 
     def test_un_client_unique_n_est_pas_fidele(self, db_session, population):
-        """Regression : le score de montant suffisait a le classer parmi les fideles.
-
-        Un client venu une fois, meme pour un gros montant recent, est nouveau.
-        """
+        """Regression : le score de montant suffisait a le classer parmi les fideles."""
         segments = _segments_par_email(db_session)
 
         assert segments["recent-unique@test.fr"] == "Nouveaux"
@@ -268,24 +240,10 @@ class TestSegmentationRFM:
 
 
 class TestQuintilesRFM:
-    """Notation par quintiles de population.
-
-    Le decoupage a change : il portait sur les valeurs distinctes, il porte
-    desormais sur la population. La distinction n'est pas cosmetique - sur le
-    jeu de demonstration, elle faisait passer « A risque » de dix-neuf clients
-    a cinq mille quatre cents, soit d'un segment decoratif au segment qui pese
-    un quart du chiffre d'affaires.
-
-    Ces tests fixent la propriete, pas les valeurs : ils doivent rester vrais
-    quelle que soit la distribution.
-    """
+    """Notation par quintiles de population."""
 
     def test_les_quintiles_decoupent_la_population(self):
-        """Sur cent valeurs distinctes, chaque score prend exactement vingt clients.
-
-        C'est la definition meme d'un quintile, et precisement ce que l'ancienne
-        version ne garantissait pas.
-        """
+        """Sur cent valeurs distinctes, chaque score prend exactement vingt clients."""
         scores = analytics._score_par_rang(list(range(100)), croissant=True)
 
         effectifs = {score: 0 for score in range(1, 6)}
@@ -295,15 +253,7 @@ class TestQuintilesRFM:
         assert effectifs == {1: 20, 2: 20, 3: 20, 4: 20, 5: 20}
 
     def test_une_echelle_etiree_ne_trompe_plus_le_decoupage(self):
-        """Regression : le defaut qui vidait les segments de relance.
-
-        Quatre-vingt-dix clients tres recents et dix tres anciens, mais des
-        anciennetes etalees sur une large echelle. En classant les valeurs
-        distinctes, les quatre-vingt-dix recents se partageaient les meilleurs
-        scores et personne ne tombait dans les mauvais quintiles. En classant la
-        population, les vingt derniers clients obtiennent un score de 1 ou 2,
-        quelle que soit l'amplitude de l'echelle.
-        """
+        """Regression : le defaut qui vidait les segments de relance."""
         valeurs = [jour for jour in range(90)] + [500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400]
 
         scores = analytics._score_par_rang(valeurs, croissant=True)
@@ -314,11 +264,7 @@ class TestQuintilesRFM:
         assert all(scores[v] == 1 for v in (900, 1000, 1100, 1200, 1300, 1400))
 
     def test_les_ex_aequo_partagent_leur_score(self):
-        """Deux clients de meme valeur doivent etre notes pareil.
-
-        Sans cette garantie, le score dependrait de l'ordre dans lequel la base
-        rend les lignes - il changerait donc d'une lecture a l'autre.
-        """
+        """Deux clients de meme valeur doivent etre notes pareil."""
         valeurs = [10] * 30 + [20] * 30 + [30] * 40
 
         scores = analytics._score_par_rang(valeurs, croissant=False)
@@ -329,14 +275,7 @@ class TestQuintilesRFM:
         assert scores[30] > scores[20] > scores[10]
 
     def test_un_gros_groupe_est_juge_sur_son_milieu(self):
-        """Un paquet d'ex aequo plus large qu'un quintile prend la note de son centre.
-
-        La majorite des clients n'ayant commande qu'une fois, les juger sur
-        l'extremite basse de leur groupe les deprecierait tous. La convention
-        des rangs moyens vise le milieu : un groupe occupant les 70 % du bas est
-        centre sur 65 %, donc note 2 - et non 1, qui serait la note de son pire
-        element.
-        """
+        """Un paquet d'ex aequo plus large qu'un quintile prend la note de son centre."""
         valeurs = [5] * 30 + [1] * 70
 
         scores = analytics._score_par_rang(valeurs, croissant=False)
@@ -345,17 +284,7 @@ class TestQuintilesRFM:
         assert scores[1] == 2   # groupe du bas, centre sur 65 %
 
     def test_un_groupe_a_cheval_sur_une_borne_bascule_vers_le_bas(self):
-        """Cas limite assume : le centre d'un groupe peut tomber sur une frontiere.
-
-        Un groupe occupant les 40 % du haut est centre exactement sur le
-        vingtieme centile, borne entre le premier et le deuxieme quintile. Il
-        bascule alors dans le second, donc 4 et non 5.
-
-        Documente ici parce que c'est surprenant a la lecture d'un resultat, et
-        parce que l'entrepot doit se comporter pareil : `floor` cote SQL et
-        `int` cote Python arrondissent tous deux vers le bas, ce qui est la
-        condition pour que les deux chemins ne divergent jamais sur ce cas.
-        """
+        """Cas limite assume : le centre d'un groupe peut tomber sur une frontiere."""
         scores = analytics._score_par_rang([5] * 40 + [1] * 60, croissant=False)
 
         assert scores[5] == 4
@@ -364,30 +293,13 @@ class TestQuintilesRFM:
         assert analytics._score_par_rang([], croissant=True) == {}
 
     def test_un_client_seul_est_note_a_la_mediane(self):
-        """Un client unique n'est ni le meilleur ni le pire : il est la mediane.
-
-        Le score le plus eleve recompense une position relative, et il n'y a
-        aucune position relative a occuper quand on est seul. Le noter 5
-        laisserait croire a un champion la ou il n'y a qu'un echantillon d'une
-        personne ; 3 dit ce qu'il en est - le milieu d'une distribution qui se
-        reduit a lui.
-
-        C'est la meme limite que celle rappelee par `rfm_segments` : sur une
-        poignee d'acheteurs, les quintiles ne separent plus rien.
-        """
+        """Un client unique n'est ni le meilleur ni le pire : il est la mediane."""
         assert analytics._score_par_rang([42], croissant=True) == {42: 3}
 
 
 class TestRecenceEnJoursDeCalendrier:
     def test_une_commande_d_hier_soir_compte_pour_un_jour(self, db_session, user_factory):
-        """Regression : la recence dependait de l'heure autant que de la date.
-
-        `(maintenant - derniere).days` compte des tranches de vingt-quatre
-        heures : une commande passee hier a 23 h y valait zero jour. L'entrepot,
-        lui, soustrait deux dates. Les deux chemins classaient donc une poignee
-        de clients differemment, et deux segmentations contradictoires selon
-        l'onglet ouvert ne sont credibles ni l'une ni l'autre.
-        """
+        """Regression : la recence dependait de l'heure autant que de la date."""
         user, _ = user_factory(email="hier@test.fr")
         hier_soir = datetime.now(timezone.utc).replace(hour=23, minute=0) - timedelta(days=1)
         commande = Order(
@@ -411,12 +323,7 @@ class TestAffinites:
         assert res["orders"] == 0
 
     def test_paire_systematique(self, db_session, product, expensive_product):
-        """Deux articles toujours achetes ensemble : lift maximal.
-
-        Quand A et B apparaissent dans exactement les memes commandes, la
-        confiance vaut 1 et le lift vaut l'inverse de la frequence de B. Avec
-        dix commandes sur dix, le lift vaut donc 1.
-        """
+        """Deux articles toujours achetes ensemble : lift maximal."""
         for i in range(10):
             order = Order(
                 number=f"C{i}", email="x@test.fr", status="paid",

@@ -1,29 +1,11 @@
-"""Rejeu sur des requetes qui ne doivent s'executer qu'une fois.
+"""Idempotence des requêtes qui ne doivent s'exécuter qu'une fois (en-tête `Idempotency-Key`).
 
-LE CAS REEL. Un acheteur clique deux fois sur « Payer ». Son navigateur rejoue
-la requete apres une coupure de reseau. Son telephone reessaie parce que la
-reponse a mis trop longtemps a venir. Dans les trois cas, la meme intention
-arrive deux fois, et sans garde cela produit deux commandes, deux debits de
-stock et deux courriels - alors que la personne n'a rien fait de travers.
+Le client tire une clé avant d'envoyer et la répète en cas de réessai ; le
+serveur rejoue la réponse enregistrée. Même convention que Stripe.
 
-LE CONTRAT. Le client tire une cle au hasard AVANT d'envoyer et la repete a
-l'identique s'il reessaie, dans l'en-tete `Idempotency-Key`. Le serveur
-enregistre la cle avec la reponse produite ; a la deuxieme presentation, il
-rejoue cette reponse sans refaire le travail. C'est la convention de Stripe et
-de la plupart des API de paiement, reprise telle quelle - un client qui sait
-parler a l'une sait parler a celle-ci.
-
-POURQUOI LA CONTRAINTE UNIQUE PLUTOT QU'UN `SELECT` PREALABLE. Entre une lecture
-qui ne trouve rien et l'insertion qui suit, une seconde requete peut passer :
-c'est exactement ce que fait le double-clic, dont les deux appels partent a
-quelques millisecondes d'intervalle. Verifier puis inserer laisse donc passer le
-seul cas qu'on cherchait a couvrir. On insere d'emblee, et c'est la base qui
-tranche ; le perdant traite la violation d'unicite comme un reessai.
-
-CE QUI RESTE VOLONTAIREMENT HORS DE PORTEE. La cle n'est pas liee au compte :
-elle est tiree au hasard sur 128 bits, la deviner n'est pas un chemin d'attaque
-credible, et l'y lier empecherait un invite d'en beneficier - or c'est justement
-lui qui n'a pas d'historique de commandes pour verifier si son achat est passe.
+La clé s'insère d'emblée et la contrainte unique tranche : un SELECT préalable
+laisserait passer les deux appels d'un double clic. Elle n'est pas liée au
+compte (128 bits aléatoires), pour servir aussi aux invités.
 """
 import hashlib
 import json
@@ -42,14 +24,12 @@ log = logging.getLogger("hanabi.idempotence")
 
 EN_TETE = "Idempotency-Key"
 
-# Bornes de forme. Une cle sans limite finirait dans un index, et une cle vide
-# ferait passer toutes les requetes pour la meme.
 LONGUEUR_MIN = 8
 LONGUEUR_MAX = 128
 
 
 class Rejeu(Exception):
-    """La requete a deja ete traitee : sa reponse est connue."""
+    """Requête déjà traitée, réponse connue."""
 
     def __init__(self, code: int, corps: str):
         super().__init__("rejeu")
@@ -61,27 +41,20 @@ class Rejeu(Exception):
             content=self.corps,
             status_code=self.code,
             media_type="application/json",
-            # En-tete informatif, et utile au diagnostic : il distingue une
-            # commande creee d'une commande rejouee, que le corps rend
-            # autrement indiscernables.
+            # Distingue un rejeu d'une création au diagnostic
             headers={"Idempotent-Replay": "true"},
         )
 
 
 def empreinte(charge: dict) -> str:
-    """Empreinte stable du corps de la requete.
-
-    `sort_keys` est indispensable : deux serialisations du meme dictionnaire
-    n'ordonnent pas forcement leurs cles, et sans tri un client honnete verrait
-    son reessai refuse pour « corps different ».
-    """
+    """Empreinte stable du corps (`sort_keys` : l'ordre des clés ne compte pas)."""
     return hashlib.sha256(
         json.dumps(charge, sort_keys=True, separators=(",", ":"), default=str).encode()
     ).hexdigest()
 
 
 def valider(cle: str | None) -> str | None:
-    """Controle la forme de la cle. Son absence est permise."""
+    """Contrôle la forme de la clé, facultative."""
     if cle is None:
         return None
     cle = cle.strip()
@@ -90,7 +63,7 @@ def valider(cle: str | None) -> str | None:
     if not (LONGUEUR_MIN <= len(cle) <= LONGUEUR_MAX):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"{EN_TETE} doit compter entre {LONGUEUR_MIN} et {LONGUEUR_MAX} caracteres.",
+            f"{EN_TETE} doit compter entre {LONGUEUR_MIN} et {LONGUEUR_MAX} caractères.",
         )
     if not all(c.isalnum() or c in "-_" for c in cle):
         raise HTTPException(
@@ -101,11 +74,11 @@ def valider(cle: str | None) -> str | None:
 
 
 def reserver(db: Session, cle: str, point_entree: str, charge: dict) -> models.IdempotencyKey:
-    """Prend la cle, ou leve `Rejeu` si elle est deja connue.
+    """Prend la clé, ou lève `Rejeu` si elle est connue.
 
-    @raises Rejeu: requete deja traitee, sa reponse est rendue telle quelle
-    @raises HTTPException: cle reutilisee avec un corps different (422), ou
-        requete identique encore en cours (409)
+    @raises Rejeu: requête déjà traitée
+    @raises HTTPException: clé réutilisée avec un autre corps (422), ou requête
+        identique encore en cours (409)
     """
     signature = empreinte(charge)
     trace = models.IdempotencyKey(
@@ -113,8 +86,7 @@ def reserver(db: Session, cle: str, point_entree: str, charge: dict) -> models.I
     )
     db.add(trace)
     try:
-        # `flush` et non `commit` : la ligne doit exister pour que la contrainte
-        # s'applique, mais la transaction reste ouverte pour l'appelant.
+        # flush : la contrainte s'applique, la transaction reste à l'appelant
         db.flush()
     except IntegrityError:
         db.rollback()
@@ -123,7 +95,7 @@ def reserver(db: Session, cle: str, point_entree: str, charge: dict) -> models.I
 
 
 def _resoudre_conflit(db: Session, cle: str, point_entree: str, signature: str) -> models.IdempotencyKey:
-    """Statue sur une cle deja prise."""
+    """Statue sur une clé déjà prise."""
     existante = db.scalar(
         select(models.IdempotencyKey).where(
             models.IdempotencyKey.cle == cle,
@@ -131,28 +103,23 @@ def _resoudre_conflit(db: Session, cle: str, point_entree: str, signature: str) 
         )
     )
     if existante is None:
-        # La ligne concurrente a ete annulee entre la violation et cette
-        # lecture. Rare, mais possible : on laisse l'appelant retenter.
+        # La ligne concurrente vient d'être annulée
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "Requete concurrente en cours, reessaie dans un instant."
+            status.HTTP_409_CONFLICT, "Requête concurrente en cours, réessaie dans un instant."
         )
 
     if existante.empreinte != signature:
-        # Ce n'est pas un reessai mais une cle reutilisee par megarde. Renvoyer
-        # la reponse de l'autre achat serait le pire des comportements : le
-        # client croirait sa commande passee.
+        # Clé réutilisée : rendre la réponse d'un autre achat serait trompeur
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"Cette {EN_TETE} a deja servi pour une requete differente.",
+            f"Cette {EN_TETE} a déjà servi pour une requête différente.",
         )
 
     if existante.statut == "en_cours":
-        # Le premier appel n'a pas fini. Le client doit attendre, pas relancer :
-        # c'est ce que dit un 409, la ou un 500 l'inviterait a reessayer tout de
-        # suite et a empiler les tentatives.
+        # 409 : attendre plutôt que relancer
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "Une requete identique est en cours de traitement.",
+            "Une requête identique est en cours de traitement.",
         )
 
     log.info("rejeu servi", extra={"cle": cle, "point_entree": point_entree})
@@ -160,19 +127,14 @@ def _resoudre_conflit(db: Session, cle: str, point_entree: str, signature: str) 
 
 
 def conclure(db: Session, trace: models.IdempotencyKey, code: int, corps: str) -> None:
-    """Enregistre la reponse produite, pour la rejouer si besoin."""
+    """Enregistre la réponse produite."""
     trace.statut = "termine"
     trace.code_reponse = code
     trace.corps_reponse = corps
 
 
 def purger(db: Session, maintenant: datetime | None = None) -> int:
-    """Oublie les cles expirees. Rend le nombre de lignes supprimees.
-
-    Sans purge, la table croit indefiniment : elle n'est qu'un journal de
-    requetes, et sa seule raison d'exister est la fenetre pendant laquelle un
-    client peut encore reessayer.
-    """
+    """Supprime les clés plus vieilles que la fenêtre de réessai ; rend le nombre de lignes."""
     maintenant = maintenant or datetime.now(timezone.utc)
     limite = maintenant - timedelta(hours=settings.IDEMPOTENCE_RETENTION_HEURES)
     resultat = db.execute(

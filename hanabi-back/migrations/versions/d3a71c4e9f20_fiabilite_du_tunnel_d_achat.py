@@ -1,19 +1,8 @@
 """fiabilite du tunnel d achat
 
-Trois ajouts qui vont ensemble, parce qu'ils repondent au meme risque : une
-commande passee une seule fois par l'acheteur ne doit produire qu'une commande,
-qu'un debit et qu'un courriel, quoi qu'il arrive au reseau entre les deux.
-
-  - `idempotency_keys` : trace des requetes non rejouables et de leur reponse.
-  - `outbox_emails` : file des courriels, ecrite dans la transaction de la
-    commande et videe ensuite par une tache de fond.
-  - `orders.payment_ref` : reference d'autorisation du paiement, seul moyen de
-    rapprocher une commande d'un mouvement bancaire.
-
 Revision ID: d3a71c4e9f20
 Revises: c092692a7b8f
 Create Date: 2026-08-15 17:05:00.000000
-
 """
 from typing import Sequence, Union
 
@@ -29,9 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Nullable, donc sans valeur par defaut a fournir : les commandes deja
-    # passees n'ont pas de reference d'autorisation et ne peuvent pas en
-    # recevoir une retroactivement.
+    # Nullable, donc sans valeur par defaut a fournir
     with op.batch_alter_table("orders", schema=None) as batch_op:
         batch_op.add_column(sa.Column("payment_ref", sa.String(length=64), nullable=True))
 
@@ -46,9 +33,7 @@ def upgrade() -> None:
         sa.Column("corps_reponse", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        # La contrainte porte tout le mecanisme : c'est elle qui arbitre entre
-        # deux requetes simultanees portant la meme cle, la ou un `SELECT`
-        # prealable laisserait passer le double-clic qu'on cherche a bloquer.
+        # La contrainte porte tout le mecanisme
         sa.UniqueConstraint("cle", "point_entree", name="uq_idempotence"),
     )
     # Indexe pour la purge, qui balaie par anciennete.
@@ -71,10 +56,7 @@ def upgrade() -> None:
         sa.Column("envoye_le", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    # L'ouvrier ne pose qu'une question, « qu'y a-t-il a envoyer maintenant »,
-    # et il la pose en boucle. Sans cet index il balaierait toute la table a
-    # chaque tour, messages deja remis compris - dont le nombre ne fait que
-    # croitre.
+    # L'ouvrier ne pose qu'une question, « qu'y a-t-il a envoyer maintenant », et il la pose en boucle
     op.create_index(
         "ix_outbox_a_traiter", "outbox_emails", ["statut", "prochaine_tentative"], unique=False
     )

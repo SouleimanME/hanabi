@@ -1,9 +1,4 @@
-"""Marge, classement ABC, couverture de stock, tendance et correlation.
-
-Les valeurs attendues sont calculees a la main dans chaque test : c'est la
-seule facon de verifier une formule, la comparer a sa propre implementation ne
-prouvant rien.
-"""
+"""Marge, classement ABC, couverture de stock, tendance et correlation."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -63,7 +58,7 @@ class TestMarge:
 
         fiche = next(p for p in analytics.catalogue(db_session) if p["code"] == "MRG-1")
 
-        # 3 x (100,00 - 40,00) = 180,00 EUR
+        # 3 x (100,00, 40,00) = 180,00 EUR
         assert fiche["revenue_cents"] == 30000
         assert fiche["margin_cents"] == 18000
         assert fiche["margin_rate"] == 0.6
@@ -186,7 +181,7 @@ class TestRegression:
 
 class TestCroissanceComposee:
     def test_doublement_en_trois_mois(self):
-        # 100 -> 200 en 3 periodes : 2^(1/3) - 1 = 25,99 %
+        # 100 -> 200 en 3 periodes : 2^(1/3), 1 = 25,99 %
         assert analytics._cmgr(100, 200, 3) == pytest.approx(0.2599, abs=0.0001)
 
     def test_depuis_zero_indefini(self):

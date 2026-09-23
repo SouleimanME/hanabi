@@ -7,13 +7,7 @@ from app.main import app
 
 @pytest.fixture
 def base_en_panne():
-    """Remplace la session de la sonde par une base qui refuse tout.
-
-    On passe par `dependency_overrides`, le point d'extension prevu par FastAPI,
-    plutot que par un en-tete de test : le code de production n'a pas a savoir
-    qu'il est teste, et une branche « si en-tete de test » finit toujours par
-    exister aussi en production.
-    """
+    """Remplace la session de la sonde par une base qui refuse tout."""
 
     def poser(message: str):
         class Muette:
@@ -28,8 +22,7 @@ def base_en_panne():
 
 class TestRacine:
     def test_la_racine_ne_renvoie_plus_un_404(self, client):
-        """Ouvrir l'adresse de l'API dans un navigateur donnait « Not Found »,
-        ce qui laisse croire a une panne alors que le service tourne."""
+        """Ouvrir l'adresse de l'API dans un navigateur donnait « Not Found »."""
         res = client.get("/")
 
         assert res.status_code == 200
@@ -55,13 +48,7 @@ class TestSante:
         }
 
     def test_la_sonde_signale_les_courriels_abandonnes(self, client, db_session):
-        """Une file en echec ne se voit nulle part ailleurs.
-
-        L'ouvrier echoue en silence PAR CONSTRUCTION : son role est d'absorber
-        les pannes de relais sans les faire remonter au visiteur. Sans cette
-        ligne dans la sonde, on decouvrirait le probleme par un client qui n'a
-        jamais recu sa confirmation.
-        """
+        """Une file en echec ne se voit nulle part ailleurs."""
         from app import models
 
         db_session.add(
@@ -76,13 +63,11 @@ class TestSante:
 
         assert body["status"] == "degrade"
         assert body["courriels"]["abandonnes"] == 1
-        # Pas de 503 : le service repond, prend des commandes et sert des pages.
-        # Seule la remise du courrier est en defaut, et retirer l'instance du
-        # service aggraverait une panne partielle.
+        # Pas de 503 : le service repond, prend des commandes et sert des pages
         assert res.status_code == 200
 
     def test_les_messages_en_attente_ne_degradent_pas_la_sonde(self, client, db_session):
-        """C'est l'etat NORMAL d'un message entre son ecriture et sa remise."""
+        """C'est l'etat normal d'un message entre son ecriture et sa remise."""
         from app import models
 
         db_session.add(models.OutboxEmail(destinataire="a@b.fr", sujet="s", texte="t"))
@@ -94,15 +79,7 @@ class TestSante:
         assert body["courriels"]["en_attente"] == 1
 
     def test_la_sonde_interroge_reellement_la_base(self, client, base_en_panne):
-        """Une base injoignable doit faire rougir la sonde.
-
-        C'est tout l'interet du changement. L'ancienne version rendait
-        `{"status": "ok"}` en dur : elle ne prouvait que la presence du
-        processus Python, alors que la panne la plus frequente est en aval. Une
-        base en veille, un pool epuise ou un mot de passe expire laissaient la
-        sonde au vert pendant que chaque page renvoyait une erreur, si bien que
-        la surveillance ne redemarrait rien et que personne n'etait prevenu.
-        """
+        """Une base injoignable doit faire rougir la sonde."""
         base_en_panne("connexion refusee")
         res = client.get("/health")
 
@@ -114,12 +91,7 @@ class TestSante:
         assert body["base"] == "injoignable"
 
     def test_la_sonde_ne_divulgue_pas_le_detail_de_la_panne(self, client, base_en_panne):
-        """Le message du pilote reste dans le journal, pas dans la reponse.
-
-        Une sonde de sante est souvent publique, et les erreurs de connexion
-        des pilotes de base citent volontiers le nom d'hote, le port et le nom
-        de la base.
-        """
+        """Le message du pilote reste dans le journal, pas dans la reponse."""
         base_en_panne("could not connect to host db-prod.interne:5432")
         corps = client.get("/health").text
 

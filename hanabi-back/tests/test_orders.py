@@ -14,10 +14,7 @@ def checkout_payload(product_id, qty=1, email="client@test.fr", promo_code=None)
             "ville": "Paris",
         },
         "promo_code": promo_code,
-        # Obligatoire depuis l'ajout des conditions de vente. Son absence a fait
-        # echouer huit tests d'un coup, ce qui est le comportement voulu : un
-        # champ obligatoire qui laisserait passer un appel sans lui ne servirait
-        # a rien.
+        # Obligatoire depuis l'ajout des conditions de vente
         "cgv_acceptees": True,
     }
 
@@ -40,14 +37,7 @@ class TestCheckout:
         assert product.stock == stock_initial - 2
 
     def test_quantite_au_dela_du_plafond_refusee_par_le_schema(self, client, product):
-        """Le schema plafonne a 99 par ligne : au-dela, rejet avant tout acces base.
-
-        Ce plafond evite qu'une commande fabriquee a la main demande un million
-        d'unites, ce qui ferait travailler la base pour rien.
-
-        Le cas « quantite valide mais stock insuffisant » est couvert par
-        test_commande_au_dela_du_stock_refusee, qui attend un 409.
-        """
+        """Le schema plafonne a 99 par ligne : au-dela, rejet avant tout acces base."""
         res = client.post("/orders/checkout", json=checkout_payload(product.id, qty=100))
         assert res.status_code == 422
 
@@ -59,18 +49,7 @@ class TestCheckout:
         assert product.stock == 5  # inchange
 
     def test_le_stock_ne_devient_jamais_negatif(self, client, db_session, product):
-        """Deux commandes SUCCESSIVES sur le dernier article.
-
-        La seconde doit echouer : le decrement passe par un UPDATE conditionnel
-        (`WHERE stock >= qty`), pas par une lecture suivie d'une ecriture.
-
-        Ce test disait « concurrentes », ce qu'il n'a jamais fait : ses deux
-        requetes partent l'une apres l'autre. Il verifie le refus sur stock
-        insuffisant, ce qui compte, mais ne met jamais deux requetes en vol
-        ensemble - or c'est la que se cache l'entrelacement. Le vrai
-        parallelisme est teste dans `test_concurrence.py`, avec des fils
-        d'execution et une barriere de depart.
-        """
+        """Deux commandes successives sur le dernier article."""
         client.post("/orders/checkout", json=checkout_payload(product.id, qty=5))
         seconde = client.post("/orders/checkout", json=checkout_payload(product.id, qty=1))
 
@@ -142,11 +121,7 @@ class TestHistorique:
 
 
 class TestConditionsDeVente:
-    """Obligatoires en vente a distance, et verifiees COTE SERVEUR.
-
-    Une case a cocher qui ne vit que dans le navigateur se contourne depuis la
-    console, et l'acceptation perdrait toute valeur probante.
-    """
+    """Obligatoires en vente a distance, et verifiees cote serveur."""
 
     def test_une_commande_sans_acceptation_est_refusee(self, client, db_session, product):
         charge = checkout_payload(product.id)
@@ -176,10 +151,7 @@ class TestConditionsDeVente:
         assert product.stock == depart
 
     def test_la_version_acceptee_est_enregistree(self, client, db_session, product):
-        """Un booleen dirait qu'une case a ete cochee, pas CE QUI a ete accepte.
-
-        Les conditions evoluent ; sans la version, l'acceptation ne prouve rien.
-        """
+        """Un booleen dirait qu'une case a ete cochee, pas CE qui a ete accepte."""
         from app.config import settings
 
         client.post("/orders/checkout", json=checkout_payload(product.id))

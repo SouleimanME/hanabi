@@ -1,12 +1,4 @@
-"""Gestion de son propre compte : profil, identifiants, moyens de paiement.
-
-Deux familles de garanties sont verifiees ici, et la seconde compte plus que la
-premiere :
-
-  1. les modifications font ce qu'elles annoncent ;
-  2. on ne peut PAS toucher au compte d'un autre, ni faire changer un mot de
-     passe ou une adresse sans prouver qu'on est bien la maintenant.
-"""
+"""Gestion de son propre compte : profil, identifiants, moyens de paiement."""
 import pytest
 
 from app import models
@@ -44,12 +36,7 @@ class TestProfil:
         assert user.phone == "0612345678"
 
     def test_ne_touche_pas_aux_champs_absents(self, client, db_session, compte):
-        """LE piege de ces formulaires.
-
-        Un ecran qui n'envoie que le telephone ne doit pas effacer l'adresse, la
-        ville et le code postal - tous absents du corps, donc tous vus comme
-        `None` si l'on ne distingue pas « absent » de « vide ».
-        """
+        """LE piege de ces formulaires."""
         headers, user = compte
         user.city = "Kyoto"
         user.addr = "3 rue des Erables"
@@ -72,8 +59,7 @@ class TestProfil:
         assert user.phone is None
 
     def test_une_chaine_vide_n_efface_pas_le_nom(self, client, db_session, compte):
-        """Un compte sans nom n'a pas de sens : c'est une faute de frappe, pas
-        une intention."""
+        """Un compte sans nom n'a pas de sens : c'est une faute de frappe, pas une intention."""
         headers, user = compte
         avant = user.name
 
@@ -103,8 +89,7 @@ class TestProfil:
         assert client.patch("/compte/profil", json={"phone": "06"}).status_code in (401, 403)
 
     def test_l_email_ne_se_change_pas_par_cette_route(self, client, db_session, compte):
-        """Il engage l'ACCES au compte, pas son contenu : route dediee, mot de
-        passe exige."""
+        """Il engage l'acces au compte, pas son contenu : route dediee, mot de passe exige."""
         headers, user = compte
         avant = user.email
 
@@ -135,10 +120,7 @@ class TestChangementMotDePasse:
         assert connexion.status_code == 200
 
     def test_refuse_sans_l_ancien(self, client, compte):
-        """Une session prouve qu'on etait la il y a douze heures, pas qu'on est
-        la maintenant. Un poste laisse ouvert suffirait sinon a verrouiller le
-        proprietaire hors de son compte.
-        """
+        """Une session prouve qu'on etait la il y a douze heures, pas qu'on est la maintenant."""
         headers, _ = compte
         res = client.post(
             "/compte/mot-de-passe",
@@ -149,8 +131,7 @@ class TestChangementMotDePasse:
         assert res.status_code == 403
 
     def test_refuse_un_mot_de_passe_faible(self, client, compte):
-        """Un parcours de changement n'est pas une occasion d'assouplir la
-        politique."""
+        """Un parcours de changement n'est pas une occasion d'assouplir la politique."""
         headers, _ = compte
         res = client.post(
             "/compte/mot-de-passe",
@@ -169,9 +150,7 @@ class TestChangementMotDePasse:
         assert res.status_code == 422
 
     def test_revoque_les_liens_de_reinitialisation_en_cours(self, client, db_session, compte):
-        """Quelqu'un qui change son mot de passe le fait souvent parce qu'il
-        doute : laisser vivre un lien demande une heure plus tot annulerait le
-        geste."""
+        """Quelqu'un qui change son mot de passe le fait souvent parce qu'il doute."""
         headers, _ = compte
         client.post("/auth/forgot-password", json={"email": "ada@test.fr"})
         assert db_session.query(models.Token).filter_by(utilise_le=None).count() == 1
@@ -199,9 +178,7 @@ class TestChangementEmail:
         assert user.email == "ada.nouvelle@test.fr"
 
     def test_la_nouvelle_adresse_repart_non_confirmee(self, client, db_session, compte):
-        """Sinon il suffirait de confirmer une adresse quelconque puis d'en
-        declarer une autre pour se retrouver « confirme » sur une boite dont on
-        n'a jamais prouve l'acces."""
+        """Sinon il suffirait de confirmer une adresse quelconque puis d'en declarer une autre pour se."""
         headers, user = compte
         user.email_verified = True
         db_session.commit()
@@ -280,11 +257,7 @@ class TestMoyensDePaiement:
         assert "pm_" not in corps
 
     def test_aucun_numero_complet_n_est_accepte(self, client, db_session, compte):
-        """Le schema n'a pas de champ pour cela, et c'est le but.
-
-        Ce que la table ne contient pas ne peut pas etre vole : c'est ce qui
-        maintient l'application hors du perimetre PCI-DSS.
-        """
+        """Le schema n'a pas de champ pour cela, et c'est le but."""
         headers, _ = compte
         client.post(
             "/compte/paiements",
@@ -337,8 +310,7 @@ class TestMoyensDePaiement:
         assert client.get("/compte/paiements", headers=headers).json() == []
 
     def test_supprimer_le_defaut_en_designe_un_autre(self, client, compte):
-        """Sinon le paiement suivant proposerait une liste sans selection, ce
-        qui se lit comme un oubli de l'application."""
+        """Sinon le paiement suivant proposerait une liste sans selection, ce qui se lit comme un oubli de l'application."""
         headers, _ = compte
         premiere = client.post("/compte/paiements", json=CARTE, headers=headers).json()
         client.post(
@@ -414,11 +386,7 @@ class TestCloisonnement:
         assert res.status_code == 404
 
     def test_les_routes_sont_fermees_sans_session(self, client):
-        """Balayage exhaustif : une route ajoutee sans garde se voit ici.
-
-        `client.get` n'accepte pas de corps, contrairement aux autres verbes -
-        d'ou `client.request`, qui les traite tous de la meme facon.
-        """
+        """Balayage exhaustif : une route ajoutee sans garde se voit ici."""
         for methode, chemin in [
             ("GET", "/compte/paiements"),
             ("POST", "/compte/paiements"),
@@ -433,12 +401,7 @@ class TestCloisonnement:
 
 
 class TestPaiementAvecCarteEnregistree:
-    """Une carte qu'on ne peut pas utiliser au paiement est un decor.
-
-    C'est le defaut que ces tests empechent de revenir : la fonctionnalite
-    existait de bout en bout - modele, routes, ecran - sans que le tunnel
-    d'achat sache s'en servir.
-    """
+    """Une carte qu'on ne peut pas utiliser au paiement est un decor."""
 
     def test_paie_avec_une_carte_enregistree(self, client, db_session, compte, product):
         headers, _ = compte
@@ -457,8 +420,7 @@ class TestPaiementAvecCarteEnregistree:
     def test_on_ne_paie_pas_avec_la_carte_d_un_autre(
         self, client, db_session, auth_header, compte, product
     ):
-        """LE controle qui compte. Le filtre sur le proprietaire est dans la
-        requete, pas dans un test qui suit : il n'y a rien a oublier."""
+        """LE controle qui compte."""
         headers_ada, _ = compte
         moyen = client.post("/compte/paiements", json=CARTE, headers=headers_ada).json()
 

@@ -1,4 +1,4 @@
-import json
+import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select, text
@@ -36,24 +36,41 @@ def _to_out(p: models.Product, rating: tuple[float, int], lang: str | None) -> s
     return out
 
 
+def _sans_accents(texte: str) -> str:
+    """Minuscules sans diacritiques : « eventail » trouve « Éventail »."""
+    decompose = unicodedata.normalize("NFD", texte.lower())
+    return "".join(c for c in decompose if unicodedata.category(c) != "Mn")
+
+
 @router.get("", response_model=list[schemas.ProductOut])
 def list_products(
     db: Session = Depends(get_db),
-    category: str | None = Query(None),
-    q: str | None = Query(None),
+    category: str | None = Query(None, max_length=40),
+    q: str | None = Query(None, max_length=80),
     sort: str = Query("pop", pattern="^(pop|new|asc|desc)$"),
-    lang: str | None = Query(None),
+    lang: str | None = Query(None, max_length=5),
 ):
     stmt = select(models.Product).where(models.Product.active.is_(True))
     if category and category != "Tout":
         stmt = stmt.where(models.Product.category == category)
-    if q:
-        like = f"%{q.lower()}%"
-        stmt = stmt.where(func.lower(models.Product.name).like(like) | func.lower(models.Product.category).like(like))
     products = db.scalars(stmt).all()
     ratings = _ratings_map(db, [p.id for p in products])
 
     out = [_to_out(p, ratings.get(p.id, (0.0, 0)), lang) for p in products]
+
+    # Recherche sur ce que la personne lit (nom traduit, accroche), et sur le nom
+    # français et le code. Le catalogue tient en mémoire : douze références.
+    if q and q.strip():
+        motif = _sans_accents(q.strip())
+        francais = {p.id: p for p in products}
+        out = [
+            o
+            for o in out
+            if any(
+                motif in _sans_accents(champ)
+                for champ in (o.name, o.blurb, o.code, francais[o.id].name, o.category)
+            )
+        ]
     if sort == "asc":
         out.sort(key=lambda x: x.price_cents)
     elif sort == "desc":
@@ -67,7 +84,7 @@ def list_products(
 
 @router.get("/featured", response_model=list[schemas.ProductOut])
 def featured_products(db: Session = Depends(get_db), lang: str | None = Query(None)):
-    """Produits mis en avant dans le carrousel, triés par featured_order."""
+    """Produits mis en avant (pièce du mois), triés par `featured_order`."""
     stmt = (
         select(models.Product)
         .where(models.Product.active.is_(True), models.Product.featured.is_(True))
@@ -95,21 +112,10 @@ def record_view(
     db: Session = Depends(get_db),
     user: models.User | None = Depends(get_optional_user),
 ):
-    """Enregistre l'ouverture d'une fiche produit.
+    """Enregistre l'ouverture d'une fiche (audience et conversion du back-office).
 
-    Alimente les indicateurs d'audience du back-office : articles les plus et
-    les moins consultes, et surtout taux de conversion, qui rapporte les
-    commandes aux vues et n'a donc aucun sens sans cette mesure.
-
-    Volontairement silencieuse. Un produit inconnu ne provoque pas d'erreur :
-    c'est une mesure d'usage, pas une operation metier, et faire remonter un
-    404 dans la console d'un visiteur pour une fiche supprimee entre-temps
-    n'apporte rien. Meme raison pour le 204 sans corps : le client n'a rien a
-    faire de la reponse.
-
-    Le plafond de 60 appels par minute et par IP evite qu'un rafraichissement
-    automatique gonfle les compteurs sans rien empecher d'une navigation
-    normale, qui ouvre rarement plus d'une fiche par seconde.
+    Silencieuse : un produit inconnu ne lève rien. Plafonnée par IP pour ne pas
+    gonfler les compteurs.
     """
     if db.get(models.Product, product_id) is None:
         return
@@ -123,23 +129,23 @@ def record_view(
 def notify_restock(
     request: Request, product_id: int, data: schemas.NotifyIn, db: Session = Depends(get_db)
 ):
-    """Alerte retour en stock : enregistre une demande pour un produit epuise.
-
-    Formulaire ouvert sans authentification : c'est la porte d'entree la plus
-    exposee du site, et elle enregistre une adresse e-mail. Sans barriere, elle
-    sert a inonder la base d'adresses arbitraires.
-    """
+    """Alerte de retour en stock. Formulaire public : barrière anti-robots."""
     verify_antibot(data.antibot, "notify")
 
     p = db.get(models.Product, product_id)
-    if p is None:
+    if p is None or not p.active:
         raise HTTPException(404, "Produit introuvable.")
     existing = db.query(models.StockAlert).filter(
-        models.StockAlert.product_id == product_id, models.StockAlert.email == str(data.email)
+        models.StockAlert.product_id == product_id,
+        func.lower(models.StockAlert.email) == data.email,
     ).first()
-    if not existing:
-        db.add(models.StockAlert(product_id=product_id, email=str(data.email)))
-        db.commit()
+    if existing is None:
+        db.add(models.StockAlert(product_id=product_id, email=data.email, lang=data.lang))
+    elif existing.notified:
+        # Déjà prévenu d'un précédent retour : la demande repart
+        existing.notified = False
+        existing.lang = data.lang
+    db.commit()
     return {"ok": True}
 
 @router.get("/{product_id}/affinites", response_model=list[schemas.ProductOut])
@@ -149,25 +155,10 @@ def affinites(
     lang: str | None = Query(None, max_length=5),
     limit: int = Query(3, ge=1, le=6),
 ):
-    """Produits reellement achetes avec celui-ci, par ordre de lift decroissant.
+    """Produits achetés avec celui-ci, lus dans `gold.gold_affinites_produits`.
 
-    C'est la seule route publique qui lit l'entrepot decisionnel. Les
-    suggestions ne viennent donc pas d'une regle ecrite a la main - « meme
-    categorie », « meme tranche de prix » - mais des paniers reels : la table
-    `gold.gold_affinites_produits`, construite par dbt, mesure pour chaque
-    paire a quel point elle depasse le hasard.
-
-    Le tri se fait sur le LIFT et non sur la confiance. La confiance se laisse
-    tromper par les articles populaires - tout se vend avec le best-seller - la
-    ou le lift rapporte la frequence observee a celle qu'on attendrait si les
-    deux achats etaient independants. Seules les paires au-dessus de 1 sont
-    proposees : en dessous, les deux articles se substituent plutot qu'ils ne
-    se completent, et les recommander ensemble serait un contresens.
-
-    Degradation volontaire. Sans entrepot - base SQLite en developpement,
-    schemas non construits, table vide - la reponse est une liste vide, jamais
-    une erreur : la fiche produit doit rester consultable quoi qu'il arrive.
-    L'appelant se contente alors de ne rien afficher.
+    Tri par lift, paires au-dessus de 1 seulement. Sans entrepôt, liste vide :
+    la fiche reste consultable.
     """
     bind = db.get_bind()
     if bind is None or bind.dialect.name != "postgresql":
@@ -176,9 +167,7 @@ def affinites(
     try:
         lignes = db.execute(
             text(
-                # La paire est stockee une seule fois, dans un ordre stable
-                # (produit_a_id < produit_b_id) : il faut donc chercher des
-                # deux cotes et rendre a chaque fois l'AUTRE article.
+                # Paire stockée une fois (a < b) : chercher des deux côtés, rendre l'autre
                 """
                 select case when produit_a_id = :pid then produit_b_id else produit_a_id end as autre
                 from gold.gold_affinites_produits
@@ -190,7 +179,7 @@ def affinites(
             {"pid": product_id, "limite": limit},
         ).all()
     except SQLAlchemyError:
-        # Schema absent ou droits manquants : meme reponse que sans entrepot.
+        # Schéma absent ou droits manquants : comme sans entrepôt
         db.rollback()
         return []
 
@@ -205,9 +194,7 @@ def affinites(
         )
     }
     notes = _ratings_map(db, list(produits))
-    # L'ordre du lift est celui de la requete, pas celui de la table `products` :
-    # on reconstruit la liste a partir des identifiants, sans quoi la meilleure
-    # suggestion pourrait se retrouver en derniere position.
+    # Conserve l'ordre du lift
     return [
         _to_out(produits[pid], notes.get(pid, (0.0, 0)), lang) for pid in ids if pid in produits
     ]

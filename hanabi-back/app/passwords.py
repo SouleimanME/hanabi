@@ -1,30 +1,15 @@
-"""
-Politique de mot de passe, appliquee cote serveur.
+"""Politique de mot de passe, appliquée côté serveur (la jauge du navigateur n'est qu'une aide).
 
-La jauge de robustesse du navigateur est une aide a la saisie, pas un controle :
-un client peut appeler l'API directement et ignorer tout ce que fait la page.
-La regle qui compte est donc celle-ci.
-
-Choix suivant les recommandations NIST SP 800-63B, qui vont a l'encontre de
-l'habitude des annees 2000 :
-  - la longueur primee sur la complexite, car « P@ssw0rd! » satisfait toutes les
-    regles de classes de caracteres et figure dans tous les dictionnaires
-    d'attaque ;
-  - pas d'expiration forcee, qui pousse a des variantes incrementales ;
-  - en revanche, refus des mots de passe notoirement compromis.
-
-La liste ci-dessous est volontairement courte et sert d'exemple. En production,
-il faut brancher un jeu de donnees de fuites - l'API « Pwned Passwords » de
-Have I Been Pwned repond a un prefixe de 5 caracteres du condensat SHA-1, si
-bien que le mot de passe complet ne quitte jamais le serveur (k-anonymat).
+NIST SP 800-63B : longueur plutôt que classes de caractères, pas d'expiration
+forcée, refus des mots de passe courants. La liste ci-dessous est un exemple ; en
+production, l'API Pwned Passwords (k-anonymat) la remplacerait.
 """
 from __future__ import annotations
 
 import re
 import unicodedata
 
-# Mots de passe les plus utilises, et motifs propres a ce site. Normalises en
-# minuscules ; la comparaison l'est aussi.
+# Mots de passe très utilisés et propres au site, en minuscules
 COMMON_PASSWORDS = {
     "12345678", "123456789", "1234567890", "password", "motdepasse",
     "azertyuiop", "qwertyuiop", "azerty123", "qwerty123", "password1",
@@ -34,39 +19,40 @@ COMMON_PASSWORDS = {
 }
 
 MIN_LENGTH = 10
-MAX_LENGTH = 128
+
+# bcrypt ignore tout ce qui dépasse 72 octets : deux mots de passe au même début
+# ouvriraient le même compte. Limite en octets (« é » en pèse deux). Pré-hacher
+# en SHA-256 invaliderait les condensats existants.
+MAX_BYTES = 72
 
 
 def _normalise(raw: str) -> str:
-    # NFKC : « ﬁ » et « fi » ne doivent pas compter comme des secrets distincts.
+    # NFKC : « ﬁ » et « fi » sont le même secret
     return unicodedata.normalize("NFKC", raw).strip()
 
 
 def validate_password(raw: str, *, email: str = "", name: str = "") -> str | None:
-    """Renvoie un message d'erreur, ou None si le mot de passe est acceptable.
-
-    Le message est destine a l'utilisateur : il doit dire quoi corriger.
-    """
+    """Message d'erreur destiné à l'utilisateur, ou None si le mot de passe convient."""
     pwd = _normalise(raw)
 
     if len(pwd) < MIN_LENGTH:
-        return f"Le mot de passe doit contenir au moins {MIN_LENGTH} caracteres."
-    if len(pwd) > MAX_LENGTH:
-        return f"Le mot de passe ne peut pas depasser {MAX_LENGTH} caracteres."
+        return f"Le mot de passe doit contenir au moins {MIN_LENGTH} caractères."
+    if len(pwd.encode("utf-8")) > MAX_BYTES:
+        return (
+            f"Le mot de passe ne peut pas dépasser {MAX_BYTES} caractères. "
+            "Les lettres accentuées et les emoji en comptent plusieurs."
+        )
 
     lowered = pwd.lower()
 
     if lowered in COMMON_PASSWORDS:
-        return "Ce mot de passe est trop courant. Choisis-en un moins previsible."
+        return "Ce mot de passe est trop courant. Choisis-en un moins prévisible."
 
-    # Un seul caractere repete, ou une suite triviale.
     if len(set(lowered)) < 5:
-        return "Ce mot de passe est trop repetitif. Varie les caracteres."
+        return "Ce mot de passe est trop répétitif. Varie les caractères."
     if re.search(r"(?:0123|1234|2345|3456|4567|5678|6789|abcd|qwer|azer)", lowered):
-        return "Evite les suites de touches consecutives."
+        return "Évite les suites de touches consécutives."
 
-    # Reutiliser son e-mail ou son nom rend le mot de passe devinable par
-    # quiconque connait la personne.
     local_part = email.split("@")[0].lower() if email else ""
     for personal in (local_part, name.lower()):
         if personal and len(personal) >= 4 and personal in lowered:

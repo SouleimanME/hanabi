@@ -1,15 +1,6 @@
-"""
-Durcissement securite de l'API.
+"""Protections applicatives de l'API : limitation de débit, en-têtes de sécurité, taille du corps.
 
-Trois briques, toutes cote application (ce qui se code) :
-  1. Rate limiting par IP (slowapi) - freine brute-force et spam de bots.
-  2. Headers de securite HTTP - limite clickjacking, sniffing MIME, etc.
-  3. Limite de taille des requetes - bloque les payloads abusifs.
-
-Ce qui ne se code PAS ici et reste a activer chez l'hebergeur :
-  - Protection DDoS volumetrique (Cloudflare / Railway / Render).
-  - WAF et filtrage d'IP malveillantes connues.
-  - HTTPS / redirection TLS (gere par le reverse proxy de l'hebergeur).
+Restent du ressort de l'hébergeur : protection DDoS, WAF, terminaison TLS.
 """
 import os
 
@@ -19,79 +10,111 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-# Limiteur global base sur l'IP de l'appelant.
-# default_limits s'applique a toutes les routes sauf surcharge explicite.
+# Limite par IP, surchargée route par route
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
 
-# Taille max d'un corps de requete. Au-dela => 413.
-#
-# 1 Mo etait trop juste : le back-office envoie les photos produit encodees en
-# base64 dans le corps JSON, or le base64 gonfle la taille d'un tiers. Une fiche
-# avec son visuel principal et trois photos de galerie depasse le mega-octet
-# meme apres la reduction faite dans le navigateur, et l'enregistrement echouait
-# sur « Requete trop volumineuse ».
-#
-# Le plafond reste une protection : il borne ce qu'une requete unique peut faire
-# ingerer au serveur. La limite de debit (200 appels par minute et par IP) borne
-# le reste. Configurable pour pouvoir le resserrer selon l'hebergement.
-#
-# Limite connue de l'approche : stocker les photos en base64 dans la base n'est
-# pas ce qu'on ferait en production. On deposerait les fichiers sur un stockage
-# objet et l'on ne garderait que leur URL, ce qui allegerait aussi la reponse du
-# catalogue, qui transporte aujourd'hui les images de chaque produit.
+# Corps maximal (413 au-delà). Les photos produit arrivent en base64 dans le JSON,
+# d'où 8 Mo ; un stockage objet permettrait de redescendre.
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", 8_000_000))
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Ajoute les en-tetes de securite recommandes a chaque reponse."""
+    """En-têtes de sécurité sur chaque réponse."""
 
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
         h = response.headers
-        # Empeche le navigateur de "deviner" un type de contenu (anti sniffing).
         h["X-Content-Type-Options"] = "nosniff"
-        # Interdit l'affichage du site dans une iframe (anti clickjacking).
         h["X-Frame-Options"] = "DENY"
-        # Ne fuite pas l'URL d'origine vers les sites tiers.
         h["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        # Coupe l'acces aux capteurs sensibles par defaut.
         h["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        # Force HTTPS cote navigateur (effet reel uniquement derriere TLS en prod).
         h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        # Politique de contenu. Cette API ne sert que du JSON : rien a charger,
-        # rien a executer. Tout verrouiller supprime la surface d'attaque des
-        # reponses d'erreur, qui pourraient sinon renvoyer du HTML injecte.
-        # `frame-ancestors 'none'` est la version moderne de X-Frame-Options,
-        # conservee au-dessus pour les navigateurs anciens.
+        # L'API ne sert que du JSON : rien à charger ni à exécuter
         h["Content-Security-Policy"] = (
             "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
         )
-        # Empeche un navigateur d'inclure ces reponses dans un autre document.
         h["Cross-Origin-Resource-Policy"] = "same-site"
         return response
 
 
-class BodySizeLimitMiddleware(BaseHTTPMiddleware):
-    """Rejette les requetes dont le corps depasse MAX_BODY_BYTES."""
+def _message_413(recu: int) -> str:
+    """Indique la taille reçue et la limite."""
+    return (
+        f"Requête trop volumineuse : {recu / 1_000_000:.1f} Mo "
+        f"pour un maximum de {MAX_BODY_BYTES / 1_000_000:.0f} Mo. "
+        "Réduis le nombre ou le poids des photos."
+    )
 
-    async def dispatch(self, request: Request, call_next):
-        cl = request.headers.get("content-length")
-        if cl is not None:
+
+class _CorpsTropGros(Exception):
+    """Levée dès que le corps reçu franchit le plafond."""
+
+
+class BodySizeLimitMiddleware:
+    """Rejette les corps au-delà de MAX_BODY_BYTES.
+
+    Compte les octets réellement reçus : `Content-Length` manque en
+    `Transfer-Encoding: chunked`. L'en-tête reste vérifié d'abord pour refuser
+    tôt. Intermédiaire ASGI, seul moyen de lire le flux entrant.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        entetes = dict(scope.get("headers") or [])
+        annonce = entetes.get(b"content-length")
+        if annonce is not None:
             try:
-                if int(cl) > MAX_BODY_BYTES:
-                    # Message actionnable : sans la limite ni la taille recue,
-                    # on ne sait pas de combien on depasse ni quoi alleger.
-                    return JSONResponse(
-                        status_code=413,
-                        content={
-                            "detail": (
-                                f"Requete trop volumineuse : {int(cl) / 1_000_000:.1f} Mo "
-                                f"pour un maximum de {MAX_BODY_BYTES / 1_000_000:.0f} Mo. "
-                                "Reduis le nombre ou le poids des photos."
-                            )
-                        },
-                    )
+                taille = int(annonce)
             except ValueError:
-                return JSONResponse(status_code=400, content={"detail": "En-tete invalide."})
-        return await call_next(request)
+                await self._repond(send, 400, "En-tête invalide.")
+                return
+            if taille > MAX_BODY_BYTES:
+                await self._repond(send, 413, _message_413(taille))
+                return
+
+        recu = 0
+
+        async def receive_borne():
+            nonlocal recu
+            message = await receive()
+            if message.get("type") == "http.request":
+                recu += len(message.get("body", b""))
+                if recu > MAX_BODY_BYTES:
+                    raise _CorpsTropGros(recu)
+            return message
+
+        commencee = False
+
+        async def send_suivi(message):
+            nonlocal commencee
+            if message.get("type") == "http.response.start":
+                commencee = True
+            await send(message)
+
+        try:
+            await self.app(scope, receive_borne, send_suivi)
+        except _CorpsTropGros as trop:
+            # Réponse déjà partie : impossible de la réécrire
+            if commencee:
+                raise
+            await self._repond(send, 413, _message_413(trop.args[0]))
+
+    @staticmethod
+    async def _repond(send, code: int, detail: str) -> None:
+        reponse = JSONResponse(status_code=code, content={"detail": detail})
+        await send({
+            "type": "http.response.start",
+            "status": code,
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(reponse.body)).encode()),
+            ],
+        })
+        await send({"type": "http.response.body", "body": reponse.body})

@@ -136,11 +136,7 @@ class TestAnalytics:
     def test_commande_expediee_compte_dans_le_chiffre_d_affaires(
         self, client, product, admin_headers
     ):
-        """Une commande partie a bien ete encaissee.
-
-        Ne retenir que le statut « payee » faisait baisser le chiffre d'affaires
-        a mesure que les colis quittaient l'atelier.
-        """
+        """Une commande partie a bien ete encaissee."""
         res = client.post(
             "/orders/checkout", json=checkout_payload(product.id, email="expedie@test.fr")
         )

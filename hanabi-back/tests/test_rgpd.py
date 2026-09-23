@@ -1,14 +1,4 @@
-"""Droits des personnes : portabilite (art. 20) et effacement (art. 17).
-
-Une fonctionnalite juridique se teste par ses GARANTIES, pas par ses appels.
-Trois sont verifiees ici, et la deuxieme est la plus difficile :
-
-  1. l'export contient tout ce qu'on detient ;
-  2. apres effacement, plus AUCUNE trace de la personne ne subsiste - et le test
-     le verifie en balayant toutes les tables, pas en cochant celles auxquelles
-     on a pense ;
-  3. ce que la loi oblige a garder est bel et bien garde.
-"""
+"""Droits des personnes : portabilite (art."""
 import pytest
 
 from app import models, rgpd
@@ -75,8 +65,7 @@ class TestExport:
         assert len(corps["moyens_de_paiement"]) == 1
 
     def test_n_expose_jamais_le_jeton_de_paiement(self, client, compte_garni):
-        """Ce n'est pas une donnee SUR la personne mais un moyen de la debiter :
-        l'exporter reviendrait a le mettre en circulation."""
+        """Ce n'est pas une donnee sur la personne mais un moyen de la debiter."""
         headers, _ = compte_garni
         corps = client.post("/compte/export", json={"password": MOT_DE_PASSE}, headers=headers).text
 
@@ -93,8 +82,7 @@ class TestExport:
         assert "20" in corps["_a_propos"]["fondement"]
 
     def test_exige_le_mot_de_passe(self, client, compte):
-        """Un export rassemble en un fichier ce que le site ne montre que par
-        fragments : c'est ce qu'un poste laisse ouvert permettrait d'emporter."""
+        """Un export rassemble en un fichier ce que le site ne montre que par fragments."""
         headers, _ = compte
         res = client.post("/compte/export", json={"password": "pas-le-bon"}, headers=headers)
 
@@ -126,13 +114,7 @@ class TestEffacement:
         assert user.anonymise_le is not None
 
     def test_AUCUNE_TRACE_DE_LA_PERSONNE_NE_SUBSISTE(self, client, db_session, compte_garni):
-        """LA garantie du droit a l'effacement, verifiee par BALAYAGE.
-
-        On ne coche pas les tables auxquelles on a pense : on parcourt toutes
-        les colonnes textuelles de tout le schema et on cherche les valeurs
-        personnelles. Une table ajoutee plus tard et oubliee dans
-        `rgpd.anonymiser` fera echouer ce test sans qu'on ait rien a y ajouter.
-        """
+        """LA garantie du droit a l'effacement, verifiee par balayage."""
         headers, _ = compte_garni
         personnelles = ["ada@test.fr", "0612345678", "12 rue des Erables", "75011"]
 
@@ -215,8 +197,7 @@ class TestCeQuiDoitRester:
         assert len(commande.items) == articles
 
     def test_le_texte_des_avis_reste_en_ligne(self, client, db_session, compte_garni):
-        """Un avis parle d'un produit, et les autres clients s'y fient. Seul
-        l'auteur est anonymise - la limite est annoncee dans la reponse."""
+        """Un avis parle d'un produit, et les autres clients s'y fient."""
         headers, _ = compte_garni
         self._supprimer(client, headers)
 
@@ -231,8 +212,7 @@ class TestCeQuiDoitRester:
         assert "avis" in corps["note_avis"].lower()
 
     def test_les_consultations_restent_mais_deliees(self, client, db_session, compte_garni, product):
-        """Leur volume nourrit l'audience ; deliees d'un compte, elles ne
-        designent plus personne."""
+        """Leur volume nourrit l'audience ; deliees d'un compte, elles ne designent plus personne."""
         headers, user = compte_garni
         db_session.add(models.ProductView(product_id=product.id, user_id=user.id))
         db_session.commit()
@@ -312,11 +292,9 @@ class TestGardeFous:
 
 class TestAdresseDeRemplacement:
     def test_est_unique_par_compte(self, db_session):
-        """Deux comptes anonymises entreraient sinon en collision sur la
-        contrainte d'unicite de l'adresse."""
+        """Deux comptes anonymises entreraient sinon en collision sur la contrainte d'unicite de l'adresse."""
         assert rgpd._adresse_anonyme(1) != rgpd._adresse_anonyme(2)
 
     def test_utilise_un_domaine_non_routable(self):
-        """`.invalid` est reserve par la RFC 2606 : un courriel envoye par
-        erreur ne partira nulle part."""
+        """`.invalid` est reserve par la RFC 2606 : un courriel envoye par erreur ne partira nulle part."""
         assert rgpd._adresse_anonyme(1).endswith(".invalid")

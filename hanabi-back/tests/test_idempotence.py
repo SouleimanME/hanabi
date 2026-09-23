@@ -1,10 +1,4 @@
-"""Rejeu du tunnel d'achat.
-
-Ce que ces tests protegent : un acheteur qui clique deux fois, un navigateur qui
-rejoue apres une coupure, un telephone qui reessaie sur delai depasse. Dans les
-trois cas la meme intention arrive deux fois, et une seule commande doit en
-sortir.
-"""
+"""Rejeu du tunnel d'achat."""
 import pytest
 
 from app import models
@@ -79,8 +73,7 @@ class TestRejeu:
 
 class TestCleReutilisee:
     def test_meme_cle_corps_different_est_refusee(self, client, db_session, product):
-        """Renvoyer la reponse d'un autre achat serait le pire comportement :
-        le client croirait sa commande passee."""
+        """Renvoyer la reponse d'un autre achat serait le pire comportement : le client croirait sa commande passee."""
         client.post("/orders/checkout", json=checkout_payload(product.id, qty=1), headers={EN_TETE: CLE})
         res = client.post(
             "/orders/checkout", json=checkout_payload(product.id, qty=2), headers={EN_TETE: CLE}
@@ -90,11 +83,7 @@ class TestCleReutilisee:
         assert db_session.query(models.Order).count() == 1
 
     def test_l_ordre_des_cles_json_n_est_pas_une_difference(self, client, db_session, product):
-        """Deux serialisations du meme corps doivent avoir la meme empreinte.
-
-        Sans tri des cles, un client honnete verrait son reessai refuse pour
-        « corps different » selon l'ordre choisi par sa bibliotheque HTTP.
-        """
+        """Deux serialisations du meme corps doivent avoir la meme empreinte."""
         charge = checkout_payload(product.id)
         inverse = dict(reversed(list(charge.items())))
 
@@ -121,11 +110,7 @@ class TestFormeDeLaCle:
 
 
 class TestPaiement:
-    """Le paiement est simule, mais ses chemins d'echec sont jouables.
-
-    C'est ce qui donne son sens a l'idempotence : rejouer une insertion est
-    benin, rejouer un debit ne l'est pas.
-    """
+    """Le paiement est simule, mais ses chemins d'echec sont jouables."""
 
     def test_carte_refusee_annule_tout(self, client, db_session, product):
         depart = product.stock
@@ -143,12 +128,7 @@ class TestPaiement:
         assert db_session.query(models.OutboxEmail).count() == 0
 
     def test_issue_indecise_conserve_la_commande_en_attente(self, client, db_session, product):
-        """Un delai depasse ne dit pas si le debit a eu lieu.
-
-        On ne peut ni confirmer - livrer un paiement non prouve - ni annuler -
-        oublier un debit possible et rendre un stock peut-etre deja vendu. La
-        commande reste donc en attente de rapprochement.
-        """
+        """Un delai depasse ne dit pas si le debit a eu lieu."""
         charge = checkout_payload(product.id)
         charge["payment_token"] = "tok_indecis"
 
@@ -175,14 +155,7 @@ class TestPaiement:
     def test_le_rejeu_d_une_issue_indecise_ne_double_pas_la_commande(
         self, client, db_session, product
     ):
-        """LE cas qui justifie tout le mecanisme.
-
-        Une premiere version annulait la transaction sur issue indecise en
-        invitant a reessayer avec la meme cle. C'etait une promesse creuse : le
-        `rollback` emportait aussi la ligne d'idempotence, qui vit dans la meme
-        transaction. La cle disparaissait, le reessai repartait de zero, et le
-        second debit qu'on pretendait empecher redevenait possible.
-        """
+        """LE cas qui justifie tout le mecanisme."""
         charge = checkout_payload(product.id)
         charge["payment_token"] = "tok_indecis"
 

@@ -1,32 +1,13 @@
-"""Autorisation de paiement simulee.
+"""Autorisation de paiement simulée : aucun prestataire, aucune clé, aucun encaissement.
 
-AUCUN ARGENT NE CIRCULE. Cette boutique est fictive, et le rester est une
-decision, pas une limite technique. Ce module ne parle a aucun prestataire, ne
-detient aucune cle, et ne saurait pas encaisser un centime.
+L'étape reproduit un vrai tunnel pour que les garde-fous autour aient un objet :
+- le site ne reçoit qu'un jeton du prestataire, jamais le numéro de carte ;
+- l'autorisation peut être refusée (réponse normale) ou rester indécise (délai
+  dépassé), le cas qui justifie l'idempotence ;
+- la référence d'autorisation est conservée sur la commande.
 
-Alors pourquoi l'ecrire. Parce que sans etape de paiement, l'idempotence n'a
-rien a proteger : rejouer une requete qui ne fait qu'inserer une ligne est
-ennuyeux, rejouer une requete qui debite une carte ne l'est pas. Le decoupage
-qui suit est celui d'un vrai tunnel d'achat, et c'est lui qui donne leur sens
-aux garde-fous places autour.
-
-Ce qui est reproduit fidelement :
-
-  - Le site ne voit JAMAIS le numero de carte. Il recoit un jeton emis par le
-    formulaire du prestataire (`payment_token`), ce qui maintient l'application
-    hors du perimetre PCI-DSS. Le schema `CheckoutIn` le prevoit deja.
-  - L'autorisation precede la confirmation, et peut echouer. Un refus n'est pas
-    une panne : c'est une reponse normale, a traduire en message clair.
-  - Certains echecs sont AMBIGUS. Un delai d'attente depasse ne dit pas si le
-    debit a eu lieu. C'est le cas qui justifie a lui seul l'idempotence : le
-    client reessaie, et le serveur doit reconnaitre la seconde tentative comme
-    la meme intention.
-  - La reference d'autorisation est conservee sur la commande, seul moyen de
-    rapprocher plus tard une commande d'un mouvement bancaire.
-
-Les jetons de test suivent la convention des prestataires reels - Stripe
-distribue de la meme facon des numeros qui echouent a la demande - pour que les
-chemins d'echec soient jouables sans attendre qu'ils surviennent.
+Des jetons de test déclenchent les échecs à la demande, comme chez les
+prestataires réels.
 """
 import hashlib
 import logging
@@ -37,7 +18,7 @@ log = logging.getLogger("hanabi.paiement")
 
 
 class PaiementRefuse(Exception):
-    """Le prestataire a refuse. L'issue est connue : rien n'a ete debite."""
+    """Refus du prestataire : rien n'a été débité."""
 
     def __init__(self, motif: str, code: str = "carte_refusee"):
         super().__init__(motif)
@@ -46,13 +27,7 @@ class PaiementRefuse(Exception):
 
 
 class PaiementIndecis(Exception):
-    """L'issue est INCONNUE : le debit a peut-etre eu lieu.
-
-    Distincte de `PaiementRefuse` a dessein. Un refus permet de rendre le stock
-    et d'inviter a recommencer ; une issue indecise l'interdit, puisque
-    recommencer pourrait debiter une seconde fois. C'est precisement la que la
-    cle d'idempotence gagne sa place.
-    """
+    """Issue inconnue : le débit a peut-être eu lieu. Ne pas rejouer sans clé d'idempotence."""
 
 
 @dataclass(frozen=True)
@@ -62,32 +37,29 @@ class Autorisation:
     reseau: str
 
 
-# Jetons de test. Tout autre jeton - et l'absence de jeton - est accepte.
+# Jetons de test ; tout autre jeton, ou aucun, est accepté
 JETON_REFUS = "tok_refus"
 JETON_FONDS = "tok_fonds_insuffisants"
 JETON_INDECIS = "tok_indecis"
 
 
 def autoriser(jeton: str | None, montant_cents: int, reference_commande: str) -> Autorisation:
-    """Demande l'autorisation du montant, et rend sa reference.
+    """Autorise le montant et rend la référence.
 
-    @raises PaiementRefuse: refus franc, rien n'a ete debite
-    @raises PaiementIndecis: issue inconnue, ne pas rejouer sans cle d'idempotence
+    @raises PaiementRefuse: refus, rien n'a été débité
+    @raises PaiementIndecis: issue inconnue
     """
     if montant_cents <= 0:
         raise PaiementRefuse("Montant invalide.", code="montant_invalide")
 
     if jeton == JETON_REFUS:
-        raise PaiementRefuse("Carte refusee par la banque emettrice.")
+        raise PaiementRefuse("Carte refusée par la banque émettrice.")
     if jeton == JETON_FONDS:
         raise PaiementRefuse("Provision insuffisante.", code="fonds_insuffisants")
     if jeton == JETON_INDECIS:
-        raise PaiementIndecis("Le prestataire n'a pas repondu dans le delai imparti.")
+        raise PaiementIndecis("Le prestataire n'a pas répondu dans le délai imparti.")
 
-    # Reference deterministe pour une meme commande, comme le ferait un
-    # prestataire a qui l'on transmet sa propre reference : deux autorisations
-    # de la meme commande se reconnaissent au lieu de produire deux mouvements
-    # indiscernables.
+    # Référence déterministe par commande : deux autorisations de la même commande se reconnaissent
     graine = hashlib.sha256(reference_commande.encode()).hexdigest()[:12]
     autorisation = Autorisation(
         reference=f"auth_{graine}",
@@ -106,7 +78,7 @@ def autoriser(jeton: str | None, montant_cents: int, reference_commande: str) ->
 
 
 def _reseau(jeton: str | None) -> str:
-    """Reseau declare par le jeton, sans valeur autre qu'informative."""
+    """Réseau déduit du jeton, à titre informatif."""
     if not jeton:
         return "simule"
     for nom in ("visa", "mastercard", "amex"):
@@ -116,5 +88,5 @@ def _reseau(jeton: str | None) -> str:
 
 
 def nouvelle_reference_commande() -> str:
-    """Numero de commande. `secrets` plutot que `random` : il ne se devine pas."""
+    """Numéro de commande tiré par `secrets`, pour qu'il ne se devine pas."""
     return "ATL" + str(secrets.randbelow(900000) + 100000)

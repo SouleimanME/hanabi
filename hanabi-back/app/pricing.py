@@ -1,12 +1,11 @@
-"""Tarification cote serveur.
+"""Tarification côté serveur : le total qui fait foi se calcule ici, depuis les prix en base.
 
-Regle de securite : le total qui fait foi est calcule ici, a partir des prix
-en base. Le front peut envoyer ce qu'il veut, on ne lui fait jamais confiance
-sur les montants ni sur la validite d'un code promo.
+Frais de port dupliqués dans hanabi-front/src/lib/constants.js (un test compare).
 """
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -19,14 +18,10 @@ def _promo_label(p: models.Promo) -> str:
     if p.kind == "percent":
         return f"-{p.percent} %"
     if p.kind == "fixed":
-        return f"-{p.amount_cents / 100:.2f} euros".replace(".", ",")
+        return f"-{p.amount_cents / 100:.2f} €".replace(".", ",")
     return "Port offert"
 
 
-# Le meme piege s'est represente sur la file d'attente des courriels, ou une
-# comparaison de dates echouait pour cette raison exacte. L'aide vit desormais
-# aupres des modeles, la ou sont declarees les colonnes concernees : c'est le
-# seul endroit ou l'on pense a elle en ajoutant une date.
 _as_utc = models.as_utc
 
 
@@ -35,10 +30,10 @@ def validate_promo(db: Session, code: str, subtotal_cents: int) -> models.Promo:
     if promo is None or not promo.active:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Code promo invalide.")
     if promo.expires_at and _as_utc(promo.expires_at) < datetime.now(timezone.utc):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Ce code promo a expire.")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Ce code promo a expiré.")
     if subtotal_cents < promo.min_subtotal_cents:
-        seuil = promo.min_subtotal_cents / 100
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Minimum de {seuil:.2f} euros requis.")
+        seuil = f"{promo.min_subtotal_cents / 100:.2f}".replace(".", ",")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Minimum de {seuil} € requis.")
     return promo
 
 
@@ -46,10 +41,19 @@ def quote(db: Session, items: list[schemas.CartLineIn], promo_code: str | None) 
     if not items:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Panier vide.")
 
+    # Une seule lecture pour tout le panier, quel que soit le nombre de lignes
+    demandes = {it.product_id for it in items}
+    catalogue = {
+        p.id: p
+        for p in db.scalars(
+            select(models.Product).where(models.Product.id.in_(demandes))
+        )
+    }
+
     lines: list[schemas.QuoteLineOut] = []
     subtotal = 0
     for it in items:
-        p = db.get(models.Product, it.product_id)
+        p = catalogue.get(it.product_id)
         if p is None or not p.active:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f"Produit {it.product_id} introuvable.")
         line_total = p.price_cents * it.qty

@@ -1,10 +1,4 @@
-"""Courriels de compte : confirmation d'adresse, mot de passe oublie, newsletter.
-
-Les jetons ne sont jamais lus depuis la reponse HTTP - ils n'y figurent pas, et
-c'est voulu. On les extrait du courriel depose en file, exactement comme le
-ferait la personne qui releve sa boite. Un test qui recevrait le jeton dans la
-reponse validerait une API que la production n'expose pas.
-"""
+"""Courriels de compte : confirmation d'adresse, mot de passe oublie, newsletter."""
 import re
 
 import pytest
@@ -63,8 +57,7 @@ class TestConfirmationAdresse:
         assert res.json()["email_verified"] is True
 
     def test_le_compte_est_utilisable_sans_confirmation(self, client):
-        """Bloquer la connexion transformerait un courriel tombe dans les
-        indesirables en compte inaccessible."""
+        """Bloquer la connexion transformerait un courriel tombe dans les indesirables en compte inaccessible."""
         _inscription(client)
 
         res = client.post(
@@ -89,8 +82,7 @@ class TestConfirmationAdresse:
         assert res.status_code == 400
 
     def test_un_nouveau_lien_revoque_le_precedent(self, client, db_session):
-        """Demander un nouveau lien doit invalider l'ancien : sinon un lien
-        intercepte reste utilisable alors qu'on le croit remplace."""
+        """Demander un nouveau lien doit invalider l'ancien."""
         res = _inscription(client)
         premier = _jeton_du_dernier_courriel(db_session)
         jeton_acces = res.json()["access_token"]
@@ -139,8 +131,7 @@ class TestMotDePasseOublie:
         assert "mot de passe" in message.sujet.lower()
 
     def test_une_adresse_inconnue_recoit_la_meme_reponse(self, client, db_session):
-        """Sans cela, le formulaire devient un detecteur d'adresses : on teste
-        une liste entiere et on en extrait les clients de la boutique."""
+        """Sans cela, le formulaire devient un detecteur d'adresses."""
         connue = client.post("/auth/forgot-password", json={"email": "nouvelle@hanabi.fr"})
         inconnue = client.post("/auth/forgot-password", json={"email": "personne@hanabi.fr"})
 
@@ -210,12 +201,7 @@ class TestMotDePasseOublie:
         assert res.json()["user"]["email_verified"] is True
 
     def test_un_jeton_de_confirmation_ne_reinitialise_pas(self, client, db_session):
-        """Les usages sont cloisonnes : un jeton vaut pour ce qu'il a ete emis.
-
-        Sans cette separation, le lien de confirmation - valable sept jours et
-        envoye a toute inscription - deviendrait un lien de changement de mot
-        de passe.
-        """
+        """Les usages sont cloisonnes : un jeton vaut pour ce qu'il a ete emis."""
         _inscription(client)
         jeton = _jeton_du_dernier_courriel(db_session)
 
@@ -242,8 +228,7 @@ class TestStockageDesJetons:
         assert tokens.consommer(db_session, jeton, tokens.VERIFICATION) is not None
 
     def test_les_durees_different_selon_l_usage(self):
-        """Confirmer une adresse peut attendre ; reinitialiser donne acces au
-        compte et doit se refermer vite."""
+        """Confirmer une adresse peut attendre ; reinitialiser donne acces au compte et doit se refermer vite."""
         assert tokens.DUREES[tokens.REINITIALISATION] < tokens.DUREES[tokens.VERIFICATION]
 
 

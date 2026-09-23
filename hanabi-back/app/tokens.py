@@ -1,27 +1,10 @@
-"""Jetons a usage unique : confirmation d'adresse, reinitialisation.
+"""Jetons à usage unique : confirmation d'adresse, réinitialisation.
 
-TROIS PROPRIETES, ET CHACUNE REPOND A UNE ATTAQUE PRECISE.
-
-  - IMPREVISIBLE. 32 octets tires par `secrets`, soit 256 bits. Un jeton
-    devinable, c'est la prise de controle d'un compte sans mot de passe.
-  - STOCKE HACHE. La base ne contient que l'empreinte SHA-256 : une copie de la
-    base, une sauvegarde qui traine, un journal trop bavard ne donnent aucun
-    lien exploitable. Meme raisonnement que pour les mots de passe.
-  - A USAGE UNIQUE ET DATE. `utilise_le` ferme la porte des le premier usage,
-    et l'expiration borne la fenetre.
-
-POURQUOI PAS UN JETON SIGNE. Un JWT se verifie sans etat, ce qui est seduisant,
-mais rien ne l'empeche de resservir tant qu'il n'a pas expire. Un lien de
-reinitialisation resterait valable une heure APRES le changement de mot de
-passe, y compris dans une boite dont quelqu'un a garde l'acces. L'etat en base
-est precisement ce qui permet de le revoquer, et c'est ce qui compte ici.
-
-POURQUOI SHA-256 ET NON BCRYPT, alors que les mots de passe exigent bcrypt. Ce
-qui rend un mot de passe attaquable est sa faible entropie et sa reutilisation
-d'un site a l'autre ; un condensat lent est la pour rendre chaque essai couteux.
-Un jeton de 256 bits n'a ni l'une ni l'autre : il n'existe pas de dictionnaire
-de jetons, et l'espace est hors de portee. La lenteur de bcrypt se paierait a
-chaque verification sans rien acheter.
+- 32 octets tirés par `secrets` ;
+- stockés hachés (SHA-256) : une copie de la base ne donne aucun lien valable.
+  bcrypt n'apporterait rien sur 256 bits aléatoires ;
+- à usage unique et datés. En base plutôt que signés, pour qu'un lien de
+  réinitialisation meure dès qu'il a servi.
 """
 import hashlib
 import logging
@@ -38,10 +21,7 @@ log = logging.getLogger("hanabi.jetons")
 VERIFICATION = "verification_email"
 REINITIALISATION = "reinitialisation"
 
-# Durees de validite. Elles different parce que les deux liens n'ont ni la meme
-# urgence ni le meme pouvoir : confirmer une adresse est anodin et peut attendre
-# qu'on releve son courrier, reinitialiser un mot de passe donne acces au compte
-# et doit se refermer vite.
+# Confirmer une adresse peut attendre ; réinitialiser un mot de passe se referme vite
 DUREES = {
     VERIFICATION: timedelta(days=7),
     REINITIALISATION: timedelta(hours=1),
@@ -53,17 +33,10 @@ def _empreinte(brut: str) -> str:
 
 
 def creer(db: Session, user_id: int, usage: str) -> str:
-    """Emet un jeton et rend sa forme EN CLAIR, la seule fois ou elle existe.
-
-    L'appelant la place dans le lien du courriel ; la base n'en garde que
-    l'empreinte, et personne - pas meme un administrateur - ne peut la retrouver
-    ensuite.
-    """
+    """Émet un jeton et rend sa forme en clair, qui n'est conservée nulle part."""
     brut = secrets.token_urlsafe(32)
 
-    # Les jetons precedents du meme usage sont revoques. Demander un nouveau
-    # lien doit invalider l'ancien : sans cela, un lien intercepte reste
-    # utilisable alors que la personne croit l'avoir remplace.
+    # Un nouveau lien invalide les précédents du même usage
     db.execute(
         update(models.Token)
         .where(
@@ -86,12 +59,10 @@ def creer(db: Session, user_id: int, usage: str) -> str:
 
 
 def consommer(db: Session, brut: str, usage: str) -> models.User | None:
-    """Valide le jeton et le brule. Rend le compte, ou `None`.
+    """Valide et brûle le jeton ; rend le compte ou `None`.
 
-    Le jeton est marque utilise AVANT que l'appelant n'agisse : si l'action
-    echoue ensuite, la transaction entiere est annulee et le jeton redevient
-    valable. L'inverse - agir puis marquer - laisserait un jeton reutilisable
-    en cas d'echec partiel.
+    Marqué utilisé avant l'action : si elle échoue, la transaction annulée le
+    rend de nouveau valable.
     """
     if not brut:
         return None
@@ -116,11 +87,9 @@ def consommer(db: Session, brut: str, usage: str) -> models.User | None:
 
 
 def purger(db: Session, maintenant: datetime | None = None) -> int:
-    """Supprime les jetons expires depuis plus d'une semaine.
+    """Supprime les jetons expirés depuis plus d'une semaine.
 
-    On ne supprime pas des l'expiration : garder un jeton mort quelques jours
-    permet de repondre « ce lien a expire » plutot que « lien inconnu », ce qui
-    est la difference entre une explication et une enigme.
+    Le délai permet de répondre « lien expiré » plutôt que « lien inconnu ».
     """
     maintenant = maintenant or datetime.now(timezone.utc)
     limite = maintenant - timedelta(days=7)

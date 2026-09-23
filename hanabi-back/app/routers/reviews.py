@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..antibot import verify as verify_antibot
+from ..analytics import REVENUE_STATUSES
 from ..database import get_db
 from ..deps import get_current_user
 
@@ -15,7 +16,7 @@ def list_reviews(product_id: int, db: Session = Depends(get_db)):
     reviews = (
         db.query(models.Review)
         .filter(models.Review.product_id == product_id, models.Review.approved.is_(True))
-        # Les avis verifies (achat reel) remontent en premier.
+        # Avis vérifiés (achat constaté) en premier
         .order_by(models.Review.verified.desc(), models.Review.created_at.desc())
         .all()
     )
@@ -35,22 +36,19 @@ def add_review(
     if product is None:
         raise HTTPException(404, "Produit introuvable.")
 
-    # Achat reel : l'utilisateur a-t-il une commande payee contenant ce produit ?
+    # Achat constaté : une commande encaissée contient ce produit
     purchased = db.execute(
         select(models.Order.id)
         .join(models.OrderItem, models.OrderItem.order_id == models.Order.id)
         .where(
             models.Order.user_id == user.id,
-            models.Order.status == "paid",
+            models.Order.status.in_(REVENUE_STATUSES),
             models.OrderItem.product_id == product_id,
         )
         .limit(1)
     ).first()
 
-    # Choix produit : on autorise l'avis mais on marque "verifie" seulement si achat constate.
-    # Pour n'autoriser QUE les acheteurs, decommente :
-    # if not purchased:
-    #     raise HTTPException(status.HTTP_403_FORBIDDEN, "Seuls les acheteurs peuvent laisser un avis.")
+    # Tout client connecté peut donner un avis ; « vérifié » seulement après achat
 
     existing = (
         db.query(models.Review)
@@ -58,7 +56,7 @@ def add_review(
         .first()
     )
     if existing:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Tu as deja laisse un avis sur ce produit.")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Tu as déjà laissé un avis sur ce produit.")
 
     review = models.Review(
         product_id=product_id,
@@ -67,7 +65,7 @@ def add_review(
         rating=data.rating,
         text=data.text,
         verified=bool(purchased),
-        approved=True,  # en prod : passer par une file de moderation
+        approved=True,  # sans file de modération
     )
     db.add(review)
     db.commit()

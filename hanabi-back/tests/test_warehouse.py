@@ -1,16 +1,4 @@
-"""Routes de lecture de l'entrepot decisionnel.
-
-La suite tourne sur SQLite, ou l'entrepot n'existe pas et ne peut pas exister :
-ses modeles emploient `date_trunc`, `generate_series` et des fonctions de
-fenetrage. Ces tests verifient donc surtout ce qui doit rester vrai quel que
-soit le moteur - le controle d'acces, la coherence du registre, et le fait que
-l'absence d'entrepot se traduise par un etat annonce et non par une erreur 500.
-
-Le contenu des agregats, lui, est verifie par les tests dbt (`dbt build` joue
-133 assertions sur la base PostgreSQL), pas ici : le rejouer en Python
-reviendrait a reecrire les modeles une seconde fois, et donc a tester la copie
-plutot que l'original.
-"""
+"""Routes de lecture de l'entrepot decisionnel."""
 import pathlib
 
 import pytest
@@ -18,9 +6,7 @@ import pytest
 from app import warehouse
 
 
-# --------------------------------------------------------------------------
-# Controle d'acces
-# --------------------------------------------------------------------------
+# --- Controle d'acces ---
 
 
 def test_entrepot_refuse_les_anonymes(client):
@@ -37,26 +23,20 @@ def test_entrepot_ouvert_a_l_administrateur(client, auth_header):
     assert client.get("/admin/warehouse", headers=entetes).status_code == 200
 
 
-# --------------------------------------------------------------------------
-# Absence d'entrepot : un etat, pas une panne
-# --------------------------------------------------------------------------
+# --- Absence d'entrepot : un etat, pas une panne ---
 
 
 def test_etat_annonce_l_absence_sans_echouer(client, auth_header):
-    """Sur SQLite, la route repond 200 et dit pourquoi il n'y a rien a montrer.
-
-    Un 503 obligerait l'interface a traiter un cas d'erreur pour ce qui est la
-    situation normale en developpement.
-    """
+    """Sur SQLite, la route repond 200 et dit pourquoi il n'y a rien a montrer."""
     entetes, _ = auth_header(email="chef@test.fr", is_admin=True)
     etat = client.get("/admin/warehouse", headers=entetes).json()
 
     assert etat["disponible"] is False
     assert etat["raison"] == "moteur"
     assert etat["construit_le"] is None
-    # Les couches restent decrites : l'interface dessine le graphe attendu et
-    # signale que rien n'en est present, ce qui est plus parlant qu'une page
-    # vide.
+    # Sans entrepôt, aucun contrôle n'a pu tourner
+    assert etat["controles"] == []
+    # Les couches restent decrites
     assert [couche["cle"] for couche in etat["couches"]] == ["bronze", "silver", "gold"]
     assert all(couche["presents"] == [] for couche in etat["couches"])
 
@@ -92,38 +72,18 @@ def test_bornes_de_pagination_refusees_avant_la_base(client, auth_header):
     ).status_code == 422
 
 
-# --------------------------------------------------------------------------
-# Coherence du registre
-# --------------------------------------------------------------------------
+# --- Coherence du registre ---
 
 
 def test_chaque_mart_est_annonce_dans_la_couche_gold():
-    """Le registre et la description des couches doivent parler des memes tables.
-
-    Les deux sont ecrits a la main dans `warehouse.py`, l'un pour interroger,
-    l'autre pour dessiner le graphe. Rien n'empeche d'ajouter une table au
-    premier en oubliant le second - sinon ce test.
-    """
+    """Le registre et la description des couches doivent parler des memes tables."""
     gold = next(couche for couche in warehouse.COUCHES if couche["cle"] == "gold")
     for mart in warehouse.MARTS:
         assert mart.table in gold["modeles"], mart.table
 
 
 def test_les_couches_decrivent_tous_les_modeles_dbt():
-    """`COUCHES` doit enumerer exactement les modeles presents dans le projet dbt.
-
-    La verification manquait dans ce sens-la, et c'est celui qui echoue en
-    silence : un modele annonce mais absent de la base se voit dans l'interface,
-    un modele construit mais oublie dans `COUCHES` reste invisible - le compteur
-    affiche « 7/7 » en vert et personne ne cherche le huitieme. Les deux vues
-    bronze des sources externes et le calendrier quotidien ont vecu ainsi
-    pendant deux versions.
-
-    Les noms sont lus dans les fichiers `.sql`, sans dbt ni base : le projet est
-    dans le meme depot, et un simple parcours de dossier suffit a comparer les
-    deux listes. Le test se contente de passer si `hanabi-dwh/` est absent -
-    l'API se deploie seule, et son image n'embarque pas l'entrepot.
-    """
+    """`COUCHES` doit enumerer exactement les modeles presents dans le projet dbt."""
     modeles = pathlib.Path(__file__).resolve().parents[2] / "hanabi-dwh" / "models"
     if not modeles.is_dir():
         pytest.skip("projet dbt absent de cette copie")
@@ -152,15 +112,13 @@ def test_les_cles_de_mart_sont_uniques():
 
 
 def test_chaque_mart_porte_une_question():
-    """Une table d'agregats sans la question a laquelle elle repond est un
-    tableau de nombres, et l'interface s'appuie sur ce texte."""
+    """Une table d'agregats sans la question a laquelle elle repond est un tableau de nombres."""
     for mart in warehouse.MARTS:
         assert mart.question.endswith("?"), mart.cle
 
 
 def test_format_des_colonnes_suit_le_nommage():
-    """Le formatage est deduit du nom, faute de quoi il faudrait decrire a la
-    main une centaine de colonnes - une liste que personne ne tiendrait."""
+    """Le formatage est deduit du nom."""
     assert warehouse._format_colonne("ca_cents", "bigint") == "euro"
     assert warehouse._format_colonne("taux_marge", "numeric") == "pourcent"
     assert warehouse._format_colonne("part_ca", "numeric") == "pourcent"
@@ -175,27 +133,20 @@ def test_format_des_colonnes_suit_le_nommage():
 
 
 def test_le_libelle_masque_le_suffixe_des_montants():
-    """« Ca cents » au-dessus d'une colonne affichee en euros serait une
-    contradiction sous les yeux du lecteur."""
-    assert warehouse._libelle_colonne("ca_cents") == "Ca"
+    assert warehouse._libelle_colonne("ca_cents") == "CA"
     assert warehouse._libelle_colonne("panier_moyen_cents") == "Panier moyen"
     assert warehouse._libelle_colonne("taux_conversion") == "Taux conversion"
 
 
-# --------------------------------------------------------------------------
-# Console SQL : les barrieres de forme
-# --------------------------------------------------------------------------
-#
-# Les trois barrieres qui comptent vraiment - transaction en lecture seule,
-# delai d'execution, examen du plan par PostgreSQL - ne peuvent pas etre
-# testees ici : elles vivent dans la base, et la suite tourne sur SQLite. Ce
-# sont celles qu'on verifie a la main sur PostgreSQL, et elles sont decrites
-# dans le module.
-#
-# Ce qui suit teste la premiere barriere, celle qui s'applique au texte de la
-# requete avant toute connexion. Elle n'est pas la plus solide, mais c'est elle
-# qui rend les messages comprehensibles, et c'est elle qu'un refactoring casse
-# sans s'en apercevoir.
+def test_le_libelle_retrouve_accents_et_sigles():
+    assert warehouse._libelle_colonne("jour_ferie") == "Jour férié"
+    assert warehouse._libelle_colonne("segment_rfm") == "Segment RFM"
+    assert warehouse._libelle_colonne("cout_cents") == "Coût"
+
+
+# --- Console SQL : contrôle de forme ---
+# Transaction en lecture seule, délai et examen du plan vivent dans PostgreSQL :
+# ils ne se testent pas sur SQLite.
 
 
 class TestFormeDesRequetes:
@@ -209,14 +160,12 @@ class TestFormeDesRequetes:
         assert warehouse._valide_la_forme(sql) == sql
 
     def test_une_cte_passe(self):
-        """`WITH` est un debut de lecture parfaitement legitime, et c'est la
-        forme qu'on ecrit des que la requete se complique."""
+        """`WITH` est un debut de lecture parfaitement legitime."""
         sql = "with x as (select 1 as n) select * from x"
         assert warehouse._valide_la_forme(sql) == sql
 
     def test_le_point_virgule_final_est_tolere(self):
-        """On le retire plutot que de refuser : le coller depuis un client SQL
-        est le geste le plus naturel du monde."""
+        """On le retire plutot que de refuser : le coller depuis un client SQL est le geste le plus naturel du monde."""
         assert warehouse._valide_la_forme("select 1;") == "select 1"
 
     @pytest.mark.parametrize(
@@ -232,19 +181,14 @@ class TestFormeDesRequetes:
         assert "SELECT ou WITH" in self._refus(sql)
 
     def test_deux_instructions_sont_refusees(self):
-        """La seconde echapperait a l'examen du plan, qui ne porte que sur la
-        premiere - c'est exactement le chemin d'une injection."""
+        """La seconde echapperait a l'examen du plan."""
         assert "seule instruction" in self._refus("select 1; drop table gold.gold_execution")
 
     def test_un_mot_clef_d_ecriture_cache_est_refuse(self):
         assert "TRUNCATE" in self._refus("select * from gold.gold_kpi_mensuel where 1=1 truncate")
 
     def test_un_mot_interdit_dans_une_chaine_ne_bloque_pas(self):
-        """Regression a eviter : filtrer sur la valeur « Delete » est legitime.
-
-        Chercher les mots-clefs dans le texte brut refuserait cette requete, et
-        l'utilisateur n'aurait aucun moyen de comprendre pourquoi.
-        """
+        """Regression a eviter : filtrer sur la valeur « Delete » est legitime."""
         sql = "select * from gold.gold_segments_rfm where segment = 'Delete me'"
         assert warehouse._valide_la_forme(sql) == sql
 
@@ -278,19 +222,8 @@ def test_la_console_sans_entrepot_renvoie_409(client, auth_header):
 
 
 def test_les_schemas_ouverts_excluent_public():
-    """`public` porte les condensats de mots de passe. Il ne doit jamais entrer
-    dans la liste des schemas lisibles, quelle qu'en soit la raison.
-
-    La liste est epinglee en entier, et pas seulement l'absence de `public` :
-    l'elargir doit demander de modifier ce test, donc de justifier l'ajout au
-    lieu de le glisser.
-
-    `externe` en fait partie depuis qu'il accueille les sources publiques
-    chargees par l'entrepot, taux de change de la BCE et jours feries. Ces
-    tables ne contiennent aucune donnee personnelle : elles viennent d'API
-    ouvertes et sont deja publiques a la source.
-    """
+    """`public` porte les condensats de mots de passe."""
     assert "public" not in warehouse.SCHEMAS_AUTORISES
     assert warehouse.SCHEMAS_AUTORISES == frozenset(
-        {"bronze", "silver", "gold", "externe"}
+        {"bronze", "silver", "gold", "externe", "controles"}
     )

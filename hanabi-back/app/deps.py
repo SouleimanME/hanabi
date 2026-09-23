@@ -16,12 +16,16 @@ def get_current_user(
 ) -> User:
     if creds is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authentification requise.")
-    user_id = decode_token(creds.credentials)
-    if user_id is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Jeton invalide ou expire.")
+    lu = decode_token(creds.credentials)
+    if lu is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Jeton invalide ou expiré.")
+    user_id, generation = lu
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Compte introuvable.")
+    # Jeton émis avant une révocation : même message qu'un jeton expiré
+    if int(user.token_version or 0) != generation:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Jeton invalide ou expiré.")
     return user
 
 
@@ -31,16 +35,12 @@ def get_admin_user(
 ) -> User:
     user = get_current_user(creds, db)
     if not user.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Acces reserve aux administrateurs.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Accès réservé aux administrateurs.")
     return user
 
 
 def is_readonly_admin(user: User) -> bool:
-    """Indique si ce compte administrateur est le compte vitrine bride.
-
-    Importe tardivement pour ne pas creer de cycle : `seed` a besoin des
-    modeles, qui n'ont pas a connaitre les dependances HTTP.
-    """
+    """Vrai pour le compte back-office de démonstration bridé (import tardif : évite un cycle)."""
     from .seed import DEMO_ADMIN_EMAIL
 
     return bool(
@@ -53,24 +53,12 @@ def get_admin_writer(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> User:
-    """Administrateur autorise a modifier quelque chose.
-
-    Le compte vitrine du back-office a des identifiants publics : quiconque lit
-    la fenetre de connexion peut s'y connecter. Lui laisser les droits
-    d'ecriture reviendrait a offrir a chaque visiteur la suppression du
-    catalogue, la modification des prix et la promotion d'un compte au rang
-    d'administrateur.
-
-    Le controle est ici, cote serveur, et non dans l'interface : masquer un
-    bouton n'empeche personne d'appeler l'API directement. Le back-office se
-    contente de griser ce qui ne servirait a rien, et c'est cette dependance
-    qui refuse pour de bon.
-    """
+    """Administrateur autorisé à écrire. Refuse le compte de démonstration, côté serveur."""
     user = get_admin_user(creds, db)
     if is_readonly_admin(user):
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
-            "Compte de demonstration : le back-office est consultable, mais pas modifiable.",
+            "Compte de démonstration : le back-office est consultable, mais pas modifiable.",
         )
     return user
 
@@ -81,5 +69,12 @@ def get_optional_user(
 ) -> User | None:
     if creds is None:
         return None
-    user_id = decode_token(creds.credentials)
-    return db.get(User, user_id) if user_id else None
+    lu = decode_token(creds.credentials)
+    if lu is None:
+        return None
+    user_id, generation = lu
+    user = db.get(User, user_id)
+    # Même contrôle de génération que sur la voie obligatoire
+    if user is None or int(user.token_version or 0) != generation:
+        return None
+    return user

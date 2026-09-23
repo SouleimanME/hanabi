@@ -1,9 +1,4 @@
-"""File d'attente des courriels.
-
-Ce qui est verifie ici tient en une phrase : une commande passee produit un
-courriel, quoi qu'il arrive au relais - et une panne du relais ne peut pas
-faire echouer un achat deja paye.
-"""
+"""File d'attente des courriels."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -25,12 +20,7 @@ class TestDepot:
         assert message.tentatives == 0
 
     def test_le_courriel_partage_le_sort_de_la_commande(self, client, db_session, product):
-        """C'est tout le motif : meme transaction, donc meme destin.
-
-        Le paiement echoue apres l'inscription du courriel dans la session. Si
-        les deux ne partageaient pas la transaction, il resterait ici un
-        courriel de confirmation pour une commande qui n'existe pas.
-        """
+        """C'est tout le motif : meme transaction, donc meme destin."""
         charge = checkout_payload(product.id)
         charge["payment_token"] = "tok_refus"
 
@@ -74,7 +64,7 @@ class TestRemise:
         assert boite_courriels.boite == []
 
     def test_un_message_pas_encore_du_attend(self, db_session):
-        # `deposer` ne valide pas - c'est le coeur du motif - et la session est
+        # `deposer` ne valide pas, c'est le coeur du motif, et la session est
         # en `autoflush=False` : sans ce commit, la ligne n'existe pour personne.
         outbox.deposer(db_session, "a@b.fr", "sujet", "texte")
         db_session.commit()
@@ -108,9 +98,7 @@ class TestEchecs:
         assert message.statut == "en_attente"
         assert message.tentatives == 1
         assert "ConnectionError" in message.derniere_erreur
-        # Reporte dans le futur : sans cela le tour suivant le reprendrait
-        # immediatement, en boucle serree.
-        # `as_utc` : SQLite ne conserve pas le fuseau, la valeur relue est naive.
+        # Reporte dans le futur : sans cela le tour suivant le reprendrait immediatement, en boucle serree
         assert as_utc(message.prochaine_tentative) > datetime.now(timezone.utc)
 
     def test_les_delais_s_allongent_a_chaque_echec(self, db_session, relais_muet):
@@ -146,11 +134,7 @@ class TestEchecs:
         assert outbox.traiter_lot(db_session) == {"envoyes": 0, "echecs": 0, "abandons": 0}
 
     def test_un_relais_en_panne_ne_casse_pas_la_commande(self, client, db_session, product, relais_muet):
-        """La raison d'etre de toute la file d'attente.
-
-        Le relais est muet, mais la commande passe : l'achat ne depend plus
-        d'un tiers.
-        """
+        """La raison d'etre de toute la file d'attente."""
         res = client.post("/orders/checkout", json=checkout_payload(product.id))
 
         assert res.status_code == 201

@@ -17,15 +17,21 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(user) -> str:
+    """Jeton d'accès portant la génération courante du compte (`v`)."""
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "exp": expire}
+    payload = {
+        "sub": str(user.id),
+        "v": int(getattr(user, "token_version", 0) or 0),
+        "exp": expire,
+    }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def decode_token(token: str) -> int | None:
+def decode_token(token: str) -> tuple[int, int] | None:
+    """(identifiant, génération), ou None. Sans `v`, génération 0 (jetons antérieurs)."""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return int(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError):
+        return int(payload["sub"]), int(payload.get("v", 0))
+    except (jwt.PyJWTError, KeyError, ValueError, TypeError):
         return None

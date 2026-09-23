@@ -1,10 +1,4 @@
-"""Tarification et codes promo.
-
-C'est le coeur de la regle de securite du projet : le client peut envoyer
-n'importe quel montant, seul le calcul serveur fait foi. Ces tests verifient
-que les prix viennent bien de la base et que les codes promo sont valides
-cote serveur.
-"""
+"""Tarification et codes promo."""
 from app.pricing import FREE_SHIPPING_THRESHOLD_CENTS, SHIPPING_CENTS
 
 
@@ -60,11 +54,7 @@ class TestFraisDePort:
     def test_une_remise_peut_faire_repasser_sous_le_seuil(
         self, client, db_session, expensive_product
     ):
-        """Regle metier : le port offert s'apprecie APRES remise.
-
-        90 EUR - 20 % = 72 EUR, soit sous le seuil de 80 EUR : le port
-        redevient payant.
-        """
+        """Regle metier : le port offert s'apprecie apres remise."""
         from app.models import Promo
 
         db_session.add(Promo(code="MOINS20", kind="percent", percent=20, active=True))

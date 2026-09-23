@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Traductions du contenu produit (nom + description).
+"""Traductions du nom et de l'accroche des produits.
 
-Le francais est la source en base. On surcharge ici pour en/es.
-Pour ajouter une langue : ajoute une clef (ex "de") dans chaque produit.
-Chaine de repli cote API : langue demandee -> en -> francais (base).
+Le français est en base. Repli : langue demandée, puis anglais, puis français.
 """
 
 PRODUCT_I18N: dict[str, dict[str, dict[str, str]]] = {

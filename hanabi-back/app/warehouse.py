@@ -1,29 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Lecture des tables d'agregats construites par dbt.
+"""Lecture des tables d'agrégats construites par dbt (schéma `gold`).
 
-Ce module ne calcule rien. C'est la difference avec `analytics.py`, et c'est
-tout le propos : les indicateurs sont ici deja calcules, dans le schema `gold`
-de la base, par le projet dbt de `hanabi-dwh/`. L'API se contente d'un
-`SELECT ... LIMIT`, ce qui explique qu'une vue de l'entrepot reponde en quelques
-millisecondes la ou la meme question posee a `analytics.py` demande plusieurs
-agregations sur la table des commandes.
+Ce module ne calcule rien : `analytics.py` lit la base transactionnelle à
+l'instant, l'entrepôt lit un instantané daté par `gold.gold_execution`.
 
-Les deux chemins coexistent a dessein, et ne racontent pas la meme histoire :
-
-- `analytics.py` lit la base transactionnelle. Ses chiffres sont ceux de
-  l'instant, au prix d'un recalcul a chaque affichage ;
-- l'entrepot lit un instantane, date par `gold.gold_execution`. Ses chiffres
-  sont ceux de la derniere construction, et ne bougent pas entre deux.
-
-Un entrepot construit par lots est toujours en retard sur la base ; le probleme
-n'est pas ce retard mais de ne pas savoir de combien, d'ou l'horodatage affiche
-partout dans l'interface.
-
-Sur SQLite - la base de developpement et celle de la suite de tests - ce schema
-n'existe pas : le SQL de l'entrepot emploie `date_trunc`, `generate_series` et
-des fonctions de fenetrage. Toutes les fonctions ci-dessous le detectent et
-rendent un etat « entrepot absent » plutot que de lever une erreur. C'est un
-etat normal, pas une panne, et l'interface le presente comme tel.
+Sur SQLite (développement, tests), l'entrepôt n'existe pas : ses modèles
+emploient `date_trunc`, `generate_series` et des fenêtres. Les fonctions
+ci-dessous rendent alors un état « absent » au lieu de lever une erreur.
 """
 from __future__ import annotations
 
@@ -38,52 +21,35 @@ from sqlalchemy.orm import Session
 
 SCHEMA = "gold"
 
-# Plafond de lignes rendues en une fois. `gold_clients_rfm` compte une ligne par
-# client acheteur - plusieurs dizaines de milliers - et les servir toutes ferait
-# un corps de reponse de plusieurs mega-octets pour un tableau qui en affiche
-# vingt-cinq.
+# `gold_clients_rfm` compte une ligne par client acheteur
 LIMITE_MAX = 200
 LIMITE_DEFAUT = 25
 
-# Un identifiant SQL valide dans ce projet. Les noms interpoles dans les
-# requetes viennent tous soit du registre ci-dessous, soit de
-# `information_schema` : ils ne peuvent donc pas etre choisis par un appelant.
-# Cette verification est la ceinture qui accompagne les bretelles - le jour ou
-# quelqu'un elargira le registre sans y penser, elle sera encore la.
+# Les noms interpolés viennent du registre ou d'information_schema, jamais de
+# l'appelant ; la vérification reste en place si le registre s'élargit.
 _IDENTIFIANT = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 @dataclass(frozen=True)
 class Mart:
-    """Une table d'agregats exposee au back-office.
-
-    `question` compte autant que le reste : une table d'entrepot sans la
-    question a laquelle elle repond est un tableau de nombres, et personne ne
-    sait quoi en faire. C'est ce texte que l'interface affiche au-dessus du
-    resultat.
-    """
+    """Une table d'agrégats exposée au back-office, avec la question qu'elle traite."""
 
     cle: str
     table: str
     titre: str
     question: str
-    # Tri applique par defaut, ecrit directement en SQL parce qu'il porte
-    # parfois sur deux colonnes. Valeur de code, jamais d'appelant : c'est ce
-    # qui autorise a l'interpoler telle quelle dans la requete.
+    # Tri par défaut, en SQL littéral (parfois sur deux colonnes). Valeur de code uniquement.
     tri: str
 
 
-# Ordre d'affichage volontaire, du general au particulier : la serie mensuelle
-# d'abord, parce que c'est la vue qu'on ouvre en premier, les regles
-# d'association en dernier, parce qu'on y va en connaissance de cause.
 MARTS: tuple[Mart, ...] = (
     Mart(
         cle="ca_quotidien",
         table="gold_ca_quotidien",
         titre="Chiffre d'affaires quotidien",
         question=(
-            "Une journee faible est-elle un incident ou un jour ferie, et la marge "
-            "bouge-t-elle a cause des prix ou du yen ?"
+            "Une journée faible est-elle un incident ou un jour férié, et la marge "
+            "bouge-t-elle à cause des prix ou du yen ?"
         ),
         tri="jour desc",
     ),
@@ -91,49 +57,49 @@ MARTS: tuple[Mart, ...] = (
         cle="kpi_mensuel",
         table="gold_kpi_mensuel",
         titre="Indicateurs mensuels",
-        question="Comment le chiffre d'affaires, la marge et l'audience evoluent-ils mois par mois ?",
+        question="Comment le chiffre d'affaires, la marge et l'audience évoluent-ils mois par mois ?",
         tri="mois_date desc",
     ),
     Mart(
         cle="performance_produit",
         table="gold_performance_produit",
         titre="Performance par produit",
-        question="Quelles references rapportent, lesquelles font du volume sans marge ?",
+        question="Quelles références rapportent, lesquelles font du volume sans marge ?",
         tri="marge_cents desc",
     ),
     Mart(
         cle="performance_categorie",
         table="gold_performance_categorie",
-        titre="Performance par categorie",
-        question="Quelle famille du catalogue porte reellement le resultat ?",
+        titre="Performance par catégorie",
+        question="Quelle famille du catalogue porte réellement le résultat ?",
         tri="ca_cents desc",
     ),
     Mart(
         cle="segments_rfm",
         table="gold_segments_rfm",
         titre="Segments RFM",
-        question="Comment la clientele se repartit-elle, et quelle part du chiffre chaque segment pese-t-il ?",
+        question="Comment la clientèle se répartit-elle, et quelle part du chiffre pèse chaque segment ?",
         tri="rang asc",
     ),
     Mart(
         cle="clients_rfm",
         table="gold_clients_rfm",
-        titre="Clients notes RFM",
-        question="Qui sont les clients derriere chaque segment, et lesquels relancer ?",
+        titre="Clients notés RFM",
+        question="Qui sont les clients derrière chaque segment, et lesquels relancer ?",
         tri="montant_cents desc",
     ),
     Mart(
         cle="cohortes",
         table="gold_cohortes_retention",
-        titre="Retention par cohorte",
-        question="Les clients recrutes un mois donne reviennent-ils les mois suivants ?",
+        titre="Rétention par cohorte",
+        question="Les clients recrutés un mois donné reviennent-ils les mois suivants ?",
         tri="cohorte_date desc, decalage_mois asc",
     ),
     Mart(
         cle="demographie",
         table="gold_demographie_clients",
-        titre="Demographie et achat",
-        question="Ville, age, civilite : quels profils achetent, et pour combien ?",
+        titre="Démographie et achat",
+        question="Ville, âge, civilité : quels profils achètent, et pour combien ?",
         tri="ca_cents desc",
     ),
     Mart(
@@ -146,8 +112,8 @@ MARTS: tuple[Mart, ...] = (
     Mart(
         cle="affinites",
         table="gold_affinites_produits",
-        titre="Affinites entre produits",
-        question="Quels articles s'achetent ensemble plus souvent que le hasard ne le voudrait ?",
+        titre="Affinités entre produits",
+        question="Quels articles s'achètent ensemble plus souvent que le hasard ?",
         tri="lift desc",
     ),
 )
@@ -155,25 +121,13 @@ MARTS: tuple[Mart, ...] = (
 PAR_CLE = {mart.cle: mart for mart in MARTS}
 
 
-# Le graphe du projet dbt, decrit ici pour que l'interface puisse le dessiner.
-#
-# Redit volontairement ce que `hanabi-dwh/models/` contient : l'API n'a pas
-# acces au projet dbt, qui n'est pas deploye avec elle. La duplication est
-# assumee et bornee - elle ne porte que des noms, jamais une regle de calcul.
-#
-# ELLE NE SE SURVEILLE QUE DANS UN SENS, ET C'EST LE PIEGE. Un modele annonce
-# ici mais absent de la base se voit tout de suite, l'interface le signalant
-# comme manquant. Un modele present en base mais oublie ici ne se voit PAS :
-# le compteur affiche « 7/7 » en vert et personne ne cherche le huitieme. C'est
-# exactement ce qui est arrive a l'arrivee des sources externes, ou cette liste
-# a cesse de suivre pendant deux versions. Ajouter un modele dans
-# `hanabi-dwh/models/` impose donc de l'ajouter ici, sans quoi il restera
-# invisible au back-office tout en etant construit chaque nuit.
+# Copie des noms de modèles de `hanabi-dwh/models/`, que l'API ne déploie pas.
+# Tout modèle ajouté là-bas doit l'être ici : test_les_couches_decrivent_tous_les_modeles_dbt.
 COUCHES = (
     {
         "cle": "bronze",
         "titre": "Bronze",
-        "resume": "Les tables de l'application et les sources externes, nommees sous une forme stable. Aucune transformation.",
+        "resume": "Tables de l'application et sources externes, renommées sous une forme stable. Aucune transformation.",
         "materialisation": "vues",
         "modeles": [
             "brz_clients", "brz_produits", "brz_commandes", "brz_lignes_commande",
@@ -184,7 +138,7 @@ COUCHES = (
     {
         "cle": "silver",
         "titre": "Silver",
-        "resume": "Donnees nettoyees et conformees. Les regles metier sont ecrites ici, une seule fois.",
+        "resume": "Données nettoyées et conformées. Les règles métier s'écrivent ici, une seule fois.",
         "materialisation": "vues, sauf la table de faits",
         "modeles": [
             "slv_clients", "slv_commandes", "slv_lignes_commande",
@@ -195,7 +149,7 @@ COUCHES = (
     {
         "cle": "gold",
         "titre": "Gold",
-        "resume": "Une table d'agregats par question metier. C'est la seule couche que ce tableau lit.",
+        "resume": "Une table d'agrégats par question métier. Seule couche lue par cet écran.",
         "materialisation": "tables",
         "modeles": [mart.table for mart in MARTS] + ["gold_execution"],
     },
@@ -203,12 +157,6 @@ COUCHES = (
 
 
 def _est_postgres(db: Session) -> bool:
-    """Vrai si la session parle a PostgreSQL.
-
-    L'entrepot n'existe que la. Poser la question au dialecte plutot que de
-    tenter la requete et rattraper l'erreur evite de polluer les journaux d'une
-    exception attendue a chaque appel en developpement.
-    """
     bind = db.get_bind()
     return bind is not None and bind.dialect.name == "postgresql"
 
@@ -225,22 +173,12 @@ def _tables_presentes(db: Session, schemas: tuple[str, ...]) -> set[str]:
 
 
 def _format_colonne(nom: str, type_sql: str) -> str:
-    """Devine comment presenter une colonne, d'apres son nom et son type.
+    """Format d'affichage déduit du nommage (`_cents`, `taux_`, `part_`, `_id`) et du type.
 
-    Le nommage de l'entrepot est regulier - `_cents` pour un montant, `taux_` ou
-    `part_` pour une proportion, `_le` pour un horodatage - et cette regularite
-    suffit a decider du formatage. L'alternative aurait ete de decrire une
-    centaine de colonnes a la main dans le registre ci-dessus : une liste que
-    personne ne tient a jour, et qui se serait desynchronisee au premier modele
-    modifie.
-
-    En cas de doute, on rend `texte` : afficher un nombre brut est moins grave
-    que de l'afficher en euros alors qu'il n'en est pas.
+    Par défaut `texte` : un nombre brut vaut mieux qu'un faux montant.
     """
     if nom == "id" or nom.endswith("_id"):
-        # Un identifiant est un nombre par accident, pas par nature : l'afficher
-        # « 66 164 » avec un separateur de milliers invite a le lire comme une
-        # quantite, et empeche de le recopier tel quel dans une requete.
+        # Sans séparateur de milliers, pour se recopier tel quel
         return "identifiant"
     if nom.endswith("_cents"):
         return "euro"
@@ -257,25 +195,29 @@ def _format_colonne(nom: str, type_sql: str) -> str:
     return "texte"
 
 
-def _libelle_colonne(nom: str) -> str:
-    """Intitule lisible pour un en-tete de tableau.
+# Les noms de colonnes sont en ASCII ; l'en-tête reprend accents et sigles
+_MOTS_AFFICHES = {
+    "ab": "A→B", "abc": "ABC", "activite": "activité", "age": "âge", "annee": "année",
+    "ba": "B→A", "ca": "CA", "categorie": "catégorie", "civilite": "civilité",
+    "cout": "coût", "cumulee": "cumulée", "decalage": "décalage", "derniere": "dernière",
+    "eur": "EUR", "expire": "expiré", "ferie": "férié", "feries": "fériés",
+    "frequence": "fréquence", "id": "ID", "jpy": "JPY", "kpi": "KPI",
+    "premiere": "première", "recence": "récence", "reference": "référence",
+    "references": "références", "retention": "rétention",
+    "rfm": "RFM", "unites": "unités",
+}
 
-    Le suffixe `_cents` disparait : la valeur est deja rendue en euros a
-    l'affichage, et une colonne intitulee « Ca cents » affichant « 4 144,92 € »
-    serait une contradiction sous les yeux du lecteur.
-    """
+
+def _libelle_colonne(nom: str) -> str:
+    """En-tête lisible ; le suffixe `_cents` tombe puisque la valeur s'affiche en euros."""
     base = nom[: -len("_cents")] if nom.endswith("_cents") else nom
-    return base.replace("_", " ").capitalize()
+    mots = [_MOTS_AFFICHES.get(mot, mot) for mot in base.split("_") if mot]
+    libelle = " ".join(mots)
+    return libelle[:1].upper() + libelle[1:]
 
 
 def _valeur_json(valeur):
-    """Ramene une valeur PostgreSQL a un type que FastAPI sait serialiser.
-
-    `numeric` remonte en `Decimal`, que le serialiseur JSON refuse. On passe par
-    `float` : l'entrepot ne rend en `numeric` que des taux et des moyennes, ou
-    la precision decimale exacte n'a aucun enjeu. Les montants, eux, sont des
-    entiers de centimes et ne passent jamais par ici.
-    """
+    """`Decimal` en float (taux et moyennes seulement), dates en ISO 8601."""
     if isinstance(valeur, Decimal):
         return float(valeur)
     if isinstance(valeur, (datetime, date)):
@@ -302,14 +244,34 @@ def _colonnes(db: Session, table: str) -> list[dict]:
     ]
 
 
-def etat(db: Session) -> dict:
-    """Ce que l'interface a besoin de savoir avant d'afficher quoi que ce soit.
+def _derniers_controles(db: Session) -> list[dict]:
+    """Dernier résultat de chaque contrôle Dagster, volume d'abord puis fraîcheur."""
+    lignes = db.execute(
+        text(
+            "select distinct on (controle) controle, titre, famille, severite, reussi, "
+            "valeur, attendu, message, execute_le "
+            "from controles.journal order by controle, execute_le desc"
+        )
+    ).mappings().all()
+    controles = [
+        {
+            "controle": ligne["controle"],
+            "titre": ligne["titre"],
+            "famille": ligne["famille"],
+            "severite": ligne["severite"],
+            "reussi": ligne["reussi"],
+            "valeur": _valeur_json(ligne["valeur"]),
+            "attendu": ligne["attendu"],
+            "message": ligne["message"],
+            "execute_le": _valeur_json(ligne["execute_le"]),
+        }
+        for ligne in lignes
+    ]
+    return sorted(controles, key=lambda c: (c["famille"] != "volume", c["titre"]))
 
-    Rend toujours une reponse, meme sans entrepot : `disponible` a faux et la
-    marche a suivre pour le construire. Une route qui repondrait 503 obligerait
-    l'interface a traiter un cas d'erreur pour ce qui est un etat parfaitement
-    normal en developpement.
-    """
+
+def etat(db: Session) -> dict:
+    """Couches, tables disponibles, date de construction et contrôles. Répond aussi sans entrepôt."""
     if not _est_postgres(db):
         return {
             "disponible": False,
@@ -317,9 +279,10 @@ def etat(db: Session) -> dict:
             "construit_le": None,
             "couches": [dict(couche, presents=[]) for couche in COUCHES],
             "marts": [],
+            "controles": [],
         }
 
-    presentes = _tables_presentes(db, ("bronze", "silver", SCHEMA))
+    presentes = _tables_presentes(db, ("bronze", "silver", SCHEMA, "controles"))
 
     couches = [
         dict(
@@ -351,10 +314,7 @@ def etat(db: Session) -> dict:
             "titre": mart.titre,
             "question": mart.question,
             "disponible": existe,
-            # Comptage exact plutot qu'estime : les tables comptent au plus
-            # quelques dizaines de milliers de lignes, et `reltuples` renvoie
-            # zero tant qu'aucun ANALYZE n'est passe - un « 0 ligne » affiche
-            # sous une table pleine ferait croire a une construction ratee.
+            # count(*) exact : reltuples vaut 0 tant qu'aucun ANALYZE n'est passé
             "lignes": (
                 db.execute(text(f"select count(*) from {SCHEMA}.{mart.table}")).scalar() or 0
                 if existe else 0
@@ -368,15 +328,17 @@ def etat(db: Session) -> dict:
         "invocation": invocation,
         "couches": couches,
         "marts": marts,
+        # Écrits par orchestration/controles.py ; absents tant que Dagster n'a pas tourné
+        "controles": _derniers_controles(db) if "controles.journal" in presentes else [],
     }
 
 
 class EntrepotAbsent(RuntimeError):
-    """L'entrepot n'a pas ete construit sur cette base."""
+    """L'entrepôt n'a pas été construit sur cette base."""
 
 
 class MartInconnu(KeyError):
-    """Cle demandee absente du registre."""
+    """Clé absente du registre."""
 
 
 def interroger(
@@ -388,18 +350,10 @@ def interroger(
     tri: str | None = None,
     sens: str = "desc",
 ) -> dict:
-    """Rend le contenu d'une table d'agregats, et le SQL qui l'a produit.
+    """Contenu d'une table d'agrégats et le SQL qui le produit.
 
-    Le SQL accompagne le resultat a dessein. Un tableau de bord qui affiche des
-    nombres sans dire d'ou ils viennent demande qu'on lui fasse confiance ;
-    celui-ci montre la requete, que l'on peut rejouer telle quelle dans
-    n'importe quel client PostgreSQL pour verifier.
-
-    Aucune portion de la requete ne vient de l'appelant. Le nom de table est lu
-    dans le registre, la colonne de tri est verifiee contre le schema reel de la
-    table, le sens est ramene a `asc` ou `desc`, et les bornes sont des
-    parametres lies. C'est ce qui permet d'exposer une lecture SQL sans ouvrir
-    une injection.
+    Rien ne vient de l'appelant : table lue dans le registre, colonne de tri
+    vérifiée contre le schéma réel, sens ramené à asc/desc, bornes liées.
     """
     mart = PAR_CLE.get(cle)
     if mart is None:
@@ -413,15 +367,9 @@ def interroger(
 
     noms = {colonne["nom"] for colonne in colonnes}
     if tri and tri in noms and _IDENTIFIANT.match(tri):
-        ordre = f"{tri} {'asc' if sens == 'asc' else 'desc'}"
-        # Les NULL en dernier quel que soit le sens : sur ces tables, un NULL
-        # signifie « pas mesurable » (une couverture de stock infinie, un panier
-        # moyen sans commande). Les remonter en tete d'un tri decroissant
-        # placerait l'absence de mesure au-dessus du meilleur resultat.
-        ordre += " nulls last"
+        # NULL signifie « non mesurable » : toujours en dernier
+        ordre = f"{tri} {'asc' if sens == 'asc' else 'desc'} nulls last"
     else:
-        # Tri par defaut du registre. Interpole tel quel, ce qui est sans
-        # risque : il vient du code, pas de la requete HTTP.
         ordre = mart.tri
 
     limite = max(1, min(int(limite), LIMITE_MAX))
@@ -456,49 +404,30 @@ def interroger(
     }
 
 
-# ------------------------------------------------------------------ #
-# Console SQL                                                         #
-# ------------------------------------------------------------------ #
+# --- Console SQL ---
 #
-# Ouvrir une saisie SQL libre dans une interface web est une decision qui se
-# pese : c'est la porte par laquelle on lit ce qu'on ne devrait pas, ou par
-# laquelle on met une base a genoux. Elle est ouverte ici parce qu'un entrepot
-# qu'on ne peut pas interroger soi-meme n'est qu'un tableau de bord de plus, et
-# refermee par quatre barrieres independantes - aucune n'est le seul rempart.
-#
-# 1. La transaction est declaree en LECTURE SEULE. C'est PostgreSQL qui refuse
-#    alors toute ecriture, quelle que soit la requete : c'est la seule barriere
-#    qui ne depende pas de notre capacite a analyser du SQL, et donc la seule a
-#    laquelle on fait vraiment confiance.
-# 2. Un delai maximal d'execution est pose. Une jointure malheureuse sur les
-#    sept cent mille consultations de fiche est interrompue par le serveur au
-#    lieu de bloquer une connexion du pool.
-# 3. Les tables reellement lues sont demandees au PLANIFICATEUR, via EXPLAIN,
-#    et non devinees par une expression reguliere. Une requete qui atteint
-#    `public.users` par une CTE, une sous-requete ou une vue est refusee, la ou
-#    un filtre sur le texte de la requete se laisserait contourner.
-# 4. La forme est verifiee avant tout : une seule instruction, commencant par
-#    SELECT ou WITH, sans mot-clef d'ecriture.
-#
-# Ce qui reste possible : lire l'entrepot en entier. C'est voulu - il ne
-# contient aucun secret, le condensat des mots de passe n'entre jamais en
-# bronze, et les donnees sont fictives.
+# Quatre barrières indépendantes :
+# 1. transaction en lecture seule, refusée par PostgreSQL quelle que soit la requête ;
+# 2. statement_timeout, pour ne pas bloquer une connexion du pool ;
+# 3. tables lues relevées dans le plan (EXPLAIN), pas dans le texte : une CTE
+#    ou une vue qui atteint `public` est refusée ;
+# 4. forme : une instruction, SELECT ou WITH, sans mot-clé d'écriture.
+# S'y ajoute la limite de débit posée sur la route.
 
-# Schemas ouverts a la lecture. `public` en est absent : c'est la que vivent les
-# condensats de mots de passe, et l'entrepot expose deja tout ce qui a un usage
-# analytique.
-SCHEMAS_AUTORISES = frozenset({"bronze", "silver", "gold", "externe"})
+# `public` porte les condensats de mots de passe : jamais lisible ici.
+SCHEMAS_AUTORISES = frozenset({"bronze", "silver", "gold", "externe", "controles"})
 
-# Delai au-dela duquel PostgreSQL interrompt la requete. Cinq secondes suffisent
-# tres largement a l'entrepot ; au-dela, c'est que la requete part en vrille.
+# Compte de démonstration, aux identifiants publics : agrégats et sources
+# externes seulement. Bronze et silver gardent une ligne par client (ville,
+# année de naissance), trop proche d'une personne pour un accès public.
+SCHEMAS_DEMONSTRATION = frozenset({"gold", "externe", "controles"})
+
 DELAI_MAX_MS = 5000
 
 LIMITE_SQL_MAX = 500
 LIMITE_SQL_DEFAUT = 50
 
-# Mots-clefs d'ecriture ou d'administration. La transaction en lecture seule les
-# rejetterait de toute facon ; les attraper ici permet de rendre un message qui
-# dit quoi corriger, plutot qu'une erreur de PostgreSQL en anglais.
+# Déjà rejetés par la transaction ; les attraper ici donne un message en français
 _MOTS_INTERDITS = (
     "insert", "update", "delete", "merge", "truncate", "drop", "alter", "create",
     "grant", "revoke", "comment", "copy", "vacuum", "analyze", "reindex", "cluster",
@@ -510,17 +439,11 @@ _DEBUT_VALIDE = re.compile(r"^\s*(select|with)\b", re.IGNORECASE)
 
 
 class SqlRefuse(ValueError):
-    """La requete n'a pas passe une des barrieres. Le message est destine a l'ecran."""
+    """Requête refusée ; le message s'affiche tel quel."""
 
 
 def _sans_litteraux(requete: str) -> str:
-    """Retire commentaires et chaines, pour chercher des mots-clefs sans faux positifs.
-
-    Sans cela, `select nom from gold.gold_clients_rfm where nom = 'Delete'`
-    serait refusee pour un mot present dans une donnee, et `-- update` en
-    commentaire ferait de meme. On ne cherche des mots-clefs que dans ce qui en
-    est reellement.
-    """
+    """Retire commentaires et chaînes avant la recherche de mots-clés."""
     sans_bloc = re.sub(r"/\*.*?\*/", " ", requete, flags=re.DOTALL)
     sans_ligne = re.sub(r"--[^\n]*", " ", sans_bloc)
     sans_texte = re.sub(r"'(?:[^']|'')*'", " ", sans_ligne)
@@ -528,44 +451,34 @@ def _sans_litteraux(requete: str) -> str:
 
 
 def _valide_la_forme(requete: str) -> str:
-    """Premiere barriere : la requete doit etre une lecture unique."""
     nettoyee = requete.strip().rstrip(";").strip()
     if not nettoyee:
-        raise SqlRefuse("Requete vide.")
+        raise SqlRefuse("Requête vide.")
 
     if not _DEBUT_VALIDE.match(nettoyee):
         raise SqlRefuse(
-            "Seules les lectures sont acceptees : la requete doit commencer par "
-            "SELECT ou WITH."
+            "Lecture seule : la requête doit commencer par SELECT ou WITH."
         )
 
     analysable = _sans_litteraux(nettoyee)
 
-    # Une instruction et une seule. Le point-virgule final a deja ete retire ;
-    # tout autre separe deux instructions, et la seconde echapperait a l'examen
-    # du planificateur fait sur la premiere.
+    # Une seconde instruction échapperait à l'examen du plan
     if ";" in analysable:
         raise SqlRefuse(
-            "Une seule instruction a la fois : retire le point-virgule qui en separe deux."
+            "Une seule instruction à la fois : retire le point-virgule qui en sépare deux."
         )
 
     for mot in _MOTS_INTERDITS:
         if re.search(rf"\b{mot}\b", analysable, re.IGNORECASE):
             raise SqlRefuse(
-                f"Mot-clef « {mot.upper()} » refuse : cette console est en lecture seule."
+                f"Mot-clé {mot.upper()} refusé : cette console est en lecture seule."
             )
 
     return nettoyee
 
 
 def _relations_du_plan(plan) -> set[tuple[str, str]]:
-    """Parcourt le plan rendu par EXPLAIN et releve chaque table lue.
-
-    Le plan est un arbre de dictionnaires imbriques dont la forme varie selon
-    les noeuds ; on le traverse entierement plutot que d'en supposer la
-    structure, et on releve les couples (schema, table) partout ou ils
-    apparaissent.
-    """
+    """Couples (schéma, table) relevés dans tout l'arbre du plan EXPLAIN."""
     trouvees: set[tuple[str, str]] = set()
 
     def visite(noeud):
@@ -582,13 +495,16 @@ def _relations_du_plan(plan) -> set[tuple[str, str]]:
     return trouvees
 
 
-def executer_sql(db: Session, requete: str, limite: int = LIMITE_SQL_DEFAUT) -> dict:
-    """Execute une lecture libre sur l'entrepot, et rend son resultat.
+def executer_sql(
+    db: Session,
+    requete: str,
+    limite: int = LIMITE_SQL_DEFAUT,
+    schemas: frozenset[str] = SCHEMAS_AUTORISES,
+) -> dict:
+    """Exécute une lecture libre sur l'entrepôt, limitée aux `schemas` donnés.
 
-    Le SQL de l'appelant n'est jamais interpole dans une autre requete : il est
-    envoye tel quel, et c'est la transaction en lecture seule qui le contient.
-    L'enveloppe `select * from ( ... ) limit n` est la seule reecriture, et elle
-    ne peut pas changer le sens d'une lecture.
+    La requête part telle quelle ; seule l'enveloppe `select * from (...) limit n`
+    s'y ajoute.
     """
     if not _est_postgres(db):
         raise EntrepotAbsent("sql")
@@ -597,16 +513,12 @@ def executer_sql(db: Session, requete: str, limite: int = LIMITE_SQL_DEFAUT) -> 
     limite = max(1, min(int(limite), LIMITE_SQL_MAX))
 
     try:
-        # Toute transaction implicite en cours est refermee : `SET TRANSACTION`
-        # doit etre la premiere instruction de la sienne, sans quoi PostgreSQL
-        # la refuse.
+        # SET TRANSACTION doit ouvrir sa transaction
         db.rollback()
         db.execute(text("set transaction read only"))
         db.execute(text(f"set local statement_timeout = {DELAI_MAX_MS}"))
 
-        # EXPLAIN valide la syntaxe ET revele les tables, sans executer quoi que
-        # ce soit. Deux barrieres pour le prix d'une : une requete mal ecrite
-        # echoue ici, avant d'avoir touche la moindre donnee.
+        # EXPLAIN valide la syntaxe et révèle les tables sans rien exécuter
         try:
             plan = db.execute(text(f"explain (format json, verbose) {nettoyee}")).scalar()
         except SQLAlchemyError as erreur:
@@ -616,13 +528,12 @@ def executer_sql(db: Session, requete: str, limite: int = LIMITE_SQL_DEFAUT) -> 
         interdites = sorted(
             f"{schema}.{table}"
             for schema, table in relations
-            if schema not in SCHEMAS_AUTORISES
+            if schema not in schemas
         )
         if interdites:
             raise SqlRefuse(
-                "Lecture refusee sur : " + ", ".join(interdites) + ". "
-                "Cette console n'ouvre que les schemas "
-                + ", ".join(sorted(SCHEMAS_AUTORISES)) + "."
+                "Lecture refusée sur " + ", ".join(interdites) + ". "
+                "Schémas ouverts : " + ", ".join(sorted(schemas)) + "."
             )
 
         enveloppe = f"select * from (\n{nettoyee}\n) as resultat limit :limite"
@@ -634,18 +545,13 @@ def executer_sql(db: Session, requete: str, limite: int = LIMITE_SQL_DEFAUT) -> 
             raise SqlRefuse(_message_postgres(erreur)) from erreur
 
     finally:
-        # Rien n'a ete ecrit - la transaction est en lecture seule - mais on la
-        # referme explicitement pour rendre la connexion au pool dans un etat
-        # propre, et pour que le `statement_timeout` local ne survive pas.
+        # Rend la connexion propre et fait tomber le statement_timeout local
         db.rollback()
 
     colonnes = [
         {
             "nom": nom,
             "libelle": _libelle_colonne(nom),
-            # Le type reel n'est pas connu ici - le resultat peut etre une
-            # expression calculee, sans table d'origine. On se rabat sur le nom,
-            # qui suffit dans un entrepot ou le nommage est regulier.
             "format": _format_colonne(nom, _type_devine(lignes, index)),
         }
         for index, nom in enumerate(colonnes_brutes)
@@ -663,12 +569,7 @@ def executer_sql(db: Session, requete: str, limite: int = LIMITE_SQL_DEFAUT) -> 
 
 
 def _type_devine(lignes, index: int) -> str:
-    """Type SQL approche d'une colonne de resultat, deduit de sa premiere valeur.
-
-    Le curseur ne rend pas le type des colonnes d'une expression calculee. Plutot
-    que de tout afficher en texte, on regarde la premiere valeur non nulle : cela
-    suffit a distinguer un entier d'un decimal, ce dont le formatage a besoin.
-    """
+    """Type approché d'une colonne calculée, d'après sa première valeur non nulle."""
     for ligne in lignes:
         valeur = ligne[index]
         if valeur is None:
@@ -686,18 +587,13 @@ def _type_devine(lignes, index: int) -> str:
 
 
 def _message_postgres(erreur: Exception) -> str:
-    """Ramene une erreur SQLAlchemy a la ligne que PostgreSQL a reellement dite.
-
-    L'exception complete embarque la requete et la trace du pilote, illisibles
-    dans une interface. La premiere ligne du message d'origine est celle qui dit
-    quoi corriger.
-    """
+    """Première ligne du message PostgreSQL, sans la requête ni la trace du pilote."""
     origine = getattr(erreur, "orig", None) or erreur
     premiere = str(origine).strip().split("\n")[0]
     if "statement timeout" in premiere.lower():
         return (
-            f"Requete interrompue apres {DELAI_MAX_MS // 1000} s. "
-            "Ajoute un filtre ou une limite : la table des consultations compte "
+            f"Requête interrompue après {DELAI_MAX_MS // 1000} s. "
+            "Ajoute un filtre ou une limite : les consultations comptent "
             "plusieurs centaines de milliers de lignes."
         )
-    return premiere or "Requete refusee par la base."
+    return premiere or "Requête refusée par la base."

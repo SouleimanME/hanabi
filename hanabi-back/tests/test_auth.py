@@ -167,9 +167,7 @@ class TestAntiRobots:
 
     def test_preuve_de_travail_invalide_refusee(self, client):
         bloc = solve_antibot("register")
-        # Reponse dont on a verifie qu'elle echoue, plutot qu'une chaine
-        # arbitraire : a la difficulte abaissee des tests, n'importe quelle
-        # valeur passe une fois sur seize, et le test echouait au hasard.
+        # Reponse dont on a verifie qu'elle echoue, plutot qu'une chaine arbitraire
         bloc["nonce"] = wrong_nonce(bloc["salt"], settings.POW_DIFFICULTY)
 
         res = client.post("/auth/register", json=register_payload(antibot=bloc))

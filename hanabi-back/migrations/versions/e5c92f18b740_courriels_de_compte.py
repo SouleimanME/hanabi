@@ -1,17 +1,8 @@
 """courriels de compte
 
-Confirmation d'adresse et reinitialisation de mot de passe : deux parcours qui
-passent par un lien recu sur la boite, donc par un jeton a usage unique.
-
-  - `tokens` : jetons stockes HACHES, dates, a usage unique.
-  - `users.email_verified` : adresse confirmee par un lien recu sur cette
-    adresse. Le compte reste utilisable sans, le drapeau sert a ne pas ecrire a
-    une adresse jamais confirmee.
-
 Revision ID: e5c92f18b740
 Revises: d3a71c4e9f20
 Create Date: 2026-08-15 19:20:00.000000
-
 """
 from typing import Sequence, Union
 
@@ -27,14 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # `server_default` obligatoire : la colonne est NOT NULL et la table contient
-    # deja cent mille comptes, auxquels le moteur doit pouvoir donner une valeur.
-    # C'est le piege le plus courant de l'ajout de colonne, et il ne se voit pas
-    # sur une base de developpement vide.
-    #
-    # Les comptes existants passent a `false` : aucun n'a jamais confirme son
-    # adresse, puisque le mecanisme n'existait pas. Les marquer confirmes serait
-    # une affirmation fausse inscrite en base.
+    # `server_default` obligatoire
     with op.batch_alter_table("users", schema=None) as batch_op:
         batch_op.add_column(
             sa.Column(

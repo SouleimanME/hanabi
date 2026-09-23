@@ -1,14 +1,8 @@
 """moyens de paiement
 
-Cartes enregistrees par un client. La table ne contient NI numero NI
-cryptogramme : de quoi reconnaitre une carte a l'ecran, et un jeton opaque du
-prestataire pour la debiter. C'est ce qui maintient l'application hors du
-perimetre PCI-DSS.
-
 Revision ID: f7d43a1b8e05
 Revises: e5c92f18b740
 Create Date: 2026-08-15 20:05:00.000000
-
 """
 from typing import Sequence, Union
 
@@ -44,10 +38,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_payment_methods_user_id", "payment_methods", ["user_id"], unique=False)
 
-    # Pas d'index unique sur (user_id, defaut) : PostgreSQL saurait le faire en
-    # index PARTIEL sur `defaut IS TRUE`, SQLite non, et un index unique
-    # ordinaire interdirait d'avoir deux cartes NON favorites. La regle est
-    # appliquee a l'ecriture, en un seul endroit (`routers/compte.py`).
+    # Pas d'index unique sur (user_id, defaut)
 
 
 def downgrade() -> None:

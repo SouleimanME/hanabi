@@ -1,9 +1,4 @@
-"""Compte vitrine du back-office.
-
-Ses identifiants sont publies dans la fenetre de connexion : n'importe qui peut
-s'y connecter. Ces tests verrouillent les deux proprietes qui rendent ce choix
-tenable - le compte ouvre bien le back-office, et il ne peut rien y modifier.
-"""
+"""Compte vitrine du back-office."""
 import pytest
 
 from antibot_helper import solve_antibot
@@ -44,11 +39,7 @@ class TestProvisionnement:
         assert db_session.query(User).filter_by(email=DEMO_ADMIN_EMAIL).count() == 1
 
     def test_remet_le_mot_de_passe_a_niveau(self, db_session):
-        """Changer la constante doit suffire, meme sur une base existante.
-
-        Sans cela, les identifiants affiches dans l'interface finiraient par ne
-        plus ouvrir quoi que ce soit.
-        """
+        """Changer la constante doit suffire, meme sur une base existante."""
         ensure_public_admin(db_session)
         compte = db_session.query(User).filter_by(email=DEMO_ADMIN_EMAIL).one()
         compte.password_hash = "condensat-obsolete"
@@ -98,7 +89,7 @@ class TestLectureSeule:
         res = appel(route, headers=demo_admin, **({"json": corps} if corps else {}))
 
         assert res.status_code == 403, res.text
-        assert "demonstration" in res.json()["detail"].lower()
+        assert "démonstration" in res.json()["detail"].lower()
 
     def test_un_vrai_administrateur_garde_ses_droits(self, client, auth_header):
         """Le garde-fou ne doit viser que le compte vitrine."""

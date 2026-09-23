@@ -1,4 +1,4 @@
-"""Delivrance des defis anti-robots."""
+"""Délivrance des défis anti-robots."""
 from fastapi import APIRouter, HTTPException, Request, status
 
 from ..antibot import Challenge, issue_challenge
@@ -6,8 +6,7 @@ from ..ratelimit import limiter
 
 router = APIRouter(prefix="/security", tags=["security"])
 
-# Un defi n'est valable que pour l'usage demande : une preuve obtenue pour
-# l'inscription ne peut pas servir a poster un avis.
+# Un défi ne vaut que pour l'usage demandé
 ALLOWED_PURPOSES = {"register", "login", "notify", "review", "subscribe"}
 
 

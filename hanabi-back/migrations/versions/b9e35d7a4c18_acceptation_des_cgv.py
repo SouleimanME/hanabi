@@ -1,14 +1,8 @@
 """acceptation des cgv
 
-Trace de l'acceptation des conditions generales de vente, obligatoire en vente a
-distance. On enregistre la VERSION du texte accepte et la date, pas un simple
-booleen : les conditions evoluent, et savoir qu'une case a ete cochee ne dit pas
-ce qui a ete accepte.
-
 Revision ID: b9e35d7a4c18
 Revises: a2b81f4c6d93
 Create Date: 2026-08-16 11:20:00.000000
-
 """
 from typing import Sequence, Union
 

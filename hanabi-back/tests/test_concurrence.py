@@ -1,27 +1,4 @@
-"""Achats simultanes sur le dernier article.
-
-CE QUI MANQUAIT. La suite contenait deja un test intitule « deux commandes
-concurrentes », mais il envoyait ses deux requetes l'une APRES l'autre. Il
-prouvait donc que l'`UPDATE` conditionnel refuse un stock insuffisant - ce qui
-compte - sans jamais mettre deux requetes en vol en meme temps. Or c'est
-exactement la que le bogue se cache : entre un `SELECT stock` et l'`UPDATE` qui
-suit, une seconde requete peut passer, et deux acheteurs repartent avec le meme
-dernier article.
-
-Ces tests lancent donc de vrais fils d'execution. La garantie tient a trois
-choses, et chacune est verifiee ici :
-
-  - le decrement est un `UPDATE ... WHERE stock >= qty`, jamais une lecture
-    suivie d'une ecriture ;
-  - le `rowcount` decide, et non une relecture du stock ;
-  - une contrainte `CHECK (stock >= 0)` reste en filet dernier, pour le jour ou
-    un futur chemin de code oublierait les deux premieres.
-
-LIMITE ASSUMEE. SQLite serialise les ecritures : le parallelisme reel y est
-moindre que sur PostgreSQL. La conclusion, elle, ne change pas - si le code
-lisait puis ecrivait, l'entrelacement se produirait meme ici, et exactement
-une commande doit passer dans tous les cas.
-"""
+"""Achats simultanes sur le dernier article."""
 import threading
 
 import pytest
@@ -39,12 +16,7 @@ from test_orders import checkout_payload
 
 
 def _en_parallele(taches):
-    """Lance les taches ensemble et rend leurs resultats.
-
-    Une barriere synchronise le depart : sans elle, le premier fil aurait fini
-    avant que le dernier ne commence, et l'on retomberait sur un test sequentiel
-    portant un nom trompeur - le defaut meme que ce fichier corrige.
-    """
+    """Lance les taches ensemble et rend leurs resultats."""
     depart = threading.Barrier(len(taches))
     resultats = [None] * len(taches)
 
@@ -67,20 +39,7 @@ def _en_parallele(taches):
 
 @pytest.fixture
 def fabrique(tmp_path):
-    """Base de test sur FICHIER, une connexion par fil.
-
-    Le `db_session` commun a la suite ne convient pas ici, et c'est instructif :
-    il sert UNE seule `Session` a toutes les requetes, via `StaticPool` sur une
-    base en memoire. Une `Session` SQLAlchemy n'est pas sure en concurrence -
-    plusieurs fils qui la partagent se volent leur transaction, et l'on obtient
-    « This transaction is closed » plutot que le comportement qu'on voulait
-    mesurer. Ce serait un artefact du test, pas un defaut du code.
-
-    En production, `get_db` ouvre une session par requete. On reproduit donc
-    cela : une base sur fichier, un pool ordinaire, une session neuve a chaque
-    appel. `timeout` laisse SQLite attendre la levee du verrou d'ecriture au
-    lieu d'echouer aussitot sur « database is locked ».
-    """
+    """Base de test sur fichier, une connexion par fil."""
     moteur = create_engine(
         f"sqlite:///{tmp_path / 'concurrence.db'}",
         connect_args={"check_same_thread": False, "timeout": 30},
@@ -131,7 +90,7 @@ def _ajouter(fabrique, **champs):
 
 @pytest.fixture
 def dernier_article(fabrique):
-    """Un produit dont il ne reste qu'UNE unite."""
+    """Un produit dont il ne reste qu'une unite."""
     return _ajouter(fabrique, code="RARE-001", name="Piece unique", price_cents=4900, stock=1)
 
 
@@ -151,9 +110,7 @@ class TestDernierArticle:
 
         codes = [r.status_code for r in reponses]
         assert codes.count(201) == 1, f"attendu une seule reussite, obtenu {codes}"
-        # Les autres sont refuses proprement : 409 pour stock insuffisant. Aucun
-        # 500 - une collision prevue n'est pas une panne, et le client doit
-        # pouvoir distinguer les deux.
+        # Les autres sont refuses proprement : 409 pour stock insuffisant
         assert all(c in (201, 409) for c in codes), f"code inattendu dans {codes}"
 
         db_session.expire_all()
@@ -184,13 +141,7 @@ class TestDernierArticle:
 
 class TestFiletDeSecurite:
     def test_la_base_refuse_un_stock_negatif(self, db_session, dernier_article):
-        """Le garde-fou de dernier recours, independant du code applicatif.
-
-        Il ne sert a rien tant que l'`UPDATE` conditionnel fait son travail.
-        Il sert le jour ou quelqu'un ecrit un autre chemin de decrement - une
-        commande d'administration, un import, une reprise de donnees - et oublie
-        la condition. La base, elle, ne l'oublie pas.
-        """
+        """Le garde-fou de dernier recours, independant du code applicatif."""
         # Relu dans la session d'inspection : la fixture rend un objet detache,
         # dont les modifications ne partiraient nulle part.
         produit = db_session.get(models.Product, dernier_article.id)
@@ -203,12 +154,7 @@ class TestFiletDeSecurite:
 
 class TestIdempotenceSousConcurrence:
     def test_le_double_clic_ne_cree_qu_une_commande(self, client, db_session, product):
-        """Le cas reel : deux requetes identiques a quelques millisecondes.
-
-        C'est ici que la contrainte unique gagne sa place. Une verification
-        prealable - lire la cle, puis inserer si absente - laisserait passer les
-        deux, puisqu'aucune des deux ne voit encore l'autre.
-        """
+        """Le cas reel : deux requetes identiques a quelques millisecondes."""
         from app.idempotency import EN_TETE
 
         charge = checkout_payload(product.id, qty=1)

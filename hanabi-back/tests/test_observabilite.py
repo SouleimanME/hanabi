@@ -1,9 +1,4 @@
-"""Identifiant de requete et journal structure.
-
-Ce que ces tests protegent : la capacite a repondre, apres coup, a la question
-« qu'est-il arrive a CETTE requete-la ». Sans identifiant partage entre la
-reponse et les journaux, un signalement d'utilisateur n'est rattachable a rien.
-"""
+"""Identifiant de requete et journal structure."""
 import json
 import logging
 
@@ -24,12 +19,7 @@ class TestIdentifiantDeRequete:
         assert premier != second
 
     def test_l_identifiant_du_client_est_repris(self, client):
-        """Permet de suivre un appel a travers plusieurs services.
-
-        Quand la boutique, l'API et un traitement de fond partagent la meme
-        reference, une trace se lit de bout en bout au lieu de s'arreter a
-        chaque frontiere.
-        """
+        """Permet de suivre un appel a travers plusieurs services."""
         res = client.get("/", headers={EN_TETE: "trace-du-client-42"})
 
         assert res.headers[EN_TETE] == "trace-du-client-42"
@@ -46,8 +36,7 @@ class TestIdentifiantDeRequete:
         assert res.headers[EN_TETE].strip()
 
     def test_la_duree_de_traitement_est_exposee(self, client):
-        """`Server-Timing` distingue une lenteur serveur d'une lenteur reseau,
-        sans qu'il faille acceder aux journaux."""
+        """`Server-Timing` distingue une lenteur serveur d'une lenteur reseau, sans qu'il faille acceder aux journaux."""
         res = client.get("/")
 
         assert res.headers["Server-Timing"].startswith("app;dur=")
@@ -75,9 +64,7 @@ class TestJournalStructure:
         assert ligne["journal"] == "hanabi.test"
 
     def test_les_champs_metier_sont_conserves(self):
-        """C'est tout l'interet du format : retrouver toutes les commandes par
-        une recherche sur un champ, plutot que par une expression reguliere sur
-        du texte libre."""
+        """C'est tout l'interet du format."""
         ligne = self._ligne(numero="ATL123456", total_cents=4900)
 
         assert ligne["numero"] == "ATL123456"
@@ -105,11 +92,7 @@ class TestJournalStructure:
 
 
 class TestAdresseTronquee:
-    """Un journal portant une adresse complete est une donnee personnelle.
-
-    On garde de quoi reconnaitre une source abusive, pas de quoi suivre une
-    personne.
-    """
+    """Un journal portant une adresse complete est une donnee personnelle."""
 
     def test_une_adresse_v4_est_reduite_a_son_reseau(self):
         assert _reseau("203.0.113.42") == "203.0.113.0/24"

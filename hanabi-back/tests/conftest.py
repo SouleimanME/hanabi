@@ -1,9 +1,4 @@
-"""Fixtures partagees par la suite de tests.
-
-Chaque test recoit une base SQLite en memoire, vierge et isolee. On evite
-ainsi toute dependance a `atelier.db` : la suite tourne sur un poste neuf
-comme en integration continue, sans etat residuel entre deux executions.
-"""
+"""Fixtures partagees par la suite de tests."""
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -21,20 +16,12 @@ from app.ratelimit import limiter
 from app.security import hash_password
 
 
-# --------------------------------------------------------------------------
-# Anti-robots
-# --------------------------------------------------------------------------
+# --- Anti-robots ---
 
 
 @pytest.fixture(autouse=True)
 def relax_antibot(monkeypatch):
-    """Rend les barrieres anti-robots franchissables en test.
-
-    On ne les desactive pas : les tests continuent de traverser le vrai code de
-    verification, ce qui detecte une regression de cablage. On abaisse seulement
-    le cout - une preuve a 18 bits par appel et une attente de 1,5 s par
-    formulaire rendraient la suite inutilisablement lente.
-    """
+    """Rend les barrieres anti-robots franchissables en test."""
     monkeypatch.setattr(settings, "POW_DIFFICULTY", 4)
     monkeypatch.setattr(settings, "MIN_FORM_SECONDS", 0.0)
     antibot._used.clear()
@@ -50,25 +37,12 @@ def antibot_for():
     return solve_antibot
 
 
-# --------------------------------------------------------------------------
-# Courriels
-# --------------------------------------------------------------------------
+# --- Courriels ---
 
 
 @pytest.fixture(autouse=True)
 def boite_courriels(monkeypatch):
-    """Detourne les courriels vers une boite en memoire.
-
-    Applique partout, y compris aux tests qui n'y touchent pas : sans cela, la
-    sortie par defaut ecrirait de vrais fichiers .eml dans `var/courriels/` a
-    chaque commande de test, et la suite laisserait des dechets derriere elle.
-
-    La remise, elle, n'est jamais automatique en test : le `client` ci-dessous
-    ne declenche pas le lifespan, donc l'ouvrier de fond ne demarre pas, et les
-    tests qui veulent voir partir un message appellent `traiter_lot` eux-memes.
-    Une tache de fond et des assertions font mauvais menage - le test passerait
-    ou non selon la vitesse de la machine.
-    """
+    """Detourne les courriels vers une boite en memoire."""
     from app import mailer
 
     boite = mailer.ExpediteurMemoire()
@@ -108,18 +82,14 @@ def client(db_session):
     # plafonnee a 5 appels par minute, or plusieurs tests s'inscrivent.
     limiter.enabled = False
 
-    # Pas de gestionnaire de contexte : on ne veut pas declencher le lifespan,
-    # qui creerait les tables et injecterait le jeu de donnees de demo dans la
-    # base de production.
+    # Pas de gestionnaire de contexte
     yield TestClient(app)
 
     app.dependency_overrides.clear()
     limiter.enabled = True
 
 
-# --------------------------------------------------------------------------
-# Donnees de test
-# --------------------------------------------------------------------------
+# --- Donnees de test ---
 
 
 @pytest.fixture
@@ -202,9 +172,7 @@ def user_factory(db_session):
 def auth_header(client, user_factory):
     """En-tete Authorization pour un client connecte."""
 
-    # `password` est transmis a `user_factory` : les tests du compte ont besoin
-    # de CONNAITRE le mot de passe courant, que plusieurs routes exigent avant
-    # de laisser changer un identifiant.
+    # `password` est transmis a `user_factory`
     def make(email="client@test.fr", is_admin=False, password="MotDePasse1!"):
         user, password = user_factory(email=email, is_admin=is_admin, password=password)
         res = client.post(

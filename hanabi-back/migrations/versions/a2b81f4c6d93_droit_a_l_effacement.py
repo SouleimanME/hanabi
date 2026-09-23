@@ -1,14 +1,8 @@
 """droit a l effacement
 
-Marque la date d'exercice du droit a l'effacement (RGPD art. 17). La ligne du
-compte subsiste apres anonymisation - les commandes doivent rester rattachees
-pour l'obligation comptable de dix ans - mais elle ne porte plus aucune donnee
-personnelle.
-
 Revision ID: a2b81f4c6d93
 Revises: f7d43a1b8e05
 Create Date: 2026-08-16 09:10:00.000000
-
 """
 from typing import Sequence, Union
 
