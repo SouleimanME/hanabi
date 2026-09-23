@@ -155,11 +155,27 @@ dans `rgpd.anonymiser` le fait échouer.
 
 ### Parcours de bout en bout
 
-Douze parcours Playwright contre une vraie API sur un SQLite jetable, barrières
+Quatorze parcours Playwright contre une vraie API sur un SQLite jetable, barrières
 anti-robots actives. Le plus utile vérifie qu'après une coupure réseau, le réessai
 porte la même clé d'idempotence que la première tentative. Un autre paie avec la
 carte de test `4000 0000 0000 0002` et attend le refus de la banque : le numéro
 reste dans le navigateur, seul le jeton qu'il désigne part au paiement simulé.
+Deux derniers surveillent le bandeau cookies : un refus tient au rechargement, et
+sans accord la fiche consultée part sans jeton, même pour un client connecté.
+
+### Cookies et mesure d'audience
+
+Une seule finalité demande un accord : rattacher les fiches consultées au compte
+connecté. Le bandeau la présente avec deux boutons identiques, refuser et accepter,
+garde le choix six mois (recommandation de la CNIL) et se rouvre depuis « Gérer mes
+cookies » en pied de page. Sans accord, la consultation est comptée sans jeton ni
+identifiant. Au démarrage, l'API détache du compte les consultations de plus de
+treize mois ; l'entrepôt n'utilise que les totaux par produit et par mois.
+
+Les polices sont servies par le site (107 ko, sous-ensembles latin et les six
+idéogrammes affichés) : plus aucune requête vers Google. Les photos passent par le
+CDN d'Unsplash, qui ne dépose pas de cookie ; la politique de confidentialité le
+déclare comme destinataire de l'adresse IP.
 
 ### Courriels promis, courriels envoyés
 
@@ -269,7 +285,7 @@ source.
 | Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation |
 | Sécurité | Anti-robots (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, en-têtes durcis |
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
-| Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20 |
+| Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
 | Qualité | 452 tests API, 198 tests d'interface, 12 parcours e2e, 111 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 

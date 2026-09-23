@@ -450,3 +450,158 @@
 .toast :focus-visible {
   outline-color: var(--vermilion-bright);
 }
+
+/* --- Consentement --- */
+
+/* Bandeau : laque fixe, comme les notifications, dans les deux thèmes. Non
+   bloquant ; refuser et accepter ont le même bouton. */
+.consent {
+  --ink: var(--ivory);
+  --line-strong: rgb(239 231 214 / 0.4);
+  position: fixed;
+  z-index: var(--z-toast);
+  inset-inline: var(--space-s);
+  inset-block-end: var(--space-s);
+  display: grid;
+  gap: var(--space-2xs);
+  max-inline-size: 26rem;
+  padding: var(--space-s);
+  border-radius: var(--r-panel);
+  background: var(--lacquer-3);
+  color: var(--ivory);
+  box-shadow: var(--shadow-toast);
+  font-size: var(--step--1);
+  animation: consent-in var(--dur-space) var(--ease-out);
+}
+@keyframes consent-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.consent h2 {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-1);
+  line-height: 1.2;
+}
+.consent p {
+  line-height: 1.5;
+}
+.consent-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-block-start: var(--space-2xs);
+}
+.consent-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-s);
+}
+.consent-liens .link {
+  min-block-size: 44px;
+  text-decoration-color: rgb(239 231 214 / 0.5);
+}
+/* Une notification s'affiche au-dessus du bandeau, pas dessous */
+.toast {
+  inset-block-end: calc(var(--space-s) + var(--hauteur-bandeau, 0px));
+}
+
+/* Préférences */
+.consent-prefs {
+  display: grid;
+  gap: var(--space-s);
+}
+.consent-finalite {
+  display: grid;
+  gap: 6px;
+  padding-block-end: var(--space-s);
+  border-block-end: 1px solid var(--line);
+}
+.consent-finalite-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+}
+.consent-finalite h3 {
+  font-weight: 700;
+  font-size: var(--step-0);
+}
+.consent-finalite p {
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.consent-toujours {
+  flex: none;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+}
+.consent-prefs > .link {
+  justify-self: start;
+  min-block-size: 44px;
+}
+.consent-prefs-pied {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: var(--space-s);
+  border-block-start: 1px solid var(--line);
+}
+.consent-prefs-pied .btn-primary {
+  grid-column: 1 / -1;
+}
+@media (min-width: 40rem) {
+  .consent-prefs-pied {
+    grid-template-columns: auto auto 1fr;
+  }
+  .consent-prefs-pied .btn-primary {
+    grid-column: auto;
+    justify-self: end;
+  }
+}
+
+/* Interrupteur : arêtes à 2 px comme le reste de la charte ; l'état se lit à
+   la position du curseur autant qu'à sa couleur */
+.interrupteur {
+  appearance: none;
+  position: relative;
+  flex: none;
+  inline-size: 46px;
+  block-size: 26px;
+  margin: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    border-color var(--dur-feedback) var(--ease-out);
+}
+.interrupteur::before {
+  content: "";
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 3px;
+  inline-size: 18px;
+  border-radius: var(--r-surface);
+  background: var(--ink);
+  transition: transform var(--dur-feedback) var(--ease-out);
+}
+/* Cible tactile de 44 px autour du dessin */
+.interrupteur::after {
+  content: "";
+  position: absolute;
+  inset: -10px -2px;
+}
+.interrupteur:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.interrupteur:checked::before {
+  transform: translateX(20px);
+  background: var(--on-accent);
+}

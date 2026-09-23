@@ -11,6 +11,7 @@ import { ProductCard } from "../components/catalog/ProductCard.jsx";
 import { ZoomPhoto } from "../components/catalog/ZoomPhoto.jsx";
 import { DeliveryNote } from "../components/ui/DeliveryNote.jsx";
 import { Products } from "../lib/api.js";
+import { audienceAcceptee } from "../lib/consentement.js";
 import { sourcesAdaptees } from "../lib/images.js";
 import { SHIPPING_CENTS, FREE_SHIPPING_CENTS } from "../lib/constants.js";
 import { useAntiBot } from "../hooks/useAntiBot.js";
@@ -117,9 +118,10 @@ export function ProductPage({
     return () => clearTimeout(id);
   }, [cleVues]);
 
-  // Mesure d'audience. Un échec (API endormie, bloqueur) ne gêne pas la fiche.
+  // Mesure d'audience, rattachée au compte seulement avec l'accord du bandeau.
+  // Un échec (API endormie, bloqueur) ne gêne pas la fiche.
   useEffect(() => {
-    Products.view(p.id).catch(() => {});
+    Products.view(p.id, audienceAcceptee()).catch(() => {});
   }, [p.id]);
 
   useEffect(() => {

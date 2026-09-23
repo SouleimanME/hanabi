@@ -27,6 +27,9 @@ import { MenuSheet } from "./components/layout/MenuSheet.jsx";
 import { CartDrawer } from "./components/cart/CartDrawer.jsx";
 import { AuthModal } from "./components/modals/AuthModal.jsx";
 import { LegalModal } from "./components/modals/LegalModal.jsx";
+import { BandeauCookies } from "./components/consent/BandeauCookies.jsx";
+import { PreferencesCookies } from "./components/consent/PreferencesCookies.jsx";
+import { enregistrerChoix, useConsentement } from "./lib/consentement.js";
 import { Toast } from "./components/ui/Toast.jsx";
 
 import Home from "./pages/Home.jsx";
@@ -92,6 +95,8 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [legalPage, setLegalPage] = useState(null);
+  const choixCookies = useConsentement();
+  const [prefsCookies, setPrefsCookies] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
   const gridRef = useRef(null);
 
@@ -147,6 +152,7 @@ export default function App() {
       setMenuOpen(false);
       setAuthOpen(false);
       setLegalPage(null);
+      setPrefsCookies(false);
     }, []),
   );
 
@@ -476,7 +482,8 @@ export default function App() {
   // Piece du mois : le premier produit mis en avant depuis le back-office, a
   // defaut la premiere nouveaute.
   const piece = featured[0] ?? products.find((p) => p.is_new) ?? null;
-  const fenetreOuverte = cartOpen || menuOpen || authOpen || Boolean(legalPage);
+  const fenetreOuverte = cartOpen || menuOpen || authOpen || Boolean(legalPage) || prefsCookies;
+  const bandeauCookies = choixCookies === null && !fenetreOuverte;
 
   useVerrouDefilement(fenetreOuverte);
   useChangementDEcran(
@@ -499,6 +506,16 @@ export default function App() {
         <a className="skip-link" href="#contenu">
           {t("skipToContent")}
         </a>
+
+        {/* Premier dans l'ordre du clavier, affiché en bas de l'écran */}
+        {bandeauCookies && (
+          <BandeauCookies
+            onAccepter={() => enregistrerChoix({ audience: true })}
+            onRefuser={() => enregistrerChoix({ audience: false })}
+            onPersonnaliser={() => setPrefsCookies(true)}
+            onEnSavoirPlus={() => setLegalPage("cookies")}
+          />
+        )}
 
         <div className="page-shell" inert={fenetreOuverte ? "" : undefined}>
           <Header
@@ -676,7 +693,12 @@ export default function App() {
             <Desinscription lien={lienDesinscription} onContinue={resetToHome} />
           )}
 
-          <Footer lang={lang} onGoCategory={goCategory} onOpenLegal={setLegalPage} />
+          <Footer
+            lang={lang}
+            onGoCategory={goCategory}
+            onOpenLegal={setLegalPage}
+            onManageCookies={() => setPrefsCookies(true)}
+          />
         </div>
 
         <MenuSheet
@@ -730,6 +752,22 @@ export default function App() {
 
         {legalPage && (
           <LegalModal page={legalPage} lang={lang} onClose={() => setLegalPage(null)} />
+        )}
+
+        {prefsCookies && (
+          <PreferencesCookies
+            choix={choixCookies}
+            onEnregistrer={(choix) => {
+              enregistrerChoix(choix);
+              setPrefsCookies(false);
+              flash(t("consentSaved"));
+            }}
+            onClose={() => setPrefsCookies(false)}
+            onEnSavoirPlus={() => {
+              setPrefsCookies(false);
+              setLegalPage("cookies");
+            }}
+          />
         )}
 
         <Toast toast={toast} onAction={runAction} />

@@ -1,7 +1,7 @@
 /** Textes légaux affichés en fenêtre : mentions, CGV, confidentialité, cookies. */
 
 /** Dernière révision, affichée en pied de chaque texte. */
-export const LEGAL_UPDATED = "30 juillet 2026";
+export const LEGAL_UPDATED = "23 septembre 2026";
 
 export const LEGAL_CONTENT = {
   mentions: {
@@ -277,10 +277,13 @@ Contact : contact@hanabi.fr
 Délégué à la protection des données : [nom et contact du DPO, ou « aucun DPO désigné »]
 
 **Données collectées et caractère obligatoire**
-• Création de compte : civilité, nom, prénom, adresse électronique, date de naissance, mot de passe (conservé sous forme chiffrée et non réversible). Ces données sont nécessaires : sans elles, le compte ne peut être créé.
+• Création de compte : nom, adresse électronique et mot de passe (conservé sous forme de condensat non réversible), nécessaires à la création du compte. Civilité, date de naissance, téléphone et adresse postale sont facultatifs.
+• Moyens de paiement enregistrés, si vous le choisissez : réseau de la carte, quatre derniers chiffres, date d'expiration et une référence fournie par le prestataire de paiement. Le numéro complet et le cryptogramme ne sont jamais conservés.
 • Commande : adresse de livraison, contenu et montant de la commande, coordonnées de contact. Données nécessaires à l'exécution du contrat.
 • Avis produit : note, texte, prénom affiché. Dépôt facultatif.
 • Alerte de réapprovisionnement : adresse électronique. Dépôt facultatif.
+• Lettre d'information : adresse électronique et langue. Inscription facultative.
+• Consultations de fiches produit : produit et date. Rattachées à votre compte uniquement avec votre accord, donné ou refusé dans le bandeau cookies.
 • Données techniques : adresse IP et journaux de connexion du serveur, à des fins de sécurité.
 
 **Finalités et bases légales**
@@ -290,13 +293,16 @@ Délégué à la protection des données : [nom et contact du DPO, ou « aucun D
 • Alertes de réapprovisionnement : consentement.
 • Prospection commerciale par courrier électronique, le cas échéant : consentement.
 • Sécurité du service, prévention de la fraude et des abus : intérêt légitime (art. 6.1.f).
+• Mesure d'audience rattachée au compte : consentement (art. 6.1.a et article 82 de la loi Informatique et Libertés), retirable depuis « Gérer mes cookies ».
+• Statistiques internes et segmentation de la clientèle (fréquence et montant des achats, tranche d'âge, ville et civilité lorsqu'elles sont renseignées) : intérêt légitime, pour comprendre la clientèle et orienter l'offre.
 • Respect des obligations comptables et fiscales : obligation légale (art. 6.1.c).
 
 **Destinataires**
 Les données sont accessibles au personnel habilité de Hanabi et à ses sous-traitants, agissant sur instruction et liés par une obligation de confidentialité : hébergeur, prestataire de paiement, transporteur, service d'envoi de courriers électroniques. Aucune donnée n'est vendue, louée ou cédée à des tiers à des fins publicitaires.
+Les photographies du catalogue sont servies par Unsplash, société établie aux États-Unis : l'adresse IP de votre navigateur lui parvient à chaque affichage d'une photo, sans autre donnée.
 
 **Transferts hors Union européenne**
-Les données sont hébergées au sein de l'Union européenne. Si un sous-traitant conduisait un transfert vers un pays tiers, celui-ci serait encadré par une décision d'adéquation de la Commission européenne ou par les clauses contractuelles types, assorties des mesures complémentaires nécessaires.
+Les données sont hébergées au sein de l'Union européenne. Seule l'adresse IP transmise à Unsplash pour afficher les photographies quitte l'Union (voir Destinataires). Si un sous-traitant conduisait un transfert vers un pays tiers, celui-ci serait encadré par une décision d'adéquation de la Commission européenne ou par les clauses contractuelles types, assorties des mesures complémentaires nécessaires.
 
 **Durées de conservation**
 • Compte client : durée de vie du compte, puis trois (3) ans à compter du dernier contact, avant suppression ou anonymisation.
@@ -304,6 +310,9 @@ Les données sont hébergées au sein de l'Union européenne. Si un sous-traitan
 • Avis produit : jusqu'au retrait du consentement ou à la suppression du compte.
 • Prospection : trois (3) ans à compter du dernier contact.
 • Journaux de connexion : douze (12) mois.
+• Consultations de fiches : rattachement au compte effacé au bout de treize (13) mois ; le comptage anonyme reste pour les statistiques.
+• Lettre d'information : jusqu'à la désinscription. L'adresse est ensuite gardée comme opposition, pour ne plus vous écrire.
+• Choix sur la mesure d'audience : six (6) mois dans votre navigateur, puis redemandé.
 
 **Vos droits**
 Conformément aux articles 15 à 22 du RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation du traitement, d'opposition, de portabilité de vos données, ainsi que du droit de retirer votre consentement à tout moment lorsque le traitement repose sur celui-ci. Vous disposez également du droit de définir des directives sur le sort de vos données après votre décès.
@@ -312,8 +321,8 @@ Ces droits s'exercent à contact@hanabi.fr. Une réponse vous sera apportée dan
 **Réclamation**
 Vous pouvez introduire une réclamation auprès de la CNIL : 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, www.cnil.fr
 
-**Absence de décision automatisée**
-Aucune décision produisant des effets juridiques à votre égard n'est prise sur le seul fondement d'un traitement automatisé. Aucun profilage n'est réalisé.
+**Décision automatisée et profilage**
+Aucune décision produisant des effets juridiques à votre égard, ou vous affectant de manière significative, n'est prise sur le seul fondement d'un traitement automatisé. La segmentation décrite plus haut constitue un profilage au sens du RGPD, limité à des statistiques internes : elle ne conditionne ni les prix, ni l'accès au service. Vous pouvez vous y opposer à tout moment à contact@hanabi.fr.
 
 **Sécurité**
 Les échanges avec le site sont chiffrés en transit. Les mots de passe sont stockés sous forme de condensats non réversibles. Les accès aux données sont limités aux personnes habilitées.`,
@@ -325,22 +334,24 @@ Hanabi, [legal form], [full address]. Contact: contact@hanabi.fr
 Data protection officer: [name and contact, or "none appointed"]
 
 **Data collected**
-• Account: title, name, e-mail, date of birth, password (stored as a non-reversible hash), required to create an account.
+• Account: name, e-mail and password (stored as a non-reversible hash), required to create an account. Title, date of birth, phone and postal address are optional.
+• Saved payment methods, if you choose to: card network, last four digits, expiry date and a reference issued by the payment provider. The full card number and security code are never stored.
 • Orders: delivery address, order contents and amount, required to perform the contract.
-• Product reviews and restock alerts: optional.
+• Product reviews, restock alerts and newsletter: optional.
+• Product page views: product and date, linked to your account only with your consent, given or refused in the cookie banner.
 • Technical data: IP address and server logs, for security purposes.
 
 **Purposes and legal bases**
-Order and after-sales management, account management: performance of the contract. Reviews, restock alerts and marketing e-mails: consent, withdrawable at any time. Service security and fraud prevention: legitimate interest. Accounting obligations: legal obligation.
+Order and after-sales management, account management: performance of the contract. Reviews, restock alerts and marketing e-mails: consent, withdrawable at any time. Service security and fraud prevention: legitimate interest. Accounting obligations: legal obligation. Audience measurement linked to your account: consent, withdrawable from the Manage cookies link. Internal statistics and customer segmentation (purchase frequency and amount, age band, city and title when provided): legitimate interest.
 
 **Recipients**
-Authorised Hanabi staff and processors bound by confidentiality: hosting provider, payment provider, carrier, e-mail service. Data is never sold or rented to third parties.
+Authorised Hanabi staff and processors bound by confidentiality: hosting provider, payment provider, carrier, e-mail service. Data is never sold or rented to third parties. Catalogue photographs are served by Unsplash, a company based in the United States: your browser's IP address reaches it each time a photo is displayed, with no other data.
 
 **Transfers outside the EU**
-Data is hosted within the European Union. Any transfer to a third country would be covered by an adequacy decision or the standard contractual clauses.
+Data is hosted within the European Union. Only the IP address sent to Unsplash to display photographs leaves the Union (see Recipients). Any transfer to a third country would be covered by an adequacy decision or the standard contractual clauses.
 
 **Retention**
-Account: life of the account, then three (3) years after last contact. Orders and accounting records: ten (10) years. Marketing: three (3) years after last contact. Server logs: twelve (12) months.
+Account: life of the account, then three (3) years after last contact. Orders and accounting records: ten (10) years. Marketing: three (3) years after last contact. Server logs: twelve (12) months. Product page views: link to your account erased after thirteen (13) months. Newsletter: until you unsubscribe, the address then being kept as an objection. Audience choice: six (6) months.
 
 **Your rights**
 Under Articles 15 to 22 GDPR you have the rights of access, rectification, erasure, restriction of processing, objection and portability, and the right to withdraw consent at any time. Exercise them at contact@hanabi.fr; you will receive a reply within one (1) month.
@@ -348,8 +359,8 @@ Under Articles 15 to 22 GDPR you have the rights of access, rectification, erasu
 **Complaints**
 You may lodge a complaint with the French supervisory authority, the CNIL: 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, www.cnil.fr
 
-**No automated decision-making**
-No decision producing legal effects is taken solely on the basis of automated processing. No profiling is carried out.
+**Automated decisions and profiling**
+No decision producing legal or similarly significant effects is taken solely on the basis of automated processing. The segmentation described above is profiling within the meaning of the GDPR, limited to internal statistics: it affects neither prices nor access to the service. You may object to it at any time at contact@hanabi.fr.
 
 The French version of this policy is the legally authoritative one.`,
     },
@@ -360,22 +371,24 @@ Hanabi, [forma jurídica], [dirección completa]. Contacto: contact@hanabi.fr
 Delegado de protección de datos: [nombre y contacto, o «no designado»]
 
 **Datos recopilados**
-• Cuenta: tratamiento, nombre, apellidos, correo, fecha de nacimiento, contraseña (almacenada como resumen no reversible), necesarios para crear la cuenta.
+• Cuenta: nombre, correo y contraseña (almacenada como resumen no reversible), necesarios para crear la cuenta. Tratamiento, fecha de nacimiento, teléfono y dirección postal son opcionales.
+• Medios de pago guardados, si usted lo decide: red de la tarjeta, últimos cuatro dígitos, fecha de caducidad y una referencia del proveedor de pago. El número completo y el código de seguridad nunca se guardan.
 • Pedidos: dirección de envío, contenido e importe, necesarios para ejecutar el contrato.
-• Opiniones y avisos de reposición: facultativos.
+• Opiniones, avisos de reposición y boletín: facultativos.
+• Consultas de fichas de producto: producto y fecha, vinculadas a su cuenta solo con su consentimiento, dado o rechazado en el banner de cookies.
 • Datos técnicos: dirección IP y registros del servidor, con fines de seguridad.
 
 **Finalidades y bases jurídicas**
-Gestión de pedidos, entrega y posventa, y gestión de la cuenta: ejecución del contrato. Opiniones, avisos de reposición y comunicaciones comerciales: consentimiento, revocable en cualquier momento. Seguridad y prevención del fraude: interés legítimo. Obligaciones contables: obligación legal.
+Gestión de pedidos, entrega y posventa, y gestión de la cuenta: ejecución del contrato. Opiniones, avisos de reposición y comunicaciones comerciales: consentimiento, revocable en cualquier momento. Seguridad y prevención del fraude: interés legítimo. Obligaciones contables: obligación legal. Medición de audiencia vinculada a la cuenta: consentimiento, revocable desde «Gestionar cookies». Estadísticas internas y segmentación de la clientela (frecuencia e importe de las compras, franja de edad, ciudad y tratamiento cuando se indican): interés legítimo.
 
 **Destinatarios**
-Personal autorizado de Hanabi y encargados sujetos a confidencialidad: proveedor de alojamiento, de pago, transportista y servicio de correo. Los datos nunca se venden ni alquilan a terceros.
+Personal autorizado de Hanabi y encargados sujetos a confidencialidad: proveedor de alojamiento, de pago, transportista y servicio de correo. Los datos nunca se venden ni alquilan a terceros. Las fotografías del catálogo las sirve Unsplash, empresa establecida en Estados Unidos: la dirección IP de su navegador le llega cada vez que se muestra una foto, sin ningún otro dato.
 
 **Transferencias fuera de la UE**
-Los datos se alojan en la Unión Europea. Cualquier transferencia a un tercer país estaría amparada por una decisión de adecuación o por las cláusulas contractuales tipo.
+Los datos se alojan en la Unión Europea. Solo la dirección IP enviada a Unsplash para mostrar las fotografías sale de la Unión (véase Destinatarios). Cualquier transferencia a un tercer país estaría amparada por una decisión de adecuación o por las cláusulas contractuales tipo.
 
 **Plazos de conservación**
-Cuenta: vigencia de la cuenta y tres (3) años desde el último contacto. Pedidos y documentos contables: diez (10) años. Prospección: tres (3) años. Registros de conexión: doce (12) meses.
+Cuenta: vigencia de la cuenta y tres (3) años desde el último contacto. Pedidos y documentos contables: diez (10) años. Prospección: tres (3) años. Registros de conexión: doce (12) meses. Consultas de fichas: vínculo con la cuenta borrado a los trece (13) meses. Boletín: hasta la baja; la dirección se conserva después como oposición. Elección sobre la medición de audiencia: seis (6) meses.
 
 **Sus derechos**
 Conforme a los artículos 15 a 22 del RGPD, tiene derecho de acceso, rectificación, supresión, limitación, oposición y portabilidad, así como a retirar su consentimiento en cualquier momento. Ejerza estos derechos en contact@hanabi.fr.
@@ -383,8 +396,8 @@ Conforme a los artículos 15 a 22 del RGPD, tiene derecho de acceso, rectificaci
 **Reclamación**
 Puede presentar una reclamación ante la autoridad francesa de control, la CNIL: 3 place de Fontenoy, TSA 80715, 75334 París Cedex 07, www.cnil.fr
 
-**Ausencia de decisiones automatizadas**
-No se adopta ninguna decisión con efectos jurídicos basada únicamente en un tratamiento automatizado. No se realiza elaboración de perfiles.
+**Decisiones automatizadas y elaboración de perfiles**
+No se adopta ninguna decisión con efectos jurídicos o significativos basada únicamente en un tratamiento automatizado. La segmentación descrita más arriba constituye una elaboración de perfiles en el sentido del RGPD, limitada a estadísticas internas: no condiciona ni los precios ni el acceso al servicio. Puede oponerse en cualquier momento en contact@hanabi.fr.
 
 La versión francesa de esta política es la jurídicamente vinculante.`,
     },
@@ -393,59 +406,76 @@ La versión francesa de esta política es la jurídicamente vinculante.`,
     fr: {
       title: "Cookies et stockage local",
       body: `**Ce que ce site dépose sur votre appareil**
-Ce site n'utilise aucun cookie publicitaire, aucun cookie de mesure d'audience et aucun traceur tiers. Il ne dépose pas de cookie au sens strict : il utilise le stockage local du navigateur (localStorage), qui relève des mêmes règles que les cookies au titre de l'article 82 de la loi Informatique et Libertés.
+Ce site ne dépose aucun cookie publicitaire et aucun traceur tiers. Il utilise le stockage local du navigateur (localStorage), soumis aux mêmes règles que les cookies au titre de l'article 82 de la loi Informatique et Libertés.
 
-**Informations conservées**
-• Panier en cours : pour ne pas perdre votre sélection en changeant de page.
-• Préférence de thème (clair ou sombre) et de langue : pour retrouver votre réglage.
-• Liste de favoris et produits vus récemment : pour vous les proposer à nouveau.
-• Jeton de session, si vous êtes connecté : pour maintenir votre authentification.
+**Nécessaires au fonctionnement, sans consentement**
+• Panier en cours et articles gardés pour plus tard.
+• Favoris et produits vus récemment.
+• Préférence de langue et de thème (clair ou sombre).
+• Jeton de session, si vous êtes connecté.
+• Votre choix sur la mesure d'audience, pour ne pas vous le redemander à chaque page.
+Ces informations servent uniquement au service que vous avez demandé. Elles sont exemptées de consentement et ne servent ni à vous suivre ni à vous cibler.
 
-**Pourquoi aucune bannière de consentement n'est affichée**
-Ces informations sont strictement nécessaires à la fourniture d'un service que vous avez expressément demandé (tenir un panier, rester connecté, mémoriser vos préférences d'affichage). À ce titre, elles sont exemptées du recueil du consentement, conformément à l'article 82 de la loi Informatique et Libertés et aux lignes directrices de la CNIL. Aucune n'est utilisée pour vous suivre, vous profiler ou vous cibler publicitairement.
-Si une mesure d'audience ou un outil tiers était ajouté au site, une bannière de consentement préalable serait mise en place et cette page mise à jour.
+**Mesure d'audience, avec votre accord**
+Chaque ouverture d'une fiche produit est comptée par notre serveur, sans cookie. Avec votre accord, et si vous êtes connecté, cette consultation est rattachée à votre compte ; sans accord, elle est comptée sans aucun identifiant. Le rattachement est effacé au bout de treize mois : la consultation reste alors comptée pour son produit et son mois, sans désigner personne.
+Votre choix est demandé au premier passage par un bandeau, où refuser est aussi simple qu'accepter. Il est conservé six mois, puis redemandé. Vous pouvez le modifier à tout moment depuis le lien « Gérer mes cookies » en pied de page.
+
+**Contenus chargés depuis un tiers**
+Les photographies du catalogue sont servies par le réseau de diffusion d'Unsplash (images.unsplash.com). Pour les afficher, votre navigateur transmet à ce service votre adresse IP, comme pour toute image hébergée ailleurs. Ces requêtes ne déposent aucun cookie. Les polices de caractères sont hébergées par le site lui-même : aucune requête n'est faite à Google.
 
 **Durée de conservation**
-Ces informations restent dans votre navigateur jusqu'à ce que vous les supprimiez. Elles ne sont pas transmises à des tiers. Le jeton de session est effacé à la déconnexion.
+Les informations du stockage local restent dans votre navigateur jusqu'à ce que vous les supprimiez. Le jeton de session est effacé à la déconnexion.
 
 **Comment les supprimer**
-Vous pouvez à tout moment vider le stockage local et les cookies depuis les réglages de confidentialité de votre navigateur, ou en navigation privée. La suppression du panier et des préférences est sans conséquence : le site refonctionnera avec ses réglages par défaut.`,
+Vous pouvez à tout moment vider le stockage local et les cookies depuis les réglages de confidentialité de votre navigateur, ou en navigation privée. La suppression du panier et des préférences est sans conséquence : le site refonctionnera avec ses réglages par défaut, et vous demandera de nouveau votre choix sur la mesure d'audience.`,
     },
     en: {
       title: "Cookies and local storage",
       body: `**What this site stores on your device**
-This site uses no advertising cookies, no analytics cookies and no third-party trackers. It does not set cookies in the strict sense: it uses the browser's local storage, which falls under the same rules as cookies.
+This site sets no advertising cookies and no third-party trackers. It uses the browser's local storage, which falls under the same rules as cookies.
 
-**Information kept**
-• Current cart: so your selection survives page changes.
-• Theme (light or dark) and language preference.
+**Required for the site to work, no consent needed**
+• Current cart and items saved for later.
 • Wishlist and recently viewed products.
+• Language and theme preference (light or dark).
 • Session token, if you are signed in.
+• Your choice on audience measurement, so you are not asked on every page.
+This information only serves the service you asked for. It is exempt from consent and is never used to track or target you.
 
-**Why no consent banner is shown**
-This information is strictly necessary to provide a service you explicitly requested (keeping a cart, staying signed in, remembering display preferences), and is therefore exempt from consent. None of it is used to track, profile or advertise to you. Should analytics or any third-party tool be added, a prior consent banner would be introduced and this page updated.
+**Audience measurement, with your consent**
+Each product page opened is counted by our server, without cookies. With your consent, and if you are signed in, the view is linked to your account; without it, the view is counted with no identifier at all. The link is erased after thirteen months: the view then remains counted for its product and month, pointing to no one.
+Your choice is asked on your first visit through a banner, where rejecting is as easy as accepting. It is kept for six months, then asked again. You can change it at any time from the "Manage cookies" link in the footer.
+
+**Content loaded from a third party**
+Catalogue photographs are served by Unsplash's delivery network (images.unsplash.com). To display them, your browser sends your IP address to that service, as with any image hosted elsewhere. These requests set no cookies. Fonts are hosted by the site itself: no request is made to Google.
 
 **Retention and deletion**
-The information stays in your browser until you delete it, and is never shared with third parties. You can clear local storage and cookies at any time from your browser's privacy settings; the site will simply return to its default settings.
+Local storage stays in your browser until you delete it; the session token is erased when you sign out. You can clear local storage and cookies at any time from your browser's privacy settings; the site will return to its default settings and ask for your audience choice again.
 
 The French version of this page is the legally authoritative one.`,
     },
     es: {
       title: "Cookies y almacenamiento local",
       body: `**Qué almacena este sitio en su dispositivo**
-Este sitio no utiliza cookies publicitarias, ni cookies de medición de audiencia, ni rastreadores de terceros. No instala cookies en sentido estricto: utiliza el almacenamiento local del navegador, sujeto a las mismas normas que las cookies.
+Este sitio no instala cookies publicitarias ni rastreadores de terceros. Utiliza el almacenamiento local del navegador, sujeto a las mismas normas que las cookies.
 
-**Información conservada**
-• Carrito actual: para no perder su selección al cambiar de página.
-• Preferencia de tema (claro u oscuro) e idioma.
-• Lista de favoritos y productos vistos recientemente.
+**Necesarias para el funcionamiento, sin consentimiento**
+• Carrito actual y artículos guardados para más tarde.
+• Favoritos y productos vistos recientemente.
+• Preferencia de idioma y de tema (claro u oscuro).
 • Token de sesión, si ha iniciado sesión.
+• Su elección sobre la medición de audiencia, para no pedírsela en cada página.
+Esta información solo sirve al servicio que usted ha solicitado. Está exenta de consentimiento y nunca se usa para seguirle ni dirigirle publicidad.
 
-**Por qué no se muestra ningún banner de consentimiento**
-Esta información es estrictamente necesaria para prestar un servicio que usted ha solicitado expresamente (mantener un carrito, permanecer conectado, recordar sus preferencias de visualización), por lo que está exenta de consentimiento. Ninguna se emplea para rastrearle, elaborar perfiles ni dirigirle publicidad. Si se añadiera una herramienta de analítica o de terceros, se implantaría un banner de consentimiento previo y se actualizaría esta página.
+**Medición de audiencia, con su consentimiento**
+Cada ficha de producto abierta la cuenta nuestro servidor, sin cookies. Con su consentimiento, y si ha iniciado sesión, la consulta se vincula a su cuenta; sin él, se cuenta sin ningún identificador. El vínculo se borra a los trece meses: la consulta sigue contada para su producto y su mes, sin designar a nadie.
+Su elección se pide en la primera visita mediante un banner, donde rechazar es tan sencillo como aceptar. Se conserva seis meses y después se vuelve a pedir. Puede cambiarla en cualquier momento desde el enlace «Gestionar cookies» del pie de página.
+
+**Contenidos cargados desde un tercero**
+Las fotografías del catálogo las sirve la red de distribución de Unsplash (images.unsplash.com). Para mostrarlas, su navegador transmite a ese servicio su dirección IP, como con cualquier imagen alojada en otro sitio. Estas solicitudes no instalan cookies. Las fuentes tipográficas están alojadas en el propio sitio: no se hace ninguna solicitud a Google.
 
 **Conservación y eliminación**
-La información permanece en su navegador hasta que usted la elimine y nunca se comparte con terceros. Puede borrar el almacenamiento local y las cookies en cualquier momento desde los ajustes de privacidad de su navegador.
+El almacenamiento local permanece en su navegador hasta que usted lo borre; el token de sesión se borra al cerrar sesión. Puede borrar el almacenamiento local y las cookies en cualquier momento desde los ajustes de privacidad de su navegador; el sitio volverá a sus ajustes por defecto y le pedirá de nuevo su elección sobre la medición de audiencia.
 
 La versión francesa de esta página es la jurídicamente vinculante.`,
     },

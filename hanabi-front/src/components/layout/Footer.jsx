@@ -6,7 +6,7 @@ import { Newsletter } from "./Newsletter.jsx";
 const LEGAL_PAGES = ["mentions", "cgv", "confidentialite", "cookies"];
 const SHOP_CATEGORIES = ["Figurines", "Décoration", "Luminaires"];
 
-export function Footer({ lang, onGoCategory, onOpenLegal }) {
+export function Footer({ lang, onGoCategory, onOpenLegal, onManageCookies }) {
   const t = useT();
 
   return (
@@ -45,6 +45,11 @@ export function Footer({ lang, onGoCategory, onOpenLegal }) {
                 </button>
               </li>
             ))}
+            <li>
+              <button className="ft-link" onClick={onManageCookies}>
+                {t("consentManage")}
+              </button>
+            </li>
           </ul>
         </nav>
 

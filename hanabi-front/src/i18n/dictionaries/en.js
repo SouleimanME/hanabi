@@ -189,6 +189,24 @@ export default {
     "Company details are not filled in: this site is a personal project and carries out no commercial activity.",
   legalUpdated: "Last updated: {date}",
   zoomHint: "Click, scroll or pinch to zoom; drag to move around.",
+  consentTitle: "Audience measurement",
+  consentText:
+    "No advertising trackers here. With your consent, the product pages you view are linked to your account to measure audience. Without it, they are counted anonymously.",
+  consentRefuse: "Reject all",
+  consentAccept: "Accept all",
+  consentCustomize: "Customise",
+  consentMore: "Learn more",
+  consentPrefsTitle: "Your privacy choices",
+  consentNeeded: "Required for the site to work",
+  consentNeededText:
+    "Cart, favourites, saved items, language, theme, session and this choice. Kept in your browser, never shared with third parties.",
+  consentAlways: "Always on",
+  consentAudience: "Audience measurement linked to your account",
+  consentAudienceText:
+    "Viewed product pages are linked to your account, to learn which objects draw attention. The link is erased after thirteen months; you are asked again after six.",
+  consentSave: "Save my choices",
+  consentSaved: "Choices saved.",
+  consentManage: "Manage cookies",
 
   // En-tete et menu
   skipToContent: "Skip to content",

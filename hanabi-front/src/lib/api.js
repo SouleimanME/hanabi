@@ -141,8 +141,10 @@ export const Products = {
   // `lang` : le courriel de retour en stock part dans la langue de la page
   notify: (id, email, antibot, lang) =>
     request(`/products/${id}/notify`, { method: "POST", body: { email, antibot, lang } }),
-  // Mesure d'audience, alimentee a l'ouverture d'une fiche
-  view: (id) => request(`/products/${id}/view`, { method: "POST", auth: true }),
+  // Mesure d'audience, alimentée à l'ouverture d'une fiche. Le jeton ne part
+  // qu'avec l'accord du visiteur ; sans lui, la vue est comptée sans nom.
+  view: (id, rattacher = false) =>
+    request(`/products/${id}/view`, { method: "POST", auth: rattacher }),
 };
 
 export const Auth = {

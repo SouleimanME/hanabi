@@ -191,6 +191,24 @@ export default {
     "Informations d'entreprise non renseignées : ce site est un projet personnel et n'exerce aucune activité commerciale.",
   legalUpdated: "Dernière mise à jour : {date}",
   zoomHint: "Clic, molette ou pincement pour zoomer ; glisser pour se déplacer.",
+  consentTitle: "Mesure d'audience",
+  consentText:
+    "Aucun traceur publicitaire ici. Avec ton accord, les fiches que tu consultes sont rattachées à ton compte pour mesurer l'audience. Sans accord, elles sont comptées sans nom.",
+  consentRefuse: "Tout refuser",
+  consentAccept: "Tout accepter",
+  consentCustomize: "Personnaliser",
+  consentMore: "En savoir plus",
+  consentPrefsTitle: "Tes choix de confidentialité",
+  consentNeeded: "Nécessaires au fonctionnement",
+  consentNeededText:
+    "Panier, favoris, articles gardés, langue, thème, session et ce choix. Gardés dans ton navigateur, jamais transmis à un tiers.",
+  consentAlways: "Toujours actifs",
+  consentAudience: "Mesure d'audience rattachée au compte",
+  consentAudienceText:
+    "Les fiches consultées sont associées à ton compte, pour savoir quels objets retiennent l'attention. Le lien est effacé au bout de treize mois ; ton choix est redemandé au bout de six.",
+  consentSave: "Enregistrer mes choix",
+  consentSaved: "Choix enregistrés.",
+  consentManage: "Gérer mes cookies",
 
   // En-tete et menu
   skipToContent: "Aller au contenu",

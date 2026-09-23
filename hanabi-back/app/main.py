@@ -11,6 +11,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from . import models, outbox
+from .audience import detacher_consultations_anciennes
 from .config import settings
 from .database import SessionLocal, get_db
 from .demo_data import ensure_demo_dataset
@@ -48,6 +49,9 @@ async def lifespan(app: FastAPI):
         jetons_morts = purger_jetons(db)
         if jetons_morts:
             log.info("jetons expires purges", extra={"lignes": jetons_morts})
+        detachees = detacher_consultations_anciennes(db)
+        if detachees:
+            log.info("consultations detachees de leur compte", extra={"lignes": detachees})
     finally:
         db.close()
 
