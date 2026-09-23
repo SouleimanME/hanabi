@@ -1,64 +1,22 @@
-# Reconstruction planifiee de l'entrepot decisionnel.
+# Reconstruction quotidienne de l'entrepôt.
 #
-# Un entrepot construit a la main est un entrepot perime : le schema `gold`
-# reste fige sur la derniere execution, et l'ecart avec la base transactionnelle
-# grandit sans que rien ne le signale. C'est ce que cet ordonnanceur corrige.
+# Le graphe Dagster (hanabi-dwh/orchestration/) porte l'ordre des étapes ; ce
+# fichier ne donne que l'heure, faute de daemon Dagster hébergé.
 #
-# CE QUE CE FICHIER DECLENCHE, ET CE QU'IL NE DECIDE PLUS
-#
-# Il ne connait plus les etapes de la chaine. Il ne sait pas qu'il faut charger
-# les taux avant de construire bronze, ni que gold vient apres silver : il
-# demande a Dagster de materialiser le graphe, et l'ordre se deduit des
-# dependances declarees par les actifs (voir hanabi-dwh/orchestration/).
-#
-# La difference n'est pas cosmetique. Tant que les etapes etaient enumerees ici,
-# l'extraction des sources externes n'y figurait pas - `externe.taux_change`
-# n'etait donc rechargee que lorsque quelqu'un y pensait, alors meme que
-# `sources.yml` declare une source perimee au bout de dix jours. Une etape
-# oubliee dans une liste ecrite a la main ne se voit pas ; une dependance
-# manquante dans un graphe, si.
-#
-# Le calendrier, lui, reste ici. Dagster en declare un identique, mais il
-# suppose un daemon qui tourne en permanence et rien n'en heberge un : c'est
-# GitHub qui donne l'heure, Dagster qui donne l'ordre.
-#
-# ------------------------------------------------------------------------
-# CE FICHIER NE FAIT RIEN TANT QUE LE SECRET N'EST PAS RENSEIGNE.
-#
-# La tache est conditionnee a la presence du secret `DWH_DATABASE_URL`. Sans
-# lui, elle s'arrete avec un message d'explication plutot que d'echouer en
-# rouge - un depot clone ou un fork ne doit pas afficher une CI cassee pour une
-# base a laquelle il n'a pas acces.
-#
-# Pour l'activer : Settings > Secrets and variables > Actions > New repository
-# secret, nomme `DWH_DATABASE_URL`, avec la chaine de connexion DIRECTE de Neon
-# (pas la variante « pooler »).
-#
-# A savoir avant de le faire : c'est confier une chaine de connexion en ecriture
-# a GitHub Actions. Les secrets ne sont pas exposes dans les journaux, mais tout
-# compte pouvant modifier un workflow de ce depot peut les lire. Sur une base de
-# demonstration c'est acceptable ; sur une base portant des donnees reelles, on
-# creerait un role PostgreSQL dedie, limite a la lecture de `public` et a
-# l'ecriture dans les schemas de l'entrepot.
-# ------------------------------------------------------------------------
+# Inactif sans le secret `DWH_DATABASE_URL` (chaîne de connexion directe Neon,
+# sans -pooler) : Settings > Secrets and variables > Actions. Ce secret confie
+# une connexion en écriture à GitHub Actions ; sur des données réelles, utiliser
+# un rôle limité à la lecture de `public` et à l'écriture dans l'entrepôt.
 
 name: Entrepot
 
 on:
   schedule:
-    # 05h00 UTC chaque jour, soit avant l'ouverture des bureaux en France. La
-    # construction prend une minute et lit la base : la jouer aux heures creuses
-    # evite de la solliciter pendant que quelqu'un consulte le back-office.
-    # Meme heure que le calendrier declare dans `orchestration/planification.py`.
+    # 5 h UTC, comme orchestration/planification.py
     - cron: "0 5 * * *"
-  # Permet de reconstruire a la demande depuis l'onglet Actions, sans attendre
-  # l'heure - indispensable apres une modification de modele.
   workflow_dispatch:
 
-# Deux constructions simultanees ecriraient dans les memes tables. La seconde
-# attend, et une execution planifiee declenchee pendant une execution manuelle
-# est simplement abandonnee : reconstruire deux fois de suite les memes donnees
-# n'apporte rien.
+# Pas deux constructions simultanées sur les mêmes tables
 concurrency:
   group: entrepot
   cancel-in-progress: false
@@ -74,23 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Deux cas a ne pas confondre, et c'est tout l'interet de cette etape.
-      #
-      # Secret ABSENT : etat normal d'un fork, qui n'a pas acces a la base. On
-      # s'arrete en vert avec une note, parce qu'un depot clone n'a pas a
-      # afficher une CI cassee pour une base qui ne le concerne pas.
-      #
-      # Secret PRESENT mais mal forme : c'est une erreur de configuration du
-      # proprietaire, et elle doit etre rouge. Le tableau de bord Neon propose
-      # plusieurs formats - parametres separes, extrait psql, bloc .env - et un
-      # seul convient. Sans ce controle de forme, la valeur traversait trois
-      # etapes avant d'echouer dans « Compiler le projet dbt », qui n'y etait
-      # pour rien ; le message parlait de PostgreSQL en masquant l'hote, et ne
-      # disait donc ni ou ni quoi corriger.
-      #
-      # La valeur n'est jamais affichee, meme partiellement : GitHub la
-      # masquerait, et une chaine de connexion partiellement revelee reste une
-      # chaine de connexion revelee.
+      # Secret absent (fork) : arrêt en vert. Secret mal formé : erreur explicite.
+      # La valeur n'est jamais affichée.
       - name: Verifier que la base est configuree
         id: garde
         env:
@@ -99,18 +42,17 @@ jobs:
           case "$DWH_DATABASE_URL" in
             "")
               echo "configure=false" >> "$GITHUB_OUTPUT"
-              echo "::notice::Secret DWH_DATABASE_URL absent : reconstruction ignoree." \
-                   "Voir l'en-tete de .github/workflows/entrepot.yml pour l'activer."
+              echo "::notice::Secret DWH_DATABASE_URL absent : reconstruction ignorée." \
+                   "Voir l'en-tête de .github/workflows/entrepot.yml pour l'activer."
               ;;
             postgres://*|postgresql://*)
               echo "configure=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "::error::Le secret DWH_DATABASE_URL ne commence pas par" \
-                   "postgresql:// - c'est la chaine de connexion DIRECTE de Neon" \
-                   "qui est attendue, au format « Connection string », et non un" \
-                   "jeu de parametres separes ni un extrait de code. L'hote ne" \
-                   "doit pas contenir -pooler."
+                   "postgresql://. Il attend la chaîne de connexion directe de Neon" \
+                   "(format « Connection string »), pas des paramètres séparés ni un" \
+                   "extrait de code. L'hôte ne doit pas contenir -pooler."
               exit 1
               ;;
           esac
@@ -126,22 +68,14 @@ jobs:
         if: steps.garde.outputs.configure == 'true'
         run: pip install -r requirements.txt
 
-      # Dagster construit son graphe a partir de `target/manifest.json`. En
-      # developpement il le regenere tout seul a chaque rechargement ; ici
-      # l'etape est explicite, parce qu'un `parse` implicite au demarrage d'une
-      # execution planifiee ferait dependre le graphe d'un effet de bord.
+      # Produit target/manifest.json, dont Dagster tire le graphe
       - name: Compiler le projet dbt
         if: steps.garde.outputs.configure == 'true'
         env:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
         run: python dwh.py parse
 
-      # `source freshness` avant la construction, et volontairement non bloquant.
-      # Il repond a « la base recoit-elle encore des ecritures ? », et il le
-      # demande a l'etat laisse par l'execution precedente - c'est bien ce qu'on
-      # veut savoir. Une source perimee n'empeche pas de reconstruire, mais
-      # c'est le premier signe d'une ingestion arretee, et on veut le voir dans
-      # le journal plutot que le decouvrir un mois plus tard.
+      # Non bloquant : une source périmée signale une ingestion arrêtée
       - name: Fraicheur des sources
         if: steps.garde.outputs.configure == 'true'
         continue-on-error: true
@@ -149,23 +83,8 @@ jobs:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
         run: python dwh.py source freshness
 
-      # Materialise les 29 actifs : les deux extractions, puis les 27 modeles
-      # dbt construits ET testes par `dbt build`, dans l'ordre du graphe. Un
-      # modele dont un test echoue bloque ce qui en depend, au lieu de propager
-      # une donnee fausse jusqu'au tableau de bord.
-      #
-      # `--partition` vise le mois en cours de la serie de taux, seul actif
-      # partitionne. Le rejouer chaque jour rattrape les cotations publiees
-      # depuis la veille et celles qu'une execution manquee aurait laissees ;
-      # l'upsert rend l'operation sans effet sur ce qui est deja charge.
-      #
-      # Les tables de `public` ne sont pas concernees : le graphe les declare en
-      # amont, mais elles appartiennent a l'API, et `*` ne selectionne que ce que
-      # la chaine sait produire.
-      #
-      # Pas de DAGSTER_HOME : l'historique des executions ne survivrait pas au
-      # conteneur. Dagster se rabat sur une instance ephemere, ce qui est la
-      # description exacte de la situation.
+      # Deux extractions puis les 27 modèles construits et testés dans l'ordre du
+      # graphe. La partition du mois en cours rattrape les cotations manquantes.
       - name: Materialiser le graphe
         if: steps.garde.outputs.configure == 'true'
         env:
@@ -176,13 +95,7 @@ jobs:
             --select '*' \
             --partition "$(date -u +%Y-%m-01)"
 
-      # Les artefacts de `target/` portent le resultat de chaque noeud et le
-      # graphe complet. Conserves, ils permettent de repondre a « depuis quand
-      # ce test echoue-t-il ? » sans rejouer la construction - et `manifest.json`
-      # est ce que consomment les outils de lignage, Dagster le premier.
-      #
-      # `always()` : c'est justement quand la construction echoue qu'on veut
-      # pouvoir lire ces fichiers.
+      # Conservés même en cas d'échec, pour lire le résultat de chaque nœud
       - name: Conserver les artefacts dbt
         if: always() && steps.garde.outputs.configure == 'true'
         uses: actions/upload-artifact@v7

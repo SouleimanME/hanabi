@@ -1,7 +1,4 @@
-# Integration continue : tests de l'API, puis lint et build de l'interface.
-#
-# Les deux projets sont independants, donc les deux taches tournent en parallele
-# et un echec de l'une n'attend pas l'autre.
+# Intégration continue : API, entrepôt, interface et parcours de bout en bout, en parallèle.
 
 name: CI
 
@@ -19,8 +16,6 @@ jobs:
         working-directory: hanabi-back
 
     env:
-      # L'API refuse de demarrer sans cle quand ENV=prod ; en test on reste en
-      # "dev", mais une cle fixe evite que chaque execution en tire une nouvelle.
       SECRET_KEY: cle-de-test-sans-valeur-en-production
       ENV: dev
 
@@ -58,23 +53,17 @@ jobs:
       - name: Installer les dependances
         run: pip install -r requirements.txt
 
-      # `parse` compile tout le Jinja et resout le graphe de dependances sans
-      # ouvrir de connexion : une reference cassee, une macro mal ecrite ou un
-      # test declare sur une colonne qui n'existe pas echouent ici. Construire
-      # reellement demanderait une base et des identifiants de production, ce
-      # qu'on ne met pas dans l'integration continue de chaque branche.
+      # Compile le Jinja et résout le graphe, sans connexion
       - name: Verification du projet dbt
         run: dbt parse --profiles-dir . --project-dir .
 
-      # Meme idee un cran plus haut : charge les definitions Dagster et resout
-      # le graphe, sans base ni execution. `dbt parse` ne voit rien de ce qui
-      # vit dans `orchestration/` - un import casse, un traducteur qui produit
-      # deux fois la meme clef d'actif, un calendrier qui vise un travail
-      # renomme, une ressource `dbt` absente. Autant de pannes qui
-      # n'apparaitraient qu'a 5 h du matin, dans la seule tache que personne ne
-      # regarde. L'etape suit `dbt parse`, dont elle reprend le manifeste.
+      # Charge les définitions Dagster à partir du manifeste produit ci-dessus
       - name: Verification du graphe Dagster
         run: dagster definitions validate
+
+      # Verdicts des contrôles de volume et de fraîcheur, sans base
+      - name: Tests des controles
+        run: python -m unittest discover -s tests/orchestration
 
   front:
     name: Interface (lint + tests + build)
@@ -92,8 +81,6 @@ jobs:
           cache: npm
           cache-dependency-path: hanabi-front/package-lock.json
 
-      # `npm ci` installe exactement les versions du package-lock : le build de
-      # l'integration continue est identique au build local.
       - name: Installer les dependances
         run: npm ci
 
@@ -103,11 +90,7 @@ jobs:
       - name: Verification du formatage
         run: npm run format:check
 
-      # Attention si l'on optimise un jour cette tache : `src/tests/contrat-tarification.test.js`
-      # lit `hanabi-back/app/pricing.py` pour verifier que les deux piles
-      # appliquent les memes frais de port. Elle a donc besoin du depot entier,
-      # ce que `actions/checkout` fait par defaut. Un `sparse-checkout` limite a
-      # `hanabi-front` rendrait ce test rouge sans qu'aucun code soit fautif.
+      # contrat-tarification.test.js lit hanabi-back/app/pricing.py : dépôt complet requis
       - name: Tests
         run: npm test
 
@@ -140,23 +123,17 @@ jobs:
         run: npm ci
         working-directory: hanabi-front
 
-      # `--with-deps` installe les bibliotheques systeme dont Chromium a besoin
-      # sur une image nue. Sans elles, le navigateur se lance et meurt aussitot,
-      # avec une erreur qui ne mentionne jamais la vraie cause.
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium
         working-directory: hanabi-front
 
-      # `PYTHON` : l'integration continue installe les dependances dans son
-      # propre environnement, sans le venv que la configuration cherche en local.
+      # Python du système en CI, pas le venv local
       - name: Parcours de bout en bout
         run: npm run e2e
         working-directory: hanabi-front
         env:
           PYTHON: python
 
-      # Traces et captures du seul echec : de quoi rejouer le parcours image par
-      # image sans avoir a le reproduire.
       - name: Conserver les traces en cas d'echec
         if: failure()
         uses: actions/upload-artifact@v4

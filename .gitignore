@@ -9,7 +9,7 @@ __pycache__/
 .coverage
 htmlcov/
 
-# --- Base de donnees locale (regeneree au demarrage par le seed) ---
+# --- Base de données locale (régénérée au démarrage) ---
 *.db
 *.sqlite
 *.sqlite3
@@ -21,12 +21,12 @@ dist-ssr/
 .vite/
 *.local
 
-# --- Secrets & environnement ---
+# --- Secrets et environnement ---
 .env
 .env.*
 !.env.example
 
-# --- Editeurs / OS / outils ---
+# --- Éditeurs, OS, outils ---
 .vscode/*
 !.vscode/extensions.json
 .idea/
@@ -35,8 +35,7 @@ Thumbs.db
 *.swp
 
 # --- Orchestration ---
-# Sans DAGSTER_HOME, `dagster dev` cree son stockage a cote du repertoire
-# courant - qui n'est pas toujours hanabi-dwh. Le motif est donc repete ici.
+# Sans DAGSTER_HOME, `dagster dev` écrit dans le répertoire courant
 .dagster/
 .tmp_dagster_home_*/
 
@@ -48,15 +47,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # --- Tests de bout en bout (Playwright) ---
-# Traces, captures et rapports ne sont produits qu'a l'echec, et se regenerent
-# a chaque execution : les versionner alourdirait le depot sans rien apporter.
+# Traces et rapports régénérés à chaque exécution
 hanabi-front/test-results/
 hanabi-front/playwright-report/
 hanabi-front/blob-report/
 hanabi-front/.playwright/
 
-# --- Courriels ecrits localement (MAIL_BACKEND=fichier) ---
-# Chaque commande, inscription ou reinitialisation depose un .eml ici. Ce sont
-# des messages reels adresses a de vraies personnes : ils n'ont rien a faire
-# dans un depot.
+# --- Courriels écrits localement (MAIL_BACKEND=fichier) ---
 hanabi-back/var/
