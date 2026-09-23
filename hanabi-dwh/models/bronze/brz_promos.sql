@@ -1,10 +1,4 @@
--- Codes promotionnels, tels qu'ecrits par l'application.
---
--- Table de reference plus que table de faits : elle sert a rapprocher un code
--- releve sur une commande de la remise qu'il accordait, et surtout a faire
--- apparaitre les codes qui n'ont jamais servi - qu'aucune commande ne
--- mentionne, et qui seraient donc invisibles dans une analyse partie des
--- commandes seules.
+-- Codes promotionnels, y compris ceux qu'aucune commande ne mentionne.
 select
     id,
     code,

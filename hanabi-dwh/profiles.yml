@@ -1,17 +1,7 @@
-# Connexion de dbt a la base.
+# Connexion de dbt, entièrement lue dans l'environnement.
 #
-# Rien n'est ecrit en dur : chaque champ vient de l'environnement, si bien que
-# ce fichier peut etre versionne sans exposer quoi que ce soit.
-#
-# Les variables `DWH_*` ne sont pas a saisir a la main. `dwh.py` decoupe pour
-# nous la chaine `DATABASE_URL` - celle-la meme que lit l'API - et les pose
-# avant d'appeler dbt. La connexion ne vit donc qu'a un seul endroit :
-# `hanabi-back/.env`. Un identifiant recopie est un identifiant qui finira par
-# diverger.
-#
-# Les valeurs par defaut correspondent au PostgreSQL jetable decrit dans le
-# README : `dbt` lance directement, sans passer par `dwh.py`, vise ce
-# conteneur-la et non une base distante. C'est le repli le moins dangereux.
+# `dwh.py` pose les variables `DWH_*` à partir de `DATABASE_URL`. Sans lui, les
+# valeurs par défaut visent le PostgreSQL jetable du README.
 
 hanabi_dwh:
   target: "{{ env_var('DWH_TARGET', 'dev') }}"
@@ -23,17 +13,11 @@ hanabi_dwh:
       user: "{{ env_var('DWH_USER', 'postgres') }}"
       password: "{{ env_var('DWH_PASSWORD', 'hanabi') }}"
       dbname: "{{ env_var('DWH_DBNAME', 'hanabi') }}"
-      # Schema de repli, utilise seulement si un modele n'en declare aucun. Les
-      # trois couches imposent le leur via `dbt_project.yml`.
+      # Repli seulement : chaque couche impose son schéma
       schema: public
-      # Neon exige TLS ; un PostgreSQL en conteneur ne le propose pas. `dwh.py`
-      # choisit donc selon l'hote plutot que d'imposer un reglage qui casse
-      # l'un des deux cas.
+      # TLS pour Neon, `prefer` pour un conteneur local (choisi par dwh.py)
       sslmode: "{{ env_var('DWH_SSLMODE', 'prefer') }}"
-      # Quatre fils suffisent : le plan gratuit de Neon plafonne les connexions
-      # simultanees, et le graphe ne compte qu'une vingtaine de modeles.
+      # Connexions simultanées limitées sur le plan gratuit de Neon
       threads: 4
-      # Neon reveille sa base a la premiere connexion. Le delai par defaut de
-      # dbt est trop court pour ce reveil, qui prend de quelques centaines de
-      # millisecondes a plusieurs secondes selon la duree de la mise en veille.
+      # Laisse le temps au réveil de Neon
       connect_timeout: 30

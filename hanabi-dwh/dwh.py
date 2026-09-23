@@ -1,23 +1,10 @@
 #!/usr/bin/env python
 """Lance dbt avec la connexion de l'application.
 
-Quatre corvees en une commande :
-
-- charger `hanabi-back/.env` si `DATABASE_URL` n'est pas deja dans
-  l'environnement, pour que la chaine de connexion ne vive qu'a un seul
-  endroit ;
-- la decouper en variables `DWH_*`, que lit `profiles.yml`. dbt-postgres attend
-  cinq champs separes la ou l'application manipule une URL ; le decoupage se
-  fait ici, avec `urllib`, plutot que de demander la saisie des memes
-  identifiants une seconde fois sous cinq noms differents - et `urllib` decode
-  au passage les caracteres echappes en pourcent d'un mot de passe, ce qu'un
-  decoupage a la main oublie invariablement ;
-- pointer `--profiles-dir` sur ce dossier plutot que sur le `~/.dbt` que dbt
-  cherche par defaut : le profil est versionne avec le projet, puisqu'il ne
-  contient aucune valeur en dur ;
-- refuser de partir si la base visee n'est pas PostgreSQL. Le SQL de l'entrepot
-  emploie `date_trunc`, `generate_series` et des fonctions de fenetrage : sur
-  une base SQLite, dbt echouerait plus loin avec une erreur bien moins parlante.
+- reprend `DATABASE_URL` de `hanabi-back/.env` si l'environnement ne la fournit pas ;
+- la découpe en variables `DWH_*` pour `profiles.yml` (mot de passe décodé) ;
+- pointe `--profiles-dir` sur ce dossier ;
+- refuse une base qui n'est pas PostgreSQL.
 
     python dwh.py build             construit tout et joue les tests
     python dwh.py run               construit sans tester
@@ -38,15 +25,7 @@ ENV_API = RACINE.parent / "hanabi-back" / ".env"
 
 
 def charge_env_api() -> None:
-    """Reprend `DATABASE_URL` du fichier .env de l'API, s'il n'est pas deja pose.
-
-    Lecture volontairement naive : ce fichier est une suite de `CLE=valeur`, pas
-    un script shell. Ajouter python-dotenv pour dix lignes reviendrait a
-    installer une dependance de plus dans un projet qui en compte peu.
-
-    La variable deja presente dans l'environnement gagne : c'est elle qui permet
-    de viser une base jetable sans toucher au fichier de l'API.
-    """
+    """Reprend `DATABASE_URL` du .env de l'API, sauf si l'environnement la fournit."""
     if os.environ.get("DATABASE_URL") or os.environ.get("DWH_DATABASE_URL"):
         return
     if not ENV_API.exists():
@@ -61,21 +40,17 @@ def charge_env_api() -> None:
 
 
 def pose_variables_dbt(obligatoire: bool = True) -> str | None:
-    """Traduit l'URL de connexion en variables `DWH_*`, et rend l'hote vise.
+    """Traduit l'URL en variables `DWH_*` et rend l'hôte visé.
 
-    `obligatoire=False` rend None au lieu de s'arreter, et sert a l'unique
-    appelant qui n'a pas le droit de mourir : le paquet `orchestration/`, dont
-    Dagster charge les definitions au demarrage du serveur de code. Un
-    `sys.exit` a l'import rendrait l'interface inaccessible sur une machine sans
-    base, la ou l'on veut au contraire pouvoir lire le graphe hors ligne - c'est
-    aussi ce que fait la CI, qui joue `dbt parse` sans identifiants.
+    `obligatoire=False` rend None au lieu de quitter : Dagster doit pouvoir
+    charger le graphe sans base.
     """
     url = os.environ.get("DWH_DATABASE_URL") or os.environ.get("DATABASE_URL", "")
     if not url:
         if not obligatoire:
             return None
         sys.exit(
-            "Aucune base indiquee. Renseigne DATABASE_URL dans hanabi-back/.env,\n"
+            "Aucune base indiquée. Renseigne DATABASE_URL dans hanabi-back/.env,\n"
             "ou exporte DWH_DATABASE_URL pour viser une autre base."
         )
     if not url.startswith(("postgres://", "postgresql://")):
@@ -83,7 +58,7 @@ def pose_variables_dbt(obligatoire: bool = True) -> str | None:
             return None
         moteur = url.split("://")[0] or "inconnu"
         sys.exit(
-            f"L'entrepot ne se construit que sur PostgreSQL (base visee : {moteur}).\n"
+            f"L'entrepôt ne se construit que sur PostgreSQL (base visée : {moteur}).\n"
             "En local, un PostgreSQL jetable suffit :\n"
             "  docker run --rm -d -p 5433:5432 -e POSTGRES_PASSWORD=hanabi "
             "-e POSTGRES_DB=hanabi --name hanabi-pg postgres:16"
@@ -97,29 +72,17 @@ def pose_variables_dbt(obligatoire: bool = True) -> str | None:
         "DWH_USER": unquote(parts.username or ""),
         "DWH_PASSWORD": unquote(parts.password or ""),
         "DWH_DBNAME": (parts.path or "/").lstrip("/") or "postgres",
-        # Neon exige TLS, un conteneur local ne le propose pas. Le reglage se
-        # deduit de l'hote plutot que d'etre impose : sans cela, l'un des deux
-        # cas echoue systematiquement.
+        # TLS exigé par Neon, absent d'un conteneur local
         "DWH_SSLMODE": "prefer" if hote in ("localhost", "127.0.0.1") else "require",
     }
     for cle, valeur in variables.items():
-        # `setdefault` : une variable posee explicitement par l'utilisateur
-        # l'emporte sur ce qui est deduit de l'URL.
+        # Une variable posée explicitement l'emporte
         os.environ.setdefault(cle, valeur)
     return os.environ["DWH_HOST"]
 
 
 def executable_dbt() -> str:
-    """Chemin de l'executable `dbt` installe a cote de l'interpreteur.
-
-    Deduit de `sys.executable` plutot que cherche dans le PATH : le venv n'est
-    pas toujours active. Dagster lance ses serveurs de code par un chemin
-    absolu, sans passer par un shell ou `.venv/Scripts` figurerait, et un
-    `dbt introuvable` a cet endroit est aussi opaque qu'evitable.
-
-    Un executable plutot que `python -m dbt.cli.main` : ce dernier reimporte un
-    paquet deja charge et fait bruire un avertissement a chaque appel.
-    """
+    """Exécutable `dbt` du venv, déduit de `sys.executable` (le venv n'est pas toujours activé)."""
     dbt = Path(sys.executable).with_name("dbt.exe" if os.name == "nt" else "dbt")
     return str(dbt) if dbt.exists() else "dbt"
 
@@ -128,10 +91,8 @@ def main() -> int:
     charge_env_api()
     hote = pose_variables_dbt()
 
-    # L'hote est affiche, jamais les identifiants : construire l'entrepot dans
-    # la base de production en croyant viser un conteneur local est exactement
-    # l'erreur que ce rappel evite.
-    print(f"[dwh] base visee : {hote}", file=sys.stderr)
+    # Hôte affiché, jamais les identifiants
+    print(f"[dwh] base visée : {hote}", file=sys.stderr)
 
     return subprocess.call([
         executable_dbt(),

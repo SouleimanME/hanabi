@@ -1,57 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Extraction des sources externes de l'entrepot.
+"""Extraction des sources externes de l'entrepôt.
 
-Jusqu'ici, la chaine partait d'une base PostgreSQL et arrivait dans la meme
-base : il n'y avait pas d'etape d'extraction, donc ni source qui tombe, ni
-rattrapage, ni idempotence a gerer. Ce module apporte ce maillon.
+- Taux EUR/JPY (Frankfurter, BCE) : le coût fournisseur est en yen, la marge en
+  euros ; la série sépare l'effet du prix de celui du change.
+- Jours fériés français (demande des clients) et japonais (réassort des
+  fournisseurs), gardés distincts.
 
-DEUX SOURCES, DEUX ROLES METIER DISTINCTS
-
-Le taux EUR/JPY. Le cout fournisseur est libelle en yen, la marge affichee en
-euros. Elle n'est donc exacte qu'au taux du jour de la commande, et
-`unit_cost_cents` fige cette conversion a l'achat - c'est voulu, un mois clos
-ne doit pas se reecrire. Disposer de la serie permet de relire la marge a
-change constant et de separer ce qui vient du prix de ce qui vient du change.
-
-Les jours feries francais ET japonais. Les deux pays ne jouent pas le meme
-role, et les confondre sous un unique drapeau « ferie » melangerait deux
-causes opposees :
-
-  - la France est le pays des CLIENTS. Un ferie deplace la demande. Un lundi
-    de Pentecote a zero commande n'est pas une mauvaise journee, c'est une
-    journee ferie ; sans cette colonne, la saisonnalite hebdomadaire est
-    fausse et toute detection d'anomalie sonnera dans le vide.
-
-  - le Japon est le pays des FOURNISSEURS. Golden Week fin avril, Obon en
-    aout, le Nouvel An : usines et logistique a l'arret pendant plusieurs
-    jours d'affilee. C'est le delai de reassort qui s'allonge, pas la
-    demande qui baisse.
-
-OU ATTERRISSENT LES DONNEES
-
-Dans un schema `externe`, et non dans `public`. La separation est
-intentionnelle : `public` appartient a l'application, qui le fait evoluer par
-migrations Alembic ; `externe` appartient a la chaine de donnees. Bronze
-expose ensuite les deux de la meme facon, par des vues sans transformation.
-
-Y ecrire depuis Alembic aurait lie le cycle de vie de l'API a celui de
-l'entrepot, et un `alembic downgrade` aurait pu emporter des donnees que
-l'application n'a jamais produites.
-
-IDEMPOTENCE
-
-Chaque chargement est un `INSERT ... ON CONFLICT DO UPDATE` sur la cle
-naturelle. Rejouer la meme fenetre ne cree pas de doublon et ne change rien
-d'autre que `charge_le`. C'est ce qui rend le rattrapage sur, y compris apres
-un echec au milieu d'une plage.
-
-DEUX APPELANTS
-
-Ce module reste utilisable seul, en ligne de commande - c'est le chemin le plus
-court pour charger une plage precise. Il est par ailleurs enveloppe par les
-actifs Dagster de `orchestration/actifs_externes.py`, qui appellent les memes
-fonctions plutot que de refaire le travail : c'est de la que vient
-l'ordonnancement, bronze declarant ces deux tables en dependance.
+Les données vont dans le schéma `externe`, propriété de la chaîne de données et
+non de l'application (pas de migration Alembic). Chargements en
+`INSERT ... ON CONFLICT DO UPDATE` : rejouer une fenêtre est sans effet.
+Utilisable seul ou via `orchestration/actifs_externes.py`.
 
 Usage :
     python -m ingestion.sources taux --depuis 2024-08-01
@@ -72,29 +30,20 @@ import urllib.request
 
 import psycopg
 
-# Frankfurter republie les taux de reference de la BCE. Sans cle, sans quota
-# annonce, et l'historique remonte a 1999.
+# Taux de référence de la BCE, sans clé, historique depuis 1999
 API_TAUX = "https://api.frankfurter.dev/v1"
 
-# Nager.Date couvre une centaine de pays avec le meme schema de reponse, ce
-# qui evite un analyseur par pays.
+# Même schéma de réponse pour tous les pays
 API_FERIES = "https://date.nager.at/api/v3/PublicHolidays"
 
 DEVISE = "JPY"
 PAYS = ("FR", "JP")
 
-# Fenetres chargees par defaut. Ce sont des constantes et non des valeurs
-# posees dans `argparse` parce qu'elles ont desormais deux lecteurs : la ligne
-# de commande ci-dessous, et les actifs Dagster de `orchestration/`, qui
-# decoupe la serie de taux en partitions mensuelles a partir de la meme date.
-# Deux fenetres qui derivent l'une de l'autre finiraient par differer, et un
-# trou dans la serie ne se voit pas : il se lit comme un jour non cote.
+# Fenêtres par défaut, partagées avec les partitions Dagster
 DEBUT_TAUX = "2024-08-01"
 PREMIERE_ANNEE_FERIES = 2024
 
-# La BCE ne cote pas le week-end ni ses propres feries : une plage de sept
-# jours ramene cinq taux. Ce n'est pas une anomalie, et le comblement des
-# trous se fait en silver, pas ici. Bronze recopie ce que la source a dit.
+# La BCE ne cote ni le week-end ni ses fériés ; les trous se comblent en silver
 DDL = """
 create schema if not exists externe;
 
@@ -119,11 +68,7 @@ create table if not exists externe.jours_feries (
 
 
 def url_base() -> str:
-    """Chaine de connexion, reprise a l'API plutot que redefinie.
-
-    Deux configurations de connexion qui derivent l'une de l'autre est une
-    panne qui attend son heure.
-    """
+    """Chaîne de connexion, reprise de l'API."""
     url = os.environ.get("DWH_DATABASE_URL") or os.environ.get("DATABASE_URL")
     if not url:
         env = pathlib.Path(__file__).resolve().parents[2] / "hanabi-back" / ".env"
@@ -133,29 +78,18 @@ def url_base() -> str:
                     url = ligne.split("=", 1)[1].strip()
                     break
     if not url:
-        sys.exit("Aucune chaine de connexion. Renseigner DWH_DATABASE_URL.")
+        sys.exit("Aucune chaîne de connexion. Renseigner DWH_DATABASE_URL.")
     if not url.startswith("postgres"):
         sys.exit("Ces sources ne se chargent que dans PostgreSQL.")
     return url
 
 
-# Frankfurter renvoie 403 sur l'agent par defaut d'urllib, qui ressemble a
-# celui d'un aspirateur de site. Se nommer est de toute facon la politesse
-# minimale envers un service gratuit : l'exploitant sait qui l'appelle et peut
-# joindre quelqu'un avant de bloquer.
+# Frankfurter refuse l'agent par défaut d'urllib ; on se nomme
 AGENT = "hanabi-dwh/1.0 (+https://github.com/SouleimanME/hanabi)"
 
 
 def ouvre_base():
-    """Connexion en autocommit, schema et tables assures.
-
-    Deux appelants : la ligne de commande de ce module, et les actifs Dagster
-    qui chargent les memes sources. Le DDL est rejoue a chaque ouverture - il
-    est entierement en `if not exists`, donc sans effet une fois le schema en
-    place, et c'est ce qui rend le premier chargement autonome sur une base
-    neuve. Aucune migration Alembic ne cree `externe` : ce schema appartient a
-    la chaine de donnees, pas a l'application.
-    """
+    """Connexion en autocommit ; le DDL `if not exists` rend un premier chargement autonome."""
     cx = psycopg.connect(url_base(), autocommit=True)
     with cx.cursor() as c:
         c.execute(DDL)
@@ -163,12 +97,7 @@ def ouvre_base():
 
 
 def lire_json(url: str, essais: int = 3):
-    """Appel HTTP avec reprise.
-
-    Une source externe tombe, c'est sa nature. Trois tentatives espacees
-    valent mieux qu'un plantage qui oblige a relancer toute la chaine, et
-    l'attente croissante evite d'insister sur un service deja en difficulte.
-    """
+    """Appel HTTP avec trois tentatives espacées."""
     dernier = None
     requete = urllib.request.Request(url, headers={"User-Agent": AGENT})
     for essai in range(essais):
@@ -181,16 +110,11 @@ def lire_json(url: str, essais: int = 3):
                 import time
 
                 time.sleep(2**essai)
-    raise RuntimeError(f"{url} injoignable apres {essais} essais : {dernier}")
+    raise RuntimeError(f"{url} injoignable après {essais} essais : {dernier}")
 
 
 def decoupe(debut: dt.date, fin: dt.date, jours: int = 365):
-    """Decoupe une plage en tranches.
-
-    Frankfurter accepte de longues plages, mais une requete par annee garde
-    les reponses de taille previsible et rend le rattrapage reprenable : si la
-    troisieme tranche echoue, les deux premieres sont deja en base.
-    """
+    """Découpe une plage en tranches annuelles, reprenables une à une."""
     curseur = debut
     while curseur <= fin:
         bout = min(curseur + dt.timedelta(days=jours - 1), fin)
@@ -214,10 +138,7 @@ def charge_taux(cx, debut: dt.date, fin: dt.date) -> int:
                do update set taux = excluded.taux, charge_le = now()""",
             lignes,
         )
-        # `rowcount` apres un upsert compte les lignes reellement ecrites, la
-        # ou `len(lignes)` compterait celles recues. Les deux different des
-        # qu'une date revient a la jointure de deux tranches, et annoncer un
-        # chiffre qui n'est pas celui de la table est le debut des ennuis.
+        # Lignes écrites, pas lignes reçues
         return c.rowcount
 
 
@@ -226,13 +147,7 @@ def charge_feries(cx, de: int, a: int) -> int:
     for annee in range(de, a + 1):
         for pays in PAYS:
             for f in lire_json(f"{API_FERIES}/{annee}/{pays}"):
-                # `global` a faux signalerait un ferie regional. Sur 2024-2027
-                # la source ne renvoie que des feries nationaux pour la France
-                # et le Japon, mais la colonne est conservee : le jour ou elle
-                # remontera le Vendredi saint d'Alsace-Moselle, le compter
-                # comme national fausserait le calendrier de tout le pays.
-                # Une colonne gardee coute une colonne ; une hypothese gardee
-                # coute une correction en production.
+                # `global` à faux : férié régional, conservé pour ne pas le compter comme national
                 lignes.append(
                     (
                         dt.date.fromisoformat(f["date"]),
@@ -257,12 +172,7 @@ def charge_feries(cx, de: int, a: int) -> int:
 
 
 def accorde_lecture(cx) -> None:
-    """Meme geste que le hook de fin d'execution dbt.
-
-    Sans ces droits, les tables sont invisibles depuis la console Neon et
-    depuis la console SQL du back-office, ce qui donne l'impression que le
-    chargement a echoue.
-    """
+    """Droits de lecture, comme le crochet de fin d'exécution dbt."""
     with cx.cursor() as c:
         c.execute("grant usage on schema externe to public")
         c.execute("grant select on all tables in schema externe to public")
@@ -279,11 +189,11 @@ def main() -> None:
     t.add_argument("--depuis", default=DEBUT_TAUX)
     t.add_argument("--jusqua", default=str(dt.date.today()))
 
-    f = sous.add_parser("feries", help="jours feries FR et JP")
+    f = sous.add_parser("feries", help="jours fériés FR et JP")
     f.add_argument("--de", type=int, default=PREMIERE_ANNEE_FERIES)
     f.add_argument("--a", type=int, default=dt.date.today().year + 1)
 
-    sous.add_parser("tout", help="les deux, sur la fenetre par defaut")
+    sous.add_parser("tout", help="les deux, sur la fenêtre par défaut")
 
     args = p.parse_args()
     with ouvre_base() as cx:

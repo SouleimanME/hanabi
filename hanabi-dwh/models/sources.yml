@@ -3,9 +3,9 @@ version: 2
 sources:
   - name: hanabi_oltp
     description: >
-      Tables de l'application, dans le schema `public`. C'est l'API FastAPI qui
-      les ecrit ; l'entrepot ne fait que les lire, et aucun modele ne doit
-      jamais y ecrire. La source de verite du schema reste
+      Tables de l'application, dans le schéma `public`. C'est l'API FastAPI qui
+      les écrit ; l'entrepôt ne fait que les lire, et aucun modèle ne doit
+      jamais y écrire. La source de vérité du schéma reste
       `hanabi-back/app/models.py`, que les migrations Alembic appliquent.
     schema: public
     # Une commande qui date de plus d'une semaine n'est pas une panne sur une
@@ -18,12 +18,12 @@ sources:
 
     tables:
       - name: users
-        description: Comptes clients. Le condensat du mot de passe n'entre jamais dans l'entrepot.
+        description: Comptes clients. Le condensat du mot de passe n'entre jamais dans l'entrepôt.
         columns:
           - name: id
             tests: [unique, not_null]
       - name: products
-        description: Catalogue. `price_cents` et `cost_cents` sont les valeurs courantes, pas celles d'une commande passee.
+        description: Catalogue. `price_cents` et `cost_cents` sont les valeurs courantes, pas celles d'une commande passée.
         freshness: null
         loaded_at_field: null
         columns:
@@ -36,8 +36,8 @@ sources:
       - name: order_items
         description: >
           Une ligne par article commande. `unit_price_cents` et
-          `unit_cost_cents` y sont figes au moment de la commande : c'est ce qui
-          permet de calculer la marge reellement degagee, et non celle que le
+          `unit_cost_cents` y sont figés au moment de la commande : c'est ce qui
+          permet de calculer la marge réellement dégagée, et non celle que le
           tarif du jour laisserait croire.
         freshness: null
         loaded_at_field: null
@@ -45,7 +45,7 @@ sources:
           - name: id
             tests: [unique, not_null]
       - name: product_views
-        description: Une ligne par ouverture de fiche produit. Table la plus volumineuse du schema.
+        description: Une ligne par ouverture de fiche produit. Table la plus volumineuse du schéma.
         columns:
           - name: id
             tests: [unique, not_null]
@@ -62,19 +62,19 @@ sources:
 
   - name: hanabi_externe
     description: >
-      Sources publiques chargees par `ingestion/sources.py` dans le schema
-      `externe` : taux de reference de la BCE republies par Frankfurter, et
-      jours feries francais et japonais fournis par Nager.Date.
+      Sources publiques chargées par `ingestion/sources.py` dans le schéma
+      `externe` : taux de référence de la BCE republiés par Frankfurter, et
+      jours fériés français et japonais fournis par Nager.Date.
 
       Elles vivent hors de `public` a dessein. `public` appartient a
-      l'application et evolue par migrations Alembic ; un `downgrade` ne doit
-      pas pouvoir emporter des donnees que l'application n'a jamais produites.
+      l'application et évolue par migrations Alembic ; un `downgrade` ne doit
+      pas pouvoir emporter des données que l'application n'a jamais produites.
     schema: externe
     tables:
       - name: taux_change
         description: >
-          Une ligne par jour cote et par devise. La BCE ne cote ni le week-end
-          ni ses propres feries : la serie a donc des trous, qui sont combles
+          Une ligne par jour côté et par devise. La BCE ne côté ni le week-end
+          ni ses propres fériés : la série a donc des trous, qui sont comblés
           en silver et non ici.
         loaded_at_field: charge_le
         freshness:
@@ -82,8 +82,8 @@ sources:
           error_after: { count: 10, period: day }
       - name: jours_feries
         description: >
-          Une ligne par jour ferie, pays et intitule. `national` distingue un
-          ferie national d'un ferie regional.
+          Une ligne par jour férié, pays et intitulé. `national` distingue un
+          férié national d'un férié regional.
         loaded_at_field: charge_le
         freshness:
           warn_after: { count: 45, period: day }

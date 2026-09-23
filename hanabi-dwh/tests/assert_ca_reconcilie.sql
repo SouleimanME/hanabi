@@ -1,15 +1,5 @@
--- Le chiffre d'affaires doit etre le meme partout ou il apparait.
---
--- Trois tables le calculent par trois chemins differents : la serie mensuelle
--- part du calendrier, la segmentation part des clients, et la couche silver
--- part des commandes. Un tableau de bord ou ces trois nombres different perd
--- toute credibilite, et la divergence ne se voit pas a l'oeil - il faut la
--- chercher.
---
--- La segmentation est comparee a part : elle exclut les commandes invitees,
--- qui ne sont rattachees a aucun compte. L'ecart attendu est donc exactement
--- le montant de ces commandes-la, et non zero. Le confondre avec une erreur de
--- calcul serait le contresens le plus facile a commettre ici.
+-- Le chiffre d'affaires concorde entre série mensuelle et silver ; la segmentation
+-- en diffère exactement du montant des commandes invitées.
 with mensuel as (
 
     select coalesce(sum(ca_cents), 0) as ca_cents

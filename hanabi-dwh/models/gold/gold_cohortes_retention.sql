@@ -1,18 +1,5 @@
--- Retention par cohorte d'inscription, sous forme longue.
---
--- Une ligne par couple (cohorte, decalage) plutot qu'une matrice a colonnes
--- fixes : le nombre de colonnes d'une matrice depend de la profondeur
--- d'historique, donc changerait a chaque mois qui passe. La forme longue se
--- pivote a l'affichage et se filtre en SQL, ce qu'une matrice ne permet ni l'un
--- ni l'autre.
---
--- C'est la seule vue qui distingue une croissance saine d'une fuite en avant :
--- une boutique qui recrute beaucoup et retient mal affiche une belle courbe de
--- chiffre d'affaires et des colonnes qui s'effondrent des le premier mois.
---
--- Les couples situes dans le futur d'une cohorte recente sont absents, et non a
--- zero : une cohorte d'un mois n'a pas encore eu l'occasion de revenir six mois
--- plus tard, et l'ecrire a zero la ferait passer pour un echec.
+-- Rétention par cohorte d'inscription, en forme longue (cohorte, décalage).
+-- Les décalages pas encore advenus sont absents, pas à zéro.
 with cohortes as (
 
     select
@@ -41,11 +28,7 @@ activite as (
 
 grille as (
 
-    -- Produit de chaque cohorte par les mois qui la suivent, jusqu'au mois
-    -- courant inclus. Passer par le calendrier plutot que par les seuls mois ou
-    -- il y a eu des commandes garantit qu'un mois creux ressort a zero et non
-    -- comme une case absente : sur une courbe de retention, une case manquante
-    -- et une case a zero racontent deux histoires opposees.
+    -- Chaque cohorte croisée avec les mois suivants : un mois creux sort à zéro
     select
         cohortes.cohorte,
         cohortes.cohorte_date,
@@ -69,9 +52,7 @@ select
     grille.mois                                 as mois_activite,
     coalesce(activite.clients_actifs, 0)::int   as clients_actifs,
     coalesce(activite.ca_cents, 0)::bigint      as ca_cents,
-    -- Le mois 0 mesure la conversion a l'inscription, les suivants la
-    -- fidelisation. Les deux se lisent sur la meme echelle, ce qui explique que
-    -- la premiere colonne d'une table de retention soit toujours la plus haute.
+    -- Mois 0 : conversion à l'inscription ; suivants : fidélisation
     round(coalesce(activite.clients_actifs, 0)::numeric
           / nullif(grille.taille, 0), 4)        as taux_retention
 from grille

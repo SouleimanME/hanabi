@@ -2,12 +2,14 @@ version: 2
 
 models:
   - name: brz_clients
-    description: Comptes clients, sans le condensat de mot de passe.
+    description: >
+      Comptes clients, sans condensat de mot de passe ni coordonnées (nom,
+      e-mail, téléphone, adresse) : l'entrepôt désigne un client par son identifiant.
     columns:
       - name: id
         tests: [unique, not_null]
-      - name: email
-        tests: [unique, not_null]
+      - name: created_at
+        tests: [not_null]
 
   - name: brz_produits
     description: Catalogue, sans les visuels.
@@ -20,7 +22,7 @@ models:
         tests: [not_null]
 
   - name: brz_commandes
-    description: En-tetes de commande, tous statuts confondus.
+    description: En-têtes de commande, tous statuts confondus.
     columns:
       - name: id
         tests: [unique, not_null]
@@ -37,7 +39,7 @@ models:
                 field: id
 
   - name: brz_lignes_commande
-    description: Lignes de commande, prix et cout figes a l'achat.
+    description: Lignes de commande, prix et coût figés à l'achat.
     columns:
       - name: id
         tests: [unique, not_null]

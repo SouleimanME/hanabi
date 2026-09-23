@@ -1,11 +1,4 @@
--- Les trois familles du catalogue, comparees sur les memes mesures.
---
--- Agrege `gold_performance_produit` plutot que de repartir des faits : la table
--- produit porte deja les vues, la marge et les notes, et la reconstruire
--- risquerait surtout d'aboutir a des totaux qui ne se recoupent pas d'une vue a
--- l'autre. Un tableau de bord ou la somme des categories ne fait pas le total
--- du catalogue perd toute credibilite, et c'est arrive a bien des projets pour
--- cette raison exacte.
+-- Les trois familles du catalogue, agrégées depuis `gold_performance_produit` pour que les totaux concordent.
 select
     categorie,
     count(*)::int                                   as references,
@@ -19,9 +12,7 @@ select
     round(sum(commandes)::numeric / nullif(sum(vues), 0), 4)       as taux_conversion,
     round(sum(ca_cents)::numeric / nullif(sum(vues), 0))::bigint   as ca_par_vue_cents,
     sum(stock)::int                                 as stock,
-    -- Part de la categorie dans la marge totale, a comparer a sa part dans le
-    -- chiffre d'affaires : c'est l'ecart entre les deux qui dit ou l'argent est
-    -- reellement gagne.
+    -- À comparer à la part du chiffre d'affaires
     round(sum(marge_cents)::numeric
           / nullif(sum(sum(marge_cents)) over (), 0), 4)           as part_marge,
     round(sum(ca_cents)::numeric

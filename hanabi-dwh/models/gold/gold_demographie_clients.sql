@@ -1,19 +1,5 @@
--- Portrait d'achat par croisement demographique.
---
--- Une ligne par (ville, tranche d'age, civilite) : c'est la forme qui repond a
--- la question que pose naturellement un histogramme de repartition. Un
--- graphique dit combien ils sont ; il ne dit pas ce qu'ils valent, et c'est
--- pourtant la seule chose qui justifie de leur parler.
---
--- Le croisement est calcule une fois pour toutes plutot qu'a la demande, comme
--- le fait la route d'exploration du back-office : les combinaisons sont peu
--- nombreuses - quelques centaines de lignes - et un filtre sur une table
--- precalculee coute infiniment moins qu'une agregation sur la table des
--- commandes a chaque clic.
---
--- `valeur_par_client_cents` compte les non-acheteurs au denominateur, a dessein.
--- C'est ce qui permet de comparer deux segments de taille differente, la ou le
--- chiffre d'affaires brut favorise toujours le plus nombreux.
+-- Portrait d'achat par (ville, tranche d'âge, civilité), précalculé.
+-- `valeur_par_client_cents` compte les non-acheteurs, pour comparer des segments de tailles différentes.
 with achats as (
 
     select
@@ -41,9 +27,7 @@ select
           / nullif(count(*), 0))::bigint             as valeur_par_client_cents
 from {{ ref('slv_clients') }} as client
 left join achats on achats.client_id = client.client_id
--- Les comptes administrateurs sont ecartes : ce sont des comptes de service,
--- et les compter parmi la clientele fausserait les taux sur les segments peu
--- nombreux.
+-- Comptes administrateurs écartés
 where not client.est_admin
 group by 1, 2, 3
 order by ca_cents desc, clients desc

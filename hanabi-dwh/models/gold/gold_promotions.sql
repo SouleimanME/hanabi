@@ -1,9 +1,4 @@
--- Rendement de chaque code promotionnel.
---
--- Part des codes declares et non des commandes, avec une jointure externe : un
--- code que personne n'a utilise doit apparaitre a zero. C'est meme le resultat
--- le plus utile de cette table - un code invisible parce qu'aucune commande ne
--- le mentionne est un code dont on ne saura jamais qu'il ne sert a rien.
+-- Rendement de chaque code, codes jamais utilisés compris (jointure externe).
 with usage as (
 
     select
@@ -35,10 +30,7 @@ select
     coalesce(usage.remise_cents, 0)::bigint         as remise_cents,
     round(coalesce(usage.ca_cents, 0)::numeric
           / nullif(usage.commandes, 0))::bigint     as panier_moyen_cents,
-    -- Ce que la remise a coute rapporte a ce qu'elle a fait entrer. Un ratio
-    -- eleve signale un code qui rogne la marge sans faire de volume ; il ne dit
-    -- pas si les commandes auraient eu lieu sans lui, ce qu'aucune donnee de
-    -- cette table ne peut trancher.
+    -- Coût de la remise rapporté au chiffre généré
     round(coalesce(usage.remise_cents, 0)::numeric
           / nullif(usage.ca_cents, 0), 4)           as cout_relatif,
     usage.premiere_utilisation_le,

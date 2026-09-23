@@ -1,14 +1,4 @@
--- Les segments RFM vus de haut : combien de clients, quelle part du chiffre.
---
--- Table courte, sept lignes au plus, mais c'est celle qui sert la decision.
--- L'ecart entre la part d'un segment dans la clientele et sa part dans le
--- chiffre d'affaires est l'information principale : un segment qui pese 5 % des
--- clients et 40 % du chiffre n'appelle pas le meme effort qu'un segment
--- nombreux et peu rentable.
---
--- L'ordre d'affichage est impose par `rang` plutot que laisse a un tri
--- alphabetique, qui placerait « A reactiver » avant « Champions » et casserait
--- la lecture du meilleur au moins bon.
+-- Segments RFM : effectif et part du chiffre. `rang` fixe l'ordre d'affichage.
 with agrege as (
 
     select

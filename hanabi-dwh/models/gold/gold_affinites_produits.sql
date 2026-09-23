@@ -1,33 +1,15 @@
--- Regles d'association entre produits : ce qui s'achete avec quoi.
+-- Règles d'association entre produits.
 --
--- Trois mesures, qui ne disent pas la meme chose :
---
---   le support     part des commandes contenant les deux articles. Il dit si la
---                  regle est frequente, pas si elle est interessante ;
---   la confiance   part des commandes contenant A qui contiennent aussi B. Elle
---                  se laisse tromper par les articles populaires : tout se vend
---                  avec le best-seller ;
---   le lift        rapporte la confiance a la frequence de B seul, et corrige
---                  ainsi ce biais. Au-dessus de 1, les deux articles s'achetent
---                  ensemble plus souvent que le hasard ne le voudrait ; en
---                  dessous, ils se substituent l'un a l'autre.
---
--- Seul le lift merite d'etre trie, d'ou l'ordre choisi.
---
--- C'est le calcul que `analytics.py` signalait lui-meme comme devant « redescendre
--- en SQL, voire dans une table precalculee » sur un catalogue plus fourni :
--- l'auto-jointure coute le carre du nombre d'articles par commande, et la faire
--- a chaque ouverture du tableau de bord ne tient que sur un petit catalogue.
--- C'est fait ici, une fois par construction.
+-- Support : part des commandes avec la paire. Confiance A vers B : part des
+-- commandes avec A qui contiennent B. Lift : confiance rapportée à la fréquence
+-- de B ; au-dessus de 1, les articles se complètent. Tri par lift.
 with commandes_ca as (
 
     select commande_id from {{ ref('slv_commandes') }} where est_ca
 
 ),
 
--- Les doublons sont ecartes des le depart : trois exemplaires du meme article
--- dans une commande formeraient sinon trois fois la meme paire, et gonfleraient
--- support et confiance sans qu'aucune commande supplementaire n'existe.
+-- Un article répété dans une commande ne forme qu'une paire
 paniers as (
 
     select distinct commande_id, produit_id
@@ -52,9 +34,7 @@ par_produit as (
 
 paires as (
 
-    -- `a.produit_id < b.produit_id` ne produit chaque paire qu'une fois, dans un
-    -- ordre stable. Sans cette inegalite stricte, on obtiendrait la paire dans
-    -- les deux sens plus l'article avec lui-meme.
+    -- Chaque paire une fois, dans un ordre stable
     select
         a.produit_id    as produit_a_id,
         b.produit_id    as produit_b_id,
@@ -87,8 +67,6 @@ inner join par_produit as compte_a on compte_a.produit_id = paires.produit_a_id
 inner join par_produit as compte_b on compte_b.produit_id = paires.produit_b_id
 inner join {{ ref('brz_produits') }} as produit_a on produit_a.id = paires.produit_a_id
 inner join {{ ref('brz_produits') }} as produit_b on produit_b.id = paires.produit_b_id
--- Seuil de bruit : au moins 1 % des commandes, et jamais moins de cinq. Sur une
--- dizaine de commandes communes, un lift eleve ne veut rien dire - c'est une
--- coincidence presentee comme une regle.
+-- Seuil de bruit : 1 % des commandes, cinq au minimum
 where paires.commandes_communes >= greatest(5, total.commandes / 100)
 order by lift desc

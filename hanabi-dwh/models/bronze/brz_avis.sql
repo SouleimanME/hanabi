@@ -1,8 +1,4 @@
--- Avis clients, tels qu'ecrits par l'application.
---
--- Le texte de l'avis est conserve : contrairement a un visuel, il est court et
--- il est la matiere d'une lecture qualitative que le back-office peut vouloir
--- offrir un jour.
+-- Avis clients, tels qu'écrits par l'application, texte compris.
 select
     id,
     product_id,

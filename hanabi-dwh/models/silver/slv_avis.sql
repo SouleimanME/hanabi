@@ -1,9 +1,4 @@
--- Avis, avec leurs periodes de rattachement.
---
--- Les avis non approuves sont conserves : c'est la couche gold qui les ecarte
--- du calcul des notes, tandis qu'un suivi de moderation aurait besoin de les
--- voir. Filtrer ici fermerait cette porte sans rien gagner, la vue ne coutant
--- rien.
+-- Avis avec leurs périodes ; les non approuvés restent (gold les écarte).
 select
     id                                      as avis_id,
     product_id                              as produit_id,

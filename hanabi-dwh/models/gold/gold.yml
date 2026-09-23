@@ -3,8 +3,8 @@ version: 2
 models:
   - name: gold_kpi_mensuel
     description: >
-      Serie mensuelle continue : chiffre d'affaires, marge, commandes, audience,
-      inscriptions, conversion. Une ligne par mois couvert par l'activite, trous
+      Série mensuelle continue : chiffre d'affaires, marge, commandes, audience,
+      inscriptions, conversion. Une ligne par mois couvert par l'activité, trous
       compris.
     columns:
       - name: mois
@@ -16,7 +16,7 @@ models:
 
   - name: gold_performance_produit
     description: >
-      Une ligne par reference : audience, ventes, marge, conversion, couverture
+      Une ligne par référence : audience, ventes, marge, conversion, couverture
       de stock, note moyenne et classe ABC.
     columns:
       - name: produit_id
@@ -47,7 +47,7 @@ models:
         tests: [unique, not_null]
 
   - name: gold_clients_rfm
-    description: Segmentation Recence / Frequence / Montant, une ligne par client acheteur.
+    description: Segmentation Récence / Fréquence / Montant, une ligne par client acheteur.
     columns:
       - name: client_id
         tests: [unique, not_null]
@@ -86,7 +86,7 @@ models:
         tests: [not_null]
 
   - name: gold_cohortes_retention
-    description: Retention par cohorte d'inscription, sous forme longue (une ligne par cohorte et decalage).
+    description: Rétention par cohorte d'inscription, sous forme longue (une ligne par cohorte et décalage).
     columns:
       - name: taille_cohorte
         tests: [not_null]
@@ -98,7 +98,7 @@ models:
             colonnes: [cohorte, decalage_mois]
 
   - name: gold_affinites_produits
-    description: Paires de produits achetes ensemble, classees par lift.
+    description: Paires de produits achetés ensemble, classées par lift.
     columns:
       - name: lift
         tests: [not_null]
@@ -113,7 +113,7 @@ models:
         tests: [unique, not_null]
 
   - name: gold_demographie_clients
-    description: Croisement ville x tranche d'age x civilite, avec le comportement d'achat associe.
+    description: Croisement ville x tranche d'âge x civilité, avec le comportement d'achat associé.
     columns:
       - name: clients
         tests: [not_null]
@@ -124,8 +124,8 @@ models:
 
   - name: gold_execution
     description: >
-      Horodatage de la derniere construction. Le back-office s'en sert pour
-      afficher la fraicheur des agregats : un entrepot construit par lots est
+      Horodatage de la dernière construction. Le back-office s'en sert pour
+      afficher la fraîcheur des agrégats : un entrepôt construit par lots est
       toujours en retard sur la base, l'important est de savoir de combien.
     columns:
       - name: construit_le

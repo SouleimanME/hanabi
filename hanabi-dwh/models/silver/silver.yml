@@ -3,8 +3,8 @@ version: 2
 models:
   - name: slv_clients
     description: >
-      Clients conformes : civilite normalisee, age et tranche d'age deduits de
-      l'annee de naissance, cohorte d'inscription.
+      Clients conformés : civilité normalisée, âge et tranche d'âge deduits de
+      l'année de naissance, cohorte d'inscription.
     columns:
       - name: client_id
         tests: [unique, not_null]
@@ -19,7 +19,7 @@ models:
         tests: [not_null]
 
   - name: slv_commandes
-    description: Commandes conformes, avec le drapeau `est_ca` qui porte la regle de chiffre d'affaires.
+    description: Commandes conformés, avec le drapeau `est_ca` qui porte la règle de chiffre d'affaires.
     columns:
       - name: commande_id
         tests: [unique, not_null]
@@ -33,7 +33,7 @@ models:
   - name: slv_lignes_commande
     description: >
       Table de faits centrale. Une ligne par article commande, avec sa marge
-      calculee sur le prix et le cout figes a l'achat.
+      calculée sur le prix et le coût figés à l'achat.
     columns:
       - name: ligne_id
         tests: [unique, not_null]
@@ -67,8 +67,8 @@ models:
 
   - name: slv_calendrier_mensuel
     description: >
-      Suite continue des mois couverts par l'activite. Garantit qu'un mois sans
-      commande apparait a zero dans les series plutot que de disparaitre.
+      Suite continue des mois couverts par l'activité. Garantit qu'un mois sans
+      commande apparait à zéro dans les séries plutot que de disparaître.
     columns:
       - name: mois_date
         tests: [unique, not_null]

@@ -1,14 +1,4 @@
--- La table des segments doit totaliser exactement la table des clients.
---
--- `gold_segments_rfm` agrege `gold_clients_rfm`. Rien ne garantit que
--- l'agregation n'ait pas perdu ou double des lignes - un `where` oublie, une
--- jointure ajoutee plus tard - et le symptome serait invisible : sept lignes
--- plausibles, des pourcentages qui totalisent 100 %, et un effectif faux.
---
--- C'est la verification qu'on fait a la main la premiere fois, puis qu'on
--- oublie de refaire. Ecrite ici, elle est rejouee a chaque construction.
---
--- Un test dbt passe quand il ne rend aucune ligne.
+-- La table des segments totalise la table des clients. Passe sans ligne rendue.
 with segments as (
 
     select

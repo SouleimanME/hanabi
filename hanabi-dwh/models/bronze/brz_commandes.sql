@@ -1,14 +1,9 @@
--- En-tetes de commande, tels qu'ecrits par l'application.
---
--- Aucun filtre sur le statut ici : bronze reproduit la source. Une commande
--- annulee est un fait, et la couche silver decidera qu'elle ne compte pas dans
--- le chiffre d'affaires. Filtrer des la premiere couche rendrait impossible de
--- mesurer le taux d'annulation, qui est justement une des questions posees.
+-- En-têtes de commande, sans filtre de statut (silver décide du chiffre d'affaires).
+-- Ni e-mail ni adresse de livraison : le client se désigne par `user_id`.
 select
     id,
     number,
     user_id,
-    email,
     status,
     subtotal_cents,
     discount_cents,
