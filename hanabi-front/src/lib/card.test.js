@@ -1,10 +1,4 @@
-/** Validation de carte, cote saisie.
- *
- * Les numeros utilises ici sont les numeros de test publics des reseaux : ils
- * satisfont la cle de Luhn sans correspondre a aucun compte. Aucun numero reel
- * n'a sa place dans un depot, et un numero invente echouerait de toute facon a
- * Luhn - il ne testerait donc que le rejet.
- */
+/** Validation de carte, cote saisie. */
 import { describe, it, expect } from "vitest";
 
 import {
@@ -17,14 +11,13 @@ import {
   expiryValid,
   cvcLength,
   cvcValid,
+  jetonDePaiement,
 } from "./card.js";
 
 const VISA = "4242424242424242";
 const AMEX = "378282246310005";
 const MASTERCARD = "5555555555554444";
-// Plage 2221-2720, ouverte par Mastercard en 2017. Une implementation qui ne
-// connait que 51-55 la classe en « inconnu » et applique un CVC de 3 chiffres
-// par chance plutot que par regle.
+// Plage 2221-2720, ouverte par Mastercard en 2017
 const MASTERCARD_2SERIES = "2223003122003222";
 
 describe("digitsOnly", () => {
@@ -115,10 +108,7 @@ describe("luhnValid", () => {
   });
 
   it("rejette une transposition, ce qui est tout l'interet de la cle", () => {
-    // Intervertir deux chiffres voisins a l'interieur du numero doit casser la
-    // somme. Transposition interne choisie a dessein : echanger les deux
-    // premiers changerait aussi le reseau detecte, et le test ne prouverait
-    // plus ce qu'il annonce.
+    // Intervertir deux chiffres voisins a l'interieur du numero doit casser la somme
     expect(luhnValid("4539578900801280")).toBe(true);
     expect(luhnValid("4359578900801280")).toBe(false);
   });
@@ -217,9 +207,30 @@ describe("code de securite", () => {
   });
 
   it("s'appuie sur le reseau, pas sur la longueur du champ", () => {
-    // La regle suit la carte saisie : le meme CVC est bon pour l'une, mauvais
+    // La regle suit la carte saisie : le meme cvc est bon pour l'une, mauvais
     // pour l'autre.
     expect(cvcValid("1234", MASTERCARD)).toBe(false);
     expect(cvcValid("1234", AMEX)).toBe(true);
+  });
+});
+
+describe("jeton de paiement", () => {
+  it("un numero de test declenche la reponse du prestataire simule", () => {
+    // Sans cela, un refus ne se voyait qu'en appelant l'API a la main
+    expect(jetonDePaiement("4000 0000 0000 0002")).toBe("tok_refus");
+    expect(jetonDePaiement("4000000000009995")).toBe("tok_fonds_insuffisants");
+    expect(jetonDePaiement("4000 0000 0000 0119")).toBe("tok_indecis");
+  });
+
+  it("une autre carte donne un jeton du reseau, jamais le numero", () => {
+    expect(jetonDePaiement(VISA)).toBe("tok_visa");
+    expect(jetonDePaiement(AMEX)).toBe("tok_amex");
+    expect(jetonDePaiement(VISA)).not.toContain("4242");
+  });
+
+  it("les numeros de test passent la cle de Luhn, donc le formulaire", () => {
+    for (const numero of ["4000000000000002", "4000000000009995", "4000000000000119"]) {
+      expect(cardNumberValid(numero)).toBe(true);
+    }
   });
 });

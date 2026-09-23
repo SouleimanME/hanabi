@@ -1,9 +1,4 @@
-/** Estimation de livraison.
- *
- * Toutes les dates sont figees. Une estimation calculee depuis `new Date()`
- * donnerait un test dont le resultat depend du jour ou on le lance : vert le
- * mardi, rouge le samedi, et impossible a reproduire quand il casse.
- */
+/** Estimation de livraison. */
 import { describe, it, expect } from "vitest";
 
 import { CUTOFF_HOUR, isBeforeCutoff, estimateDelivery, formatDeliveryDate } from "./delivery.js";

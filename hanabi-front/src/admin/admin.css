@@ -1,2137 +1,573 @@
-﻿/* Back-office Hanabi.
- *
- * Interface volontairement distincte de la boutique : dense, neutre, pensee
- * pour la saisie rapide plutot que pour la mise en valeur produit.
- * Tout est portee par .adm, ce qui evite toute collision avec les styles
- * de la boutique.
- */
+/* Back-office : la charte de la boutique, en plus dense.
+ * Jetons de thème : styles/tokens.css, lus sur `.adm[data-theme]`. */
 
-/* Aucune police n'est chargee ici.
- *
- * Le back-office tirait autrefois Manrope et JetBrains Mono par un `@import`,
- * pour se distinguer de la boutique. Il partage desormais la famille de
- * `index.html`, qui se trouve etre Manrope a nouveau : l'ecart typographique
- * entre les deux interfaces ne valait pas une famille de plus a telecharger,
- * mais la police qui allait au back-office allait aussi a la boutique.
- *
- * A retenir si l'on ajoute une police ici : un `@import` en tete de feuille
- * bloque le rendu le temps de resoudre la requete, la ou un `<link>` dans le
- * document part en parallele du reste. */
+.adm {
+  --ch-surface: var(--surface);
+  --ch-grid: var(--line);
+  --ch-crosshair: var(--line-strong);
+  --ch-serie-1: #c33a20;
+  --ch-serie-2: #2d6fb0;
+  --ch-heat-0: #efe7d6;
+  --ch-heat-1: #dc9a82;
+  --ch-heat-2: #d17a62;
+  --ch-heat-3: #c86242;
+  --ch-heat-4: #a44023;
+  --ch-heat-5: #7c2810;
+  --good: #3d6e36;
+}
+.adm[data-theme="dark"] {
+  --ch-serie-1: #dd5536;
+  --ch-serie-2: #4a8bcc;
+  --ch-heat-0: #1a110d;
+  --ch-heat-1: #7e2c19;
+  --ch-heat-2: #9c341e;
+  --ch-heat-3: #bb4024;
+  --ch-heat-4: #d9532f;
+  --ch-heat-5: #f4643f;
+  --good: #7fa663;
+}
 
-* {
+.adm {
+  display: flex;
+  min-block-size: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.adm *,
+.adm *::before,
+.adm *::after {
   box-sizing: border-box;
+}
+:where(.adm) :where(h1, h2, h3, p, ul, ol, dl, dd, figure) {
+  margin: 0;
+}
+:where(.adm) :where(ul, ol) {
+  padding: 0;
+  list-style: none;
+}
+:where(.adm) :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+:where(.adm) :where(button) {
+  cursor: pointer;
+}
+:where(.adm) :where(fieldset) {
   margin: 0;
   padding: 0;
+  border: 0;
+  min-inline-size: 0;
 }
-
-/* ---------------------------------------------------------------- */
-/* Themes                                                            */
-/* ---------------------------------------------------------------- */
-/* Le theme clair n'est pas une inversion du sombre : chaque couleur a son
-   propre pas de clarte, valide contre le fond de son theme. Une teinte lisible
-   sur du noir se dissout sur du papier. Seul l'ordre des emplacements est
-   commun, pour qu'une serie garde sa famille de teinte en changeant de mode. */
-.adm {
-  /* Manrope, comme la boutique. Une famille citee ici doit imperativement
-     etre demandee dans `index.html` : le back-office ne charge rien, et sur
-     une machine ou la police n'est pas installee le rendu retomberait sans
-     bruit sur la pile systeme. C'est exactement ce qui s'etait produit quand
-     cette ligne reclamait des familles que le document ne demandait plus. */
-  --adm-font: "Manrope", system-ui, sans-serif;
-
-  /* Le projet n'embarque plus de police a chasse fixe. Les identifiants
-     gardent leur classe `.code`, qui s'appuie desormais sur la pile monospace
-     du systeme : elle est toujours disponible et ne coute aucun octet. */
-  --adm-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
-
-  /* 漆 urushi, la laque. Un noir qui garde une trace de brun : le noir absolu
-     creuse un trou dans l'ecran et fait ressortir ses bords. Les memes valeurs
-     que la boutique, pour que passer du site au back-office ne soit pas un
-     changement de maison. */
-  --adm-bg: #0a0605;
-  --adm-panel: #140c09;
-  --adm-panel-2: #1c110d;
-  --adm-line: #241511;
-  --adm-line-2: #1a100c;
-  --adm-ink: #f7ebe6;
-  --adm-ink-2: #b3948b;
-  --adm-ink-3: #6f524a;
-
-  /* 朱 shu, le vermillon. Le back-office employait un or eteint et gardait le
-     vermillon pour les alertes ; la direction Negoro inverse les deux, l'or
-     ayant disparu de toute l'identite. */
-  --adm-accent: #f4643f;
-  --adm-accent-clair: #ff8b6b;
-  --adm-accent-sourd: #8e2c1c;
-  --adm-accent-voile: rgba(244, 100, 63, 0.08);
-  --adm-alerte: #d69420;
-
-  --adm-track: #1c110d;
-  --adm-shadow: none;
-  --adm-hover: #1c110d;
-
-  --ch-surface: #140c09;
-  --ch-grid: #2a1a14;
-  --ch-crosshair: #55403a;
-
-  /* La premiere serie prend le vermillon : c'est elle qui porte le chiffre
-     principal dans presque tous les graphiques. Les suivantes s'en ecartent
-     franchement en teinte, jamais en clarte seule - deux series qui ne
-     different que par la luminosite deviennent indiscernables une fois
-     imprimees ou vues par un daltonien. */
-  --ch-serie-1: #e8583a;
-  --ch-serie-2: #79a8c8;
-  --ch-serie-3: #62a35c;
-  --ch-serie-4: #b678c0;
-  --ch-serie-5: #cf9a2e;
-
-  /* Echelle de chaleur en laque : du noir de fond au vermillon vif. Une rampe
-     verte n'avait plus rien a faire dans cette palette, et le degrade de la
-     laque dit « intensite » de lui-meme. */
-  --ch-heat-0: #170e0a;
-  --ch-heat-1: #4a1a10;
-  --ch-heat-2: #722718;
-  --ch-heat-3: #9c3520;
-  --ch-heat-4: #c74628;
-  --ch-heat-5: #f4643f;
-
-  /* Semantiques, distinctes de l'accent de marque - sauf le rouge.
-     Une boutique vermillon ne peut pas s'approprier un rouge qui ne
-     signifierait jamais rien : l'accent ne sert donc qu'aux filets, aux liens
-     et aux etats d'interface, jamais a une valeur. Un chiffre rouge veut
-     toujours dire mauvais. */
-  --ch-good: #6fa85f;
-  --ch-warn: #d69420;
-  --ch-bad: #e8493a;
+.adm ::selection {
+  background: var(--accent);
+  color: var(--on-accent);
 }
-
-.adm[data-theme="light"] {
-  /* 白磁 hakuji, la porcelaine. Un blanc qui garde un fond chaud, jamais le
-     blanc pur d'un ecran. */
-  --adm-bg: #f4efe3;
-  --adm-panel: #efe7d6;
-  --adm-panel-2: #e7ddc8;
-  --adm-line: #ddd2bc;
-  --adm-line-2: #e7ddc8;
-  --adm-ink: #1a0f0b;
-  --adm-ink-2: #6b5347;
-  --adm-ink-3: #92806f;
-
-  /* Le meme pigment, assombri : le vermillon de la laque passe au gris sur du
-     papier et tombe sous le contraste exigible d'un texte. */
-  --adm-accent: #c33a20;
-  --adm-accent-clair: #e0513a;
-  --adm-accent-sourd: #d9b6a6;
-  --adm-accent-voile: rgba(195, 58, 32, 0.07);
-  --adm-alerte: #9a6a00;
-
-  --adm-track: #e7ddc8;
-  --adm-shadow: none;
-  --adm-hover: #ebe3d2;
-
-  --ch-surface: #f8f4ea;
-  --ch-grid: #e3d9c4;
-  --ch-crosshair: #b3a48e;
-
-  --ch-serie-1: #c33a20;
-  --ch-serie-2: #3f6d90;
-  --ch-serie-3: #43813c;
-  --ch-serie-4: #9a4aa4;
-  --ch-serie-5: #a77600;
-
-  /* Rampe de chaleur inversee pour le papier : du papier presque nu au
-     vermillon dense. */
-  --ch-heat-0: #f0e9da;
-  --ch-heat-1: #eec4b3;
-  --ch-heat-2: #e29a80;
-  --ch-heat-3: #d16d4d;
-  --ch-heat-4: #b94a29;
-  --ch-heat-5: #932f14;
-
-  --ch-good: #3d7136;
-  --ch-warn: #9a6a00;
-  --ch-bad: #c0301c;
-}
-
-/* Jetons de finition, communs aux deux themes.
- *
- * Les couleurs sont definies plus haut, theme par theme. Ce qui suit ne varie
- * pas d'un theme a l'autre.
- *
- * Une echelle d'elevation figurait ici, trois niveaux d'ombre poses en
- * prevision d'une refonte. Elle n'a jamais servi : le back-office ne construit
- * plus sa profondeur avec des ombres mais avec des filets et du vide, comme un
- * imprime. Des jetons declares et jamais employes ne sont pas une reserve,
- * c'est du code mort. */
-.adm {
-  /* Un seul anneau de focus pour tout le back-office. Il double le contour au
-     lieu de le remplacer, pour rester visible sur un fond de la meme teinte. */
-  --focus:
-    0 0 0 2px var(--adm-bg), 0 0 0 4px color-mix(in srgb, var(--adm-accent) 70%, transparent);
-}
-
-/* Le clavier a droit au meme soin que la souris. `:focus-visible` et non
-   `:focus` : un clic ne doit pas laisser d'anneau derriere lui. */
 .adm :focus-visible {
-  outline: none;
-  box-shadow: var(--focus);
-  border-radius: 2px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Aucun angle arrondi dans tout le back-office.
- *
- * Une regle unique plutot qu'une soixantaine de `border-radius: 0` : le parti
- * pris se lit d'un coup et ne peut pas etre oublie sur une regle ajoutee plus
- * tard. La carte arrondie posee sur une ombre douce est le tic visuel de
- * toutes les interfaces generees depuis trois ans ; la profondeur vient ici des
- * filets et du vide, comme dans un imprime.
- *
- * Les pastilles rondes sont exemptees : un point d'etat cesse d'etre un point
- * s'il devient carre. */
-.adm *:not(.adm-rond):not(circle) {
-  border-radius: 2px;
-}
-
-/* Grain de surface, rendu une seule fois en image plutot qu'en filtre vivant
-   qui se recalculerait a chaque redimensionnement. Desature : feTurbulence
-   produit du bruit en couleurs, et des points bleus sur une laque noire
-   feraient l'effet inverse de celui cherche. On ne le voit jamais
-   consciemment, on voit seulement que la surface n'est pas plate. */
-.adm::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.adm-nav,
-.adm-main {
-  position: relative;
-  z-index: 1;
-}
-
-.adm {
-  display: flex;
-  min-height: 100vh;
-  background: var(--adm-bg);
-  color: var(--adm-ink);
-  font-family: var(--adm-font);
-  font-size: 14px;
-  line-height: 1.5;
-  /* Le passage d'un theme a l'autre se fait en fondu plutot qu'en a-coup. */
-  transition:
-    background 0.25s ease,
-    color 0.25s ease;
-}
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: inherit;
-}
-input,
-select,
-textarea {
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--adm-ink);
-}
-/* Chiffres de gestion : montants, quantites, pourcentages.
- *
- * La police d'interface avec ses chiffres tabulaires, et non la chasse fixe. Un
- * montant n'est pas du code : la chasse fixe l'espace comme un identifiant et
- * jure au milieu d'une phrase. Les chiffres tabulaires suffisent a aligner une
- * colonne, qui est le seul service qu'on demandait au monospace.
- *
- * `font-feature-settings: "ss01"` demande a Manrope son chiffre 1 a empattement,
- * plus lisible qu'un simple trait vertical dans une colonne de montants ou il
- * risque de se confondre avec un I. Ce reglage avait ete retire au passage sous
- * Inter, ou le meme jeu stylistique designe une autre substitution : un reglage
- * de fonderie ne survit pas au changement de fonderie. Manrope etant revenue,
- * il revient avec elle. */
-.mono {
-  font-family: var(--adm-font);
+.adm .num {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "ss01";
-  letter-spacing: -0.01em;
+  text-align: end;
+}
+.adm span.num,
+.adm dd.num,
+.adm strong.num {
+  text-align: inherit;
+}
+.adm .code,
+.adm code,
+.adm kbd {
+  font-family: var(--font-code);
+  font-size: 0.92em;
+}
+.adm .sr-only {
+  position: absolute !important;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-/* Identifiants : numeros de commande, codes produit, scores RFM. Eux sont bien
-   du code, et la chasse fixe les sert - on les compare caractere par caractere,
-   jamais en valeur. */
-.code {
-  font-family: var(--adm-mono);
-  font-size: 0.94em;
-  letter-spacing: -0.02em;
-}
+/* --- Navigation latérale --- */
 
 .adm-nav {
-  width: 220px;
-  flex-shrink: 0;
-  background: var(--adm-panel);
-  border-right: 1px solid var(--adm-line);
-  display: flex;
-  flex-direction: column;
-  padding: 20px 12px 24px;
-  gap: 4px;
   position: sticky;
-  top: 0;
-  height: 100vh;
+  inset-block-start: 0;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  inline-size: 228px;
+  block-size: 100vh;
+  padding: 18px 12px 20px;
+  background: var(--surface);
+  color: var(--ink);
+  border-inline-end: 1px solid var(--line);
 }
-/* Bandeau d'identite. Le sceau rouge porte la marque a lui seul ; le mot
-   HANABI n'a plus besoin d'etre gros pour se faire entendre, ce qui laisse la
-   place a un sous-titre disant ou l'on se trouve. */
+
 .adm-logo {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 2px 10px 18px;
-  border-bottom: 1px solid var(--adm-line);
-  margin-bottom: 14px;
-}
-/* L'embleme de la boutique, ramene aux ors du back-office.
- *
- * La pastille rouge d'avant tenait d'un placeholder : un ideogramme centre
- * dans un degrade, la ou la boutique porte un embleme dessine. Deux marques
- * pour un meme commerce, dont la moins soignee etait justement celle qu'on
- * regarde huit heures par jour.
- *
- * Les teintes passent par les variables que `LogoMark` expose a cette fin,
- * plutot que par un second fichier a maintenir en parallele. Le vermillon et
- * le rose de la vitrine jureraient sur la laque : le torii et l'anneau
- * prennent l'or d'accent, le sakura sa variante claire, et le coeur des
- * etamines l'encre du texte pour rester lisible a 32 px.
- */
-.adm-logo-mark {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-
-  --lm-anneau: var(--adm-accent);
-  --lm-torii: var(--adm-accent);
-  --lm-soleil: var(--adm-accent-clair);
-  --lm-petale: var(--adm-accent-clair);
-  --lm-petale-fonce: var(--adm-accent-sourd);
-  --lm-coeur: var(--adm-ink);
-}
-.adm-logo-txt {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--adm-font);
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: 0.1em;
-  line-height: 1.15;
-  color: var(--adm-ink);
-}
-.adm-logo-txt small {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--adm-ink-3);
-}
-
-.adm-nav-groupe {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 16px;
-}
-/* Intitule de section : assez discret pour ne pas concurrencer les entrees,
-   assez present pour separer deux natures d'activite. */
-.adm-nav-titre {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--adm-ink-3);
-  padding: 0 12px 6px;
-}
-.adm-nav-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border-radius: 2px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--adm-ink-2);
-  transition:
-    background 0.18s ease,
-    color 0.18s ease;
+  padding: 4px 10px 16px;
+  margin-block-end: 12px;
+  border-block-end: 1px solid var(--line);
+  color: var(--ink);
   text-decoration: none;
 }
-/* Repere d'onglet actif : un filet vertical qui se deplie depuis le bord, plutot
-   qu'un aplat de couleur pleine. Le pave rouge attirait plus l'oeil que le
-   contenu de la page, ce qui est l'inverse du role d'une navigation. */
-.adm-nav-btn::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 3px;
-  height: 0;
-  border-radius: 0;
-  background: var(--adm-accent);
-  transform: translateY(-50%);
-  transition: height 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.adm-nav-btn:hover {
-  background: var(--adm-track);
-  color: var(--adm-ink);
-}
-.adm-nav-btn:hover .adm-nav-ic {
-  transform: translateX(2px);
-}
-/* Onglet actif : un fond tres legerement teinte de la couleur de marque plutot
-   qu'un gris neutre, plus le filet lateral. Deux signaux faibles valent mieux
-   qu'un aplat sature, qui volait la vedette au contenu. */
-.adm-nav-btn.on {
-  background: var(--adm-accent-voile);
-  color: var(--adm-ink);
-  font-weight: 700;
-}
-.adm-nav-btn.on::before {
-  height: 62%;
-}
-.adm-nav-btn.on .adm-nav-ic {
-  color: var(--adm-accent);
-  transform: scale(1.12);
-}
-.adm-nav-foot {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 12px;
-  border-top: 1px solid var(--adm-line);
-}
-.adm-back {
-  color: var(--adm-ink-3);
-  font-size: 13px;
-}
-.adm-back:hover {
-  color: var(--adm-ink);
-}
-/* L'icone est desormais un trace SVG et non un caractere : elle herite de la
-   couleur du bouton, donc du survol et de l'etat actif, sans qu'aucune regle ne
-   la cible. Le retrait est volontairement leger au repos - une icone qui crie
-   aussi fort que son libelle ne sert a rien. */
-.adm-nav-ic {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  opacity: 0.72;
-  transition: opacity 0.2s ease;
-}
-.adm-nav-btn:hover .adm-nav-ic,
-.adm-nav-btn.on .adm-nav-ic {
-  opacity: 1;
-}
-
-/* Le reglage de theme est une entree de menu comme les six autres : meme
-   classe, meme gabarit, croissant ou soleil selon l'etat. Un selecteur de
-   matiere a deux echantillons a occupe cette place ; il etait plus juste sur le
-   fond - on choisit une surface, pas un interrupteur - mais c'etait une
-   trouvaille a un endroit qui n'en demande pas. Le reglage de theme est un
-   geste qu'on fait sans regarder. */
-
-.adm-main {
-  position: relative;
-  z-index: 1;
-}
-
-.adm {
-  display: flex;
-  min-height: 100vh;
-  background: var(--adm-bg);
-  color: var(--adm-ink);
-  font-family: var(--adm-font);
-  font-size: 14px;
-  line-height: 1.5;
-  /* Le passage d'un theme a l'autre se fait en fondu plutot qu'en a-coup. */
-  transition:
-    background 0.25s ease,
-    color 0.25s ease;
-}
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: inherit;
-}
-input,
-select,
-textarea {
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--adm-ink);
-}
-/* Chiffres de gestion : montants, quantites, pourcentages.
- *
- * La police d'interface avec ses chiffres tabulaires, et non la chasse fixe. Un
- * montant n'est pas du code : la chasse fixe l'espace comme un identifiant et
- * jure au milieu d'une phrase. Les chiffres tabulaires suffisent a aligner une
- * colonne, qui est le seul service qu'on demandait au monospace.
- *
- * `font-feature-settings: "ss01"` demande a Manrope son chiffre 1 a empattement,
- * plus lisible qu'un simple trait vertical dans une colonne de montants ou il
- * risque de se confondre avec un I. Ce reglage avait ete retire au passage sous
- * Inter, ou le meme jeu stylistique designe une autre substitution : un reglage
- * de fonderie ne survit pas au changement de fonderie. Manrope etant revenue,
- * il revient avec elle. */
-.mono {
-  font-family: var(--adm-font);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "ss01";
-  letter-spacing: -0.01em;
-}
-
-/* Identifiants : numeros de commande, codes produit, scores RFM. Eux sont bien
-   du code, et la chasse fixe les sert - on les compare caractere par caractere,
-   jamais en valeur. */
-.code {
-  font-family: var(--adm-mono);
-  font-size: 0.94em;
-  letter-spacing: -0.02em;
-}
-
-.adm-nav {
-  width: 220px;
-  flex-shrink: 0;
-  background: var(--adm-panel);
-  border-right: 1px solid var(--adm-line);
-  display: flex;
-  flex-direction: column;
-  padding: 20px 12px 24px;
-  gap: 4px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-/* Bandeau d'identite. Le sceau rouge porte la marque a lui seul ; le mot
-   HANABI n'a plus besoin d'etre gros pour se faire entendre, ce qui laisse la
-   place a un sous-titre disant ou l'on se trouve. */
-.adm-logo {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 2px 10px 18px;
-  border-bottom: 1px solid var(--adm-line);
-  margin-bottom: 14px;
-}
-/* L'embleme de la boutique, ramene aux ors du back-office.
- *
- * La pastille rouge d'avant tenait d'un placeholder : un ideogramme centre
- * dans un degrade, la ou la boutique porte un embleme dessine. Deux marques
- * pour un meme commerce, dont la moins soignee etait justement celle qu'on
- * regarde huit heures par jour.
- *
- * Les teintes passent par les variables que `LogoMark` expose a cette fin,
- * plutot que par un second fichier a maintenir en parallele. Le vermillon et
- * le rose de la vitrine jureraient sur la laque : le torii et l'anneau
- * prennent l'or d'accent, le sakura sa variante claire, et le coeur des
- * etamines l'encre du texte pour rester lisible a 32 px.
- */
 .adm-logo-mark {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-
-  --lm-anneau: var(--adm-accent);
-  --lm-torii: var(--adm-accent);
-  --lm-soleil: var(--adm-accent-clair);
-  --lm-petale: var(--adm-accent-clair);
-  --lm-petale-fonce: var(--adm-accent-sourd);
-  --lm-coeur: var(--adm-ink);
+  flex: none;
+  transition: rotate var(--dur-space) var(--ease-spring);
 }
-.adm-logo-txt {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--adm-font);
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: 0.1em;
-  line-height: 1.15;
-  color: var(--adm-ink);
-}
-.adm-logo-txt small {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--adm-ink-3);
-}
-
-.adm-nav-groupe {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 16px;
-}
-/* Intitule de section : assez discret pour ne pas concurrencer les entrees,
-   assez present pour separer deux natures d'activite. */
-.adm-nav-titre {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--adm-ink-3);
-  padding: 0 12px 6px;
-}
-.adm-nav-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 2px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--adm-ink-2);
-  transition:
-    background 0.18s ease,
-    color 0.18s ease;
-  text-decoration: none;
-}
-/* Repere d'onglet actif : un filet vertical qui se deplie depuis le bord, plutot
-   qu'un aplat de couleur pleine. Le pave rouge attirait plus l'oeil que le
-   contenu de la page, ce qui est l'inverse du role d'une navigation. */
-.adm-nav-btn::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 3px;
-  height: 0;
-  border-radius: 0;
-  background: var(--adm-accent);
-  transform: translateY(-50%);
-  transition: height 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.adm-nav-btn:hover {
-  background: var(--adm-track);
-  color: var(--adm-ink);
-}
-.adm-nav-btn:hover .adm-nav-ic {
-  transform: translateX(2px);
-}
-/* Onglet actif : un fond tres legerement teinte de la couleur de marque plutot
-   qu'un gris neutre, plus le filet lateral. Deux signaux faibles valent mieux
-   qu'un aplat sature, qui volait la vedette au contenu. */
-.adm-nav-btn.on {
-  background: var(--adm-accent-voile);
-  color: var(--adm-ink);
-  font-weight: 700;
-}
-.adm-nav-btn.on::before {
-  height: 62%;
-}
-.adm-nav-btn.on .adm-nav-ic {
-  color: var(--adm-accent);
-  transform: scale(1.12);
-}
-.adm-nav-foot {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 12px;
-  border-top: 1px solid var(--adm-line);
-}
-.adm-back {
-  color: var(--adm-ink-3);
-  font-size: 13px;
-}
-.adm-back:hover {
-  color: var(--adm-ink);
-}
-/* L'icone est desormais un trace SVG et non un caractere : elle herite de la
-   couleur du bouton, donc du survol et de l'etat actif, sans qu'aucune regle ne
-   la cible. Le retrait est volontairement leger au repos - une icone qui crie
-   aussi fort que son libelle ne sert a rien. */
-.adm-nav-ic {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  opacity: 0.72;
-  transition: opacity 0.2s ease;
-}
-.adm-nav-btn:hover .adm-nav-ic,
-.adm-nav-btn.on .adm-nav-ic {
-  opacity: 1;
-}
-
-.adm-main {
-  flex: 1;
-  padding: 28px 32px;
-  overflow-y: auto;
-}
-.adm-topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--adm-line);
-  padding-bottom: 18px;
-}
-.adm-title {
-  font-family: var(--adm-font);
-  font-size: 24px;
-}
-.adm-spin {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--adm-line);
-  border-top-color: var(--adm-accent);
-  border-radius: 99px;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@media (hover: hover) {
+  .adm-logo:hover .adm-logo-mark {
+    rotate: 120deg;
   }
 }
-.adm-sub {
-  font-family: var(--adm-font);
-  font-size: 16px;
-  margin: 24px 0 12px;
-}
-.adm-err {
-  background: rgba(224, 56, 42, 0.15);
-  border: 1px solid var(--adm-alerte);
-  color: var(--adm-alerte);
-  padding: 12px 16px;
-  border-radius: 2px;
-  margin-bottom: 18px;
-}
-
-.adm-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.adm-loading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--adm-ink-2);
-  font-size: 15px;
-  padding: 40px 0;
-  justify-content: center;
-}
-.viz-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
-}
-.viz-block {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 20px;
-}
-.viz-empty {
-  color: var(--adm-ink-3);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120px;
-}
-.viz-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--adm-ink-3);
-  margin-bottom: 16px;
-}
-.bar-chart {
+.adm-logo-txt {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  font-family: var(--font-voice);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.16em;
+  line-height: 1.15;
 }
-.bar-row {
-  display: grid;
-  grid-template-columns: 90px 1fr 36px;
+.adm-logo-txt small {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.adm-nav-groupe {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-block-end: 16px;
+}
+.adm-nav-titre {
+  padding: 0 12px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.adm-nav-btn {
+  position: relative;
+  display: flex;
   align-items: center;
   gap: 10px;
+  min-block-size: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: start;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    color var(--dur-feedback) var(--ease-out);
 }
-.bar-key {
+@media (hover: hover) {
+  .adm-nav-btn:hover {
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
+}
+/* Onglet actif : arête vermillon */
+.adm-nav-btn::before {
+  content: "";
+  position: absolute;
+  inset-block: 8px;
+  inset-inline-start: 0;
+  inline-size: 2px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform var(--dur-feedback) var(--ease-out);
+}
+.adm-nav-btn.on {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+.adm-nav-btn.on::before {
+  transform: none;
+}
+/* Onglet actif : le trait s'éclaircit, le détail vermillon suffit à le signaler */
+.adm-nav-btn.on .adm-nav-ic {
+  color: var(--ink);
+}
+.adm-nav-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-block-start: auto;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--line);
+}
+.adm-compte {
+  padding: 6px 12px 0;
   font-size: 12px;
-  color: var(--adm-ink-2);
-  white-space: nowrap;
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.bar-track {
-  height: 8px;
-  background: var(--adm-track);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.6s ease;
-}
-.bar-val {
-  font-size: 12px;
-  color: var(--adm-ink);
-  text-align: right;
-}
-.donut-wrap {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.donut-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+
+/* --- Zone principale --- */
+
+.adm-main {
   flex: 1;
-}
-.donut-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-.donut-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 99px;
-  flex-shrink: 0;
-}
-.donut-key {
-  flex: 1;
-  color: var(--adm-ink-2);
-}
-.donut-pct {
-  color: var(--adm-ink);
-  font-size: 11px;
-}
-/* Tuile d'indicateur. L'accent de couleur passe par un lisere superieur en
-   degrade et une lueur diffuse au survol, plutot que par la couleur du chiffre :
-   une teinte claire est illisible en corps de texte, et le chiffre doit rester
-   la chose la plus lisible de la carte. */
-.adm-card {
-  position: relative;
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 20px 22px;
-  overflow: hidden;
-  transition:
-    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.2s ease;
-}
-.adm-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: var(--carte-teinte, var(--adm-accent));
-}
-.adm-card::after {
-  content: "";
-  position: absolute;
-  top: -60%;
-  right: -30%;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: var(--carte-teinte, var(--adm-accent));
-  opacity: 0;
-  transition: opacity 0.28s ease;
-  pointer-events: none;
-}
-/* Tuiles de variation : la teinte dit le sens, pas l'identite. Le vert n'est pas
-   « positif » au sens arithmetique mais « favorable » - c'est l'appelant qui en
-   decide, via `tendance()`. La valeur chiffree reste affichee a cote, la couleur
-   ne porte donc jamais seule l'information. */
-.adm-card[data-tendance="hausse"] {
-  --carte-teinte: var(--ch-good);
-}
-.adm-card[data-tendance="baisse"] {
-  --carte-teinte: var(--ch-bad);
-}
-.adm-card[data-tendance="neutre"] {
-  --carte-teinte: var(--adm-ink-3);
-}
-.adm-card:hover {
-  background: var(--adm-panel-2);
-  border-color: var(--adm-accent-sourd);
-}
-.adm-card-val {
-  font-family: var(--adm-font);
-  font-weight: 300;
-  font-size: 34px;
-  letter-spacing: -0.035em;
-  margin-bottom: 4px;
-  /* Chiffres proportionnels : en grand corps, des chiffres de largeur fixe
-     donnent un nombre qui flotte. */
-  font-variant-numeric: proportional-nums;
-}
-.adm-card-lbl {
-  font-size: 13px;
-  color: var(--adm-ink-3);
-}
-.adm-warn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(224, 56, 42, 0.12);
-  border: 1px solid color-mix(in srgb, var(--adm-alerte) 35%, transparent);
-  color: var(--adm-alerte);
-  padding: 10px 14px;
-  border-radius: 2px;
-  margin-bottom: 12px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.adm-warn.adm-info {
-  background: rgba(185, 138, 46, 0.12);
-  border-color: rgba(185, 138, 46, 0.3);
-  color: var(--ch-warn);
+  min-inline-size: 0;
+  padding: 24px clamp(16px, 3vw, 40px) 64px;
 }
 
-.adm-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  overflow: hidden;
+.adm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block-end: 20px;
 }
-.adm-table th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--adm-bg);
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 12px;
+.adm-title {
+  font-family: var(--font-voice);
   font-weight: 700;
-  color: var(--adm-ink-3);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--adm-line);
+  font-size: var(--step-3);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
-.adm-table td {
-  padding: 15px 16px;
-  border-bottom: 1px solid var(--adm-line-2);
-  vertical-align: middle;
+
+.adm-sub {
+  margin-block: 32px 12px;
 }
-.adm-table tr:last-child td {
-  border-bottom: none;
+.adm-sub h3 {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.25;
 }
-.adm-table tr:hover td {
-  background: var(--adm-hover);
+.adm-sub-note {
+  max-inline-size: 72ch;
+  margin-block-start: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  text-wrap: pretty;
 }
-.adm-row-off td {
-  opacity: 0.5;
+
+.adm-legend,
+.wh-note {
+  margin-block-start: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.adm-loading,
+.adm-vide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0;
+  color: var(--muted);
+}
+
+.adm-spin {
+  display: inline-block;
+  inline-size: 16px;
+  block-size: 16px;
+  border: 2px solid var(--line-strong);
+  border-block-start-color: var(--accent);
+  border-radius: 50%;
+  animation: adm-tourne 800ms linear infinite;
+}
+@keyframes adm-tourne {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.adm-err,
+.adm-warn {
+  display: grid;
+  gap: 4px;
+  margin-block-end: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  font-size: 13px;
+}
+.adm-err span {
+  color: var(--muted);
+}
+.adm-warn {
+  border-inline-start-color: var(--ink);
+}
+
+/* --- Commandes --- */
+
+.adm-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    border-color var(--dur-feedback) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.adm-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.adm-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (hover: hover) {
+  .adm-btn:hover:not(:disabled) {
+    border-color: var(--ink);
+  }
+}
+.adm-btn.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+@media (hover: hover) {
+  .adm-btn.primary:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 88%, var(--ink));
+  }
+}
+.adm-btn.danger {
+  color: var(--accent);
+}
+.adm-btn.sm {
+  min-block-size: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+/* Cible tactile de 44 px */
+.adm-btn.sm::after {
+  content: "";
+  position: absolute;
+  inset: -7px 0;
+}
+.adm-btn.icone {
+  inline-size: 30px;
+  padding: 0;
+}
+.adm-btn.large {
+  min-block-size: 46px;
+  padding: 0 22px;
+  font-size: 14px;
 }
 
 .adm-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px 16px;
+  margin-block: 8px 12px;
+}
+.adm-toolbar-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-inline-start: auto;
+}
+.adm-select {
+  inline-size: auto;
+}
+.adm .muted {
+  color: var(--muted);
 }
 .adm-count {
   font-size: 13px;
-  color: var(--adm-ink-3);
-  font-family: var(--adm-mono);
-}
-/* Repousse une action a l'extremite droite de la barre d'outils. */
-.adm-toolbar-end {
-  margin-left: auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 .adm-search {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 9px 12px;
-  color: var(--adm-ink);
-  outline: none;
-  width: 260px;
-}
-.adm-search:focus {
-  border-color: var(--adm-accent);
-}
-
-.adm-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 2px;
-  font-size: 13px;
-  font-weight: 700;
-  background: var(--adm-track);
-  color: var(--adm-ink);
-  border: 1px solid var(--adm-line);
-  transition: 0.15s;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.adm-btn:hover {
-  border-color: var(--adm-ink-3);
-  background: var(--adm-hover);
-  color: var(--adm-ink);
-}
-.adm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.adm-btn.primary {
-  background: var(--adm-accent-voile);
-  color: var(--adm-accent-clair);
-  border-color: var(--adm-accent-sourd);
-}
-.adm-btn.primary:hover {
-  background: var(--adm-accent);
-  border-color: var(--adm-accent);
-  color: var(--adm-bg);
-}
-.adm-btn.danger {
-  color: var(--adm-accent);
-  border-color: rgba(224, 56, 42, 0.3);
-}
-.adm-btn.danger:hover {
-  background: rgba(224, 56, 42, 0.12);
-}
-.adm-btn.sm {
-  padding: 5px 10px;
-  font-size: 12px;
-  margin-right: 4px;
-}
-.adm-btn.large {
-  padding: 13px 24px;
-  font-size: 15px;
-}
-
-/* ---------------------------------------------------------------- */
-/* Graphiques                                                        */
-/* ---------------------------------------------------------------- */
-.ch-card {
-  background: var(--ch-surface);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 18px 20px 14px;
-  margin: 0;
-  min-width: 0;
-}
-.ch-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-.ch-title {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--adm-ink-2);
-}
-.ch-hint {
-  display: block;
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  margin-top: 3px;
-}
-.ch-toggle {
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 3px 9px;
-  transition: 0.15s;
-}
-.ch-toggle:hover,
-.ch-toggle[aria-pressed="true"] {
-  color: var(--adm-ink);
-  border-color: var(--adm-ink-3);
-}
-
-.ch-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  list-style: none;
-  margin: 10px 0 2px;
-  padding: 0;
-  font-size: 12px;
-  color: var(--adm-ink-2);
-}
-.ch-legend li {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.ch-swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  flex-shrink: 0;
-  display: inline-block;
-}
-
-.ch-plot {
-  position: relative;
-  margin-top: 8px;
-}
-.ch-plot svg {
-  display: block;
-}
-
-/* Le trait se dessine de gauche a droite a l'apparition. L'animation dure moins
-   d'une seconde et ne se rejoue pas : elle accompagne la lecture, elle ne la
-   retarde pas. */
-.ch-trait {
-  stroke-dasharray: 2400;
-  stroke-dashoffset: 2400;
-  animation: ch-tracer 0.9s cubic-bezier(0.33, 1, 0.68, 1) forwards;
-  transition: stroke-width 0.18s ease;
-}
-.ch-trait.pointille {
-  /* Un trait deja pointille ne peut pas etre anime par le meme moyen : son
-     motif est justement porte par `stroke-dasharray`. Il apparait en fondu. */
-  stroke-dasharray: 6 5;
-  stroke-dashoffset: 0;
-  animation: ch-apparaitre 0.5s ease 0.5s backwards;
-}
-@keyframes ch-tracer {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes ch-apparaitre {
-  from {
-    opacity: 0;
-  }
-}
-.ch-aire {
-  animation: ch-apparaitre 0.7s ease 0.25s backwards;
-}
-.ch-fin {
-  animation: ch-apparaitre 0.4s ease 0.7s backwards;
-}
-/* Attenuation des series non pointees : suivre une ligne dans un faisceau
-   devient possible. */
-.ch-serie {
-  transition: opacity 0.18s ease;
-}
-.ch-serie.attenue {
-  opacity: 0.28;
-}
-
-/* Respect du reglage systeme : qui demande moins d'animation n'en recoit
-   aucune, l'etat final etant identique. */
-@media (prefers-reduced-motion: reduce) {
-  .ch-trait,
-  .ch-aire,
-  .ch-fin,
-  .ch-bar-fill,
-  .adm-card {
-    animation: none !important;
-    transition: none !important;
-    stroke-dashoffset: 0 !important;
-  }
-}
-/* Graduations et etiquettes d'axe : chiffres de largeur fixe pour qu'ils
-   s'alignent verticalement d'une graduation a l'autre. */
-.ch-axis {
-  fill: var(--adm-ink-3);
-  font-size: 10.5px;
-  font-family: var(--adm-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.ch-tip {
-  position: absolute;
-  transform: translate(12px, 0);
-  background: var(--adm-panel-2);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 9px 11px;
-  font-size: 12px;
-  pointer-events: none;
-  white-space: nowrap;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 5;
-}
-.ch-tip.left {
-  transform: translate(calc(-100% - 12px), 0);
-}
-.ch-tip-key {
-  color: var(--adm-ink-3);
-  font-size: 11px;
-  margin-bottom: 6px;
-}
-.ch-tip-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--adm-ink);
-  padding: 2px 0;
-}
-.ch-tip-lbl {
-  color: var(--adm-ink-2);
-  margin-right: 10px;
-}
-.ch-tip-row .mono {
-  margin-left: auto;
-}
-
-/* --- Barres --- */
-.ch-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 12px;
-}
-.ch-bar-row {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 68px;
-  align-items: center;
-  gap: 12px;
-  padding: 2px 0;
-}
-.ch-bar-row.on .ch-bar-key,
-.ch-bar-row.on .ch-bar-val {
-  color: var(--adm-ink);
-}
-.ch-bar-key {
-  font-size: 12px;
-  color: var(--adm-ink-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ch-bar-track {
-  height: 10px;
-  background: var(--adm-track);
-  border-radius: 2px;
-  overflow: hidden;
-}
-/* Extremite arrondie cote valeur, carree sur la ligne de base : la barre part
-   d'une origine commune et sa fin est la seule chose qui varie. */
-.ch-bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  transform-origin: left center;
-  animation: ch-pousser 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  transition: filter 0.18s ease;
-}
-/* Les barres poussent en cascade : l'oeil suit l'ordre du classement au lieu de
-   recevoir douze barres d'un bloc. Le decalage est plafonne pour qu'une longue
-   liste ne fasse pas attendre. */
-.ch-bar-row:nth-child(1) .ch-bar-fill {
-  animation-delay: 0.02s;
-}
-.ch-bar-row:nth-child(2) .ch-bar-fill {
-  animation-delay: 0.06s;
-}
-.ch-bar-row:nth-child(3) .ch-bar-fill {
-  animation-delay: 0.1s;
-}
-.ch-bar-row:nth-child(4) .ch-bar-fill {
-  animation-delay: 0.14s;
-}
-.ch-bar-row:nth-child(5) .ch-bar-fill {
-  animation-delay: 0.18s;
-}
-.ch-bar-row:nth-child(n + 6) .ch-bar-fill {
-  animation-delay: 0.22s;
-}
-.ch-bar-row.on .ch-bar-fill {
-  filter: brightness(1.15);
-}
-@keyframes ch-pousser {
-  from {
-    transform: scaleX(0);
-  }
-}
-.ch-bar-val {
-  font-size: 12px;
-  color: var(--adm-ink-2);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- Segment explorable --- */
-/* Une ligne cliquable doit se voir comme telle avant le clic : le curseur seul
-   ne suffit pas sur un ecran tactile, et rien ne signalait la difference. */
-.ch-bar-row.cliquable,
-.ch-donut-legend li.cliquable {
-  cursor: pointer;
-  border-radius: 2px;
-  padding-left: 6px;
-  padding-right: 6px;
-  margin-left: -6px;
-  margin-right: -6px;
-  transition: background 0.15s ease;
-}
-.ch-bar-row.cliquable:hover,
-.ch-donut-legend li.cliquable:hover {
-  background: var(--adm-hover);
-}
-.ch-bar-row.cliquable:focus-visible,
-.ch-donut-legend li.cliquable:focus-visible {
-  outline: 2px solid var(--adm-accent);
-  outline-offset: 1px;
-}
-.ch-bar-row.choisi,
-.ch-donut-legend li.choisi {
-  background: color-mix(in srgb, var(--adm-accent) 14%, transparent);
-}
-.ch-bar-row.choisi .ch-bar-key,
-.ch-donut-legend li.choisi .ch-donut-key {
-  color: var(--adm-ink);
-  font-weight: 700;
-}
-
-.segment-panneau {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 18px 20px;
-  margin: -18px 0 32px;
-  transition: border-color 0.2s ease;
-}
-/* Le panneau prend la couleur de marque des qu'un filtre est actif : on doit
-   voir au premier coup d'oeil qu'on ne regarde plus toute la clientele. */
-.segment-panneau.filtre {
-  border-color: color-mix(in srgb, var(--adm-accent) 45%, var(--adm-line));
-}
-.segment-entete {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-.segment-titre {
-  display: block;
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  margin-top: 3px;
-}
-.segment-chiffres {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 30px;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid var(--adm-line);
-}
-.segment-chiffres > div {
-  display: flex;
-  flex-direction: column;
-}
-.segment-val {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--adm-ink);
-}
-.segment-lbl {
-  font-size: 11px;
-  color: var(--adm-ink-3);
-}
-.segment-grille {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 22px;
-}
-.segment-bloc {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.segment-bloc .ch-title {
-  margin-bottom: 7px;
-}
-.segment-liste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.segment-liste li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 10px;
-  font-size: 12.5px;
-  color: var(--adm-ink-2);
-}
-.segment-nom {
-  color: var(--adm-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.segment-nom-fort {
-  font-size: 14px;
-  color: var(--adm-ink);
-}
-.segment-second {
-  font-size: 11.5px;
-  color: var(--adm-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* --- Anneau --- */
-.ch-donut {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-.ch-donut-total {
-  fill: var(--adm-ink);
-  font-size: 15px;
-  font-weight: 700;
-}
-.ch-donut-sub {
-  fill: var(--adm-ink-3);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.ch-donut-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.ch-donut-legend li {
-  display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 9px;
-  font-size: 12px;
-  color: var(--adm-ink-2);
-  padding: 2px 0;
-}
-.ch-donut-legend li.on {
-  color: var(--adm-ink);
-}
-.ch-donut-key {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ch-donut-val {
-  color: var(--adm-ink);
-  font-variant-numeric: tabular-nums;
-}
-.ch-donut-pct {
-  color: var(--adm-ink-3);
-  font-size: 11px;
-  min-width: 34px;
-  text-align: right;
-}
-
-/* --- Echelle de la carte de chaleur --- */
-.ch-scale {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin: 10px 0 2px;
-  font-size: 11px;
-  color: var(--adm-ink-3);
-}
-.ch-scale-step {
-  width: 26px;
-  height: 8px;
-  border-radius: 2px;
-}
-.ch-scale-lbl {
-  font-family: var(--adm-mono);
-  margin: 0 4px;
-}
-
-/* --- Vue tableau --- */
-.ch-table-wrap {
-  max-height: 260px;
-  overflow: auto;
-  margin-top: 12px;
-}
-.ch-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.ch-table th {
-  text-align: left;
-  color: var(--adm-ink-3);
-  font-weight: 700;
-  padding: 6px 10px 6px 0;
-  border-bottom: 1px solid var(--adm-line);
-  position: sticky;
-  top: 0;
-  background: var(--ch-surface);
-}
-.ch-table td {
-  padding: 5px 10px 5px 0;
-  color: var(--adm-ink-2);
-  border-bottom: 1px solid var(--adm-line-2);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ---------------------------------------------------------------- */
-/* Analytique                                                        */
-/* ---------------------------------------------------------------- */
-
-/* Bandeau du compte vitrine : informe sans alarmer, d'ou le ton neutre
-   plutot que le rouge des avertissements. */
-.adm-readonly {
-  margin-bottom: 20px;
-}
-
-/* Huit indicateurs : quatre par ligne restent lisibles, huit d'affilee
-   reduiraient chaque carte a une colonne trop etroite pour un montant. */
-.adm-cards-4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-.adm-card-hint {
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  margin-top: 6px;
-  line-height: 1.4;
-}
-.adm-sub-note {
-  display: block;
-  font-family: var(--adm-font);
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--adm-ink-3);
-  margin-top: 4px;
-  max-width: 70ch;
-}
-
-.viz-grid-2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-.viz-spaced {
-  margin-top: 8px;
-}
-.viz-hint {
-  float: right;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--adm-ink-3);
-}
-
-/* Hauteur fixe et largeur fluide : le viewBox du SVG porte la geometrie,
-   le CSS ne fait que l'etirer. */
-.line-svg {
-  width: 100%;
-  height: 150px;
-  display: block;
-}
-.line-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--adm-ink-3);
-  margin-top: 2px;
-}
-.line-foot {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--ch-grid);
-}
-
-.rank-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.rank-block {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 18px 20px;
-}
-.rank-block.cold {
-  border-color: var(--ch-grid);
-  background: var(--adm-panel);
-}
-.rank-row {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 90px 64px;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-}
-.rank-pos {
-  font-size: 11px;
-  color: var(--adm-ink-3);
-}
-.rank-key {
-  font-size: 13px;
-  color: var(--adm-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.rank-bar {
-  height: 6px;
-  background: var(--adm-track);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.rank-fill {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.6s ease;
-}
-.rank-val {
-  font-size: 12px;
-  color: var(--adm-ink-2);
-  text-align: right;
-}
-
-.th-sort {
-  cursor: pointer;
-  user-select: none;
-}
-.th-sort:hover {
-  color: var(--adm-ink);
-}
-.th-sort.on {
-  color: var(--adm-accent);
-}
-.cell-sub {
-  display: block;
-  font-size: 11px;
-  color: var(--adm-ink-3);
-}
-
-/* Taux de conversion colorie : la valeur brute ne dit rien a qui ne connait
-   pas les reperes du secteur, la couleur situe immediatement. */
-.conv {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 700;
-}
-.conv-ok {
-  background: rgba(62, 122, 91, 0.18);
-  color: var(--ch-good);
-}
-.conv-mid {
-  background: rgba(185, 138, 46, 0.16);
-  color: var(--ch-warn);
-}
-.conv-low {
-  background: rgba(224, 56, 42, 0.14);
-  color: var(--ch-bad);
+  inline-size: min(22rem, 100%);
 }
 
 .adm-pager {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: var(--adm-ink-3);
-}
-
-/* --- Sous-navigation de l'onglet analytique --- */
-.adm-subnav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border-bottom: 1px solid var(--adm-line);
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.adm-subnav-btn {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--adm-ink-3);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: 0.15s;
-}
-.adm-subnav-btn:hover {
-  color: var(--adm-ink);
-}
-.adm-subnav-btn.on {
-  color: var(--adm-accent);
-  border-bottom-color: var(--adm-accent);
-}
-.adm-subnav-spin {
-  margin-left: 8px;
-}
-.adm-periods {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-  padding-bottom: 6px;
-}
-.adm-period {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  color: var(--adm-ink-2);
-  font-size: 12px;
-  padding: 5px 11px;
-  cursor: pointer;
-  transition: 0.15s;
-}
-.adm-period:hover {
-  border-color: var(--adm-ink-3);
-  color: var(--adm-ink);
-}
-.adm-period.on {
-  background: var(--adm-track);
-  border-color: var(--adm-accent);
-  color: var(--adm-ink);
-}
-
-.adm-cards-5 {
-  grid-template-columns: repeat(5, 1fr);
-}
-.adm-card-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 4px;
+  font-size: 13px;
 }
-.adm-card-val.sm {
-  font-size: 21px;
-  margin-bottom: 0;
+
+.adm-actions {
+  white-space: nowrap;
 }
-.adm-legend {
+.adm-actions .adm-btn + .adm-btn {
+  margin-inline-start: 6px;
+}
+
+/* Ligne dépliable : le numéro ouvre le détail de livraison */
+.adm-disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 700;
+}
+.adm-disclosure svg {
+  color: var(--muted);
+  transition: rotate var(--dur-feedback) var(--ease-out);
+}
+.adm-disclosure[aria-expanded="true"] svg {
+  rotate: 180deg;
+}
+.adm-table tr.adm-detail td {
+  background: var(--panel);
+}
+@media (hover: hover) {
+  .adm-table tbody tr.adm-detail:hover {
+    background: none;
+  }
+}
+.adm-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 12px 32px;
+  padding-block: 6px;
+}
+.adm-detail-grid h3 {
+  margin-block-end: 6px;
   font-size: 12px;
-  color: var(--adm-ink-3);
-  margin-top: 12px;
-  max-width: 80ch;
+  font-weight: 700;
+  color: var(--muted);
+}
+.adm-detail-grid address {
+  font-style: normal;
   line-height: 1.6;
 }
-
-/* Variation d'un indicateur. Le vert n'est pas Â« positif Â» au sens
-   arithmetique mais Â« favorable Â» : c'est l'appelant qui en decide. */
-.delta {
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
+.adm-detail-grid li {
+  display: flex;
+  gap: 6px;
+  line-height: 1.8;
 }
-.delta-up {
-  color: var(--ch-good);
-}
-.delta-down {
-  color: var(--ch-bad);
-}
-.delta-none {
-  color: var(--adm-ink-3);
-  font-weight: 400;
-  font-style: italic;
+.adm-detail-grid li .num {
+  margin-inline-start: auto;
 }
 
-/* --- Cohortes --- */
-/* La table depasse la largeur disponible des que l'on demande douze mois :
-   elle defile dans son propre conteneur plutot que d'elargir la page. */
-.cohort-scroll {
+/* Sous-navigation en contrôle segmenté */
+.adm-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-block-end: 20px;
+}
+.adm-segments {
+  display: inline-flex;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--field);
   overflow-x: auto;
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  background: var(--adm-panel);
+  scrollbar-width: thin;
 }
-.cohort-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 720px;
-}
-.cohort-table th {
-  padding: 10px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--adm-ink-3);
-  text-align: center;
-  border-bottom: 1px solid var(--adm-line);
-}
-.cohort-table th:first-child,
-.cohort-table th:nth-child(2) {
-  text-align: left;
-  padding-left: 14px;
-}
-.cohort-key {
-  font-size: 12px;
-  color: var(--adm-ink);
-  padding: 6px 14px;
+.adm-subnav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
 }
-.cohort-size {
-  font-size: 12px;
-  color: var(--adm-ink-2);
-  padding: 6px 14px;
-  text-align: left;
+.adm-subnav-btn[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
 }
-.cohort-cell {
-  font-family: var(--adm-mono);
-  font-size: 11px;
-  color: var(--adm-ink);
-  text-align: center;
-  padding: 6px 4px;
-  min-width: 46px;
-  border-radius: 2px;
+.adm-subnav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
-.cohort-cell.empty {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--adm-panel),
-    var(--adm-panel) 4px,
-    var(--ch-heat-0) 4px,
-    var(--ch-heat-0) 8px
-  );
+.adm-subnav-btn:focus-visible {
+  outline-offset: -2px;
+}
+@media (hover: hover) {
+  .adm-subnav-btn[aria-pressed="false"]:hover:not(:disabled) {
+    color: var(--ink);
+  }
 }
 
-/* --- Segments RFM --- */
-.segment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  margin-bottom: 8px;
-}
-.segment-card {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 16px 18px;
-}
-.segment-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--adm-ink);
-  margin-bottom: 10px;
-}
-.segment-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 99px;
-  flex-shrink: 0;
-  display: inline-block;
-}
-.segment-count {
-  margin-left: auto;
-  font-size: 13px;
-  color: var(--adm-ink-2);
-}
-.segment-bar {
-  height: 6px;
-  background: var(--adm-track);
-  border-radius: 99px;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-.segment-fill {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.6s ease;
-}
-.segment-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 12px;
-  color: var(--adm-ink-2);
-}
-.segment-stats strong {
-  color: var(--adm-ink);
-}
-.segment-hint {
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  margin-top: 10px;
-  line-height: 1.5;
-}
+/* --- Champs --- */
 
-/* --- Rentabilite --- */
-.viz-grid-1 {
-  grid-template-columns: 1fr;
-}
-.line-svg.tall {
-  height: 220px;
-}
-.axe-projete {
-  color: var(--ch-warn);
-}
-
-.abc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 8px;
-}
-.abc-card {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-left-width: 3px;
-  border-radius: 2px;
-  padding: 16px 18px;
-}
-/* Le vert va a la classe qui porte le resultat, le gris a celle dont on
-   pourrait se passer : la couleur doit dire la priorite, pas decorer. */
-.abc-card.abc-A {
-  border-left-color: var(--ch-good);
-}
-.abc-card.abc-B {
-  border-left-color: var(--ch-warn);
-}
-.abc-card.abc-C {
-  border-left-color: var(--adm-ink-3);
-}
-.abc-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  color: var(--adm-ink);
+:where(.adm) :where(input:not([type="checkbox"], [type="radio"], [type="file"]), select, textarea) {
+  inline-size: 100%;
+  min-block-size: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--field);
   font-size: 14px;
 }
-.abc-head .mono {
-  color: var(--adm-ink-3);
-  font-size: 12px;
+.adm input:focus-visible,
+.adm select:focus-visible,
+.adm textarea:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
 }
-.abc-val {
-  font-family: var(--adm-font);
-  font-size: 22px;
-  margin: 8px 0 2px;
-  color: var(--adm-ink);
-}
-.abc-tag {
-  display: inline-block;
-  width: 22px;
-  text-align: center;
-  padding: 2px 0;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 700;
-}
-.abc-tag.abc-A {
-  background: rgba(62, 122, 91, 0.22);
-  color: var(--ch-good);
-}
-.abc-tag.abc-B {
-  background: rgba(185, 138, 46, 0.2);
-  color: var(--ch-warn);
-}
-.abc-tag.abc-C {
-  background: var(--adm-track);
-  color: var(--adm-ink-3);
-}
-
-/* Barre de marge glissee dans la cellule : la comparaison entre lignes se lit
-   sans avoir a rapprocher des montants a la lecture. */
-.marge-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-}
-.marge-bar {
-  flex: 1;
-  min-width: 40px;
-  height: 6px;
-  background: var(--adm-track);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.marge-fill {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: var(--ch-good);
-}
-
-/* --- Affinites --- */
-.lift-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 130px;
-}
-.lift-bar {
-  flex: 1;
-  height: 6px;
-  background: var(--adm-track);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.lift-fill {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-}
-.lift-val {
-  font-size: 12px;
-  color: var(--adm-ink-2);
-}
-.lift-val.up {
-  color: var(--ch-good);
-  font-weight: 700;
-}
-
-.adm-tag {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--adm-track);
-  color: var(--adm-ink-2);
-}
-.adm-tag.ok {
-  background: rgba(62, 122, 91, 0.2);
-  color: var(--ch-good);
-}
-.adm-tag.off {
-  background: var(--adm-line-2);
-  color: var(--adm-ink-3);
-}
-.adm-tag.admin {
-  background: rgba(224, 56, 42, 0.2);
-  color: var(--adm-accent);
-}
-.stock-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--adm-mono);
-}
-.stock-badge.ok {
-  background: rgba(62, 122, 91, 0.2);
-  color: var(--ch-good);
-}
-.stock-badge.low {
-  background: rgba(217, 116, 46, 0.2);
-  color: var(--ch-bad);
-}
-.stock-badge.out {
-  background: rgba(224, 56, 42, 0.2);
-  color: var(--adm-accent);
-}
-.status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.adm-form-wrap {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 28px;
-}
-.adm-form-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--adm-line);
-}
-.adm-form-head h2 {
-  font-family: var(--adm-font);
-  font-size: 20px;
-}
-.adm-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-}
-.adm-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.adm input[type="checkbox"] {
+  inline-size: 18px;
+  block-size: 18px;
+  accent-color: var(--accent);
 }
 .adm-field {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
   gap: 6px;
-  margin-bottom: 14px;
 }
-.adm-field span {
+.adm-field > span,
+.adm-field > legend {
   font-size: 12px;
   font-weight: 700;
-  color: var(--adm-ink-3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.adm-field > legend {
+  margin-block-end: 6px;
 }
 .adm-field small {
   font-size: 12px;
-  color: var(--adm-ink-3);
-  font-family: var(--adm-mono);
+  color: var(--muted);
 }
-.adm-field input,
-.adm-field select,
-.adm-field textarea {
-  background: var(--adm-bg);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 10px 12px;
-  color: var(--adm-ink);
-  outline: none;
-  transition: 0.15s;
-}
-.adm-field input:focus,
-.adm-field select:focus,
-.adm-field textarea:focus {
-  border-color: var(--adm-accent);
-}
-.adm-field.sm .adm-field {
-  margin-bottom: 8px;
+.adm-field-court {
+  max-inline-size: 16rem;
 }
 .adm-row2 {
   display: grid;
@@ -2139,922 +575,1406 @@ textarea {
   gap: 12px;
 }
 .adm-checks {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
+  display: grid;
+  gap: 8px;
 }
 .adm-checks label,
 .adm-check {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  cursor: pointer;
 }
-.adm-checks input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--adm-accent);
-}
-.adm-form-actions {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid var(--adm-line);
+.code-input {
+  text-transform: uppercase;
+  font-family: var(--font-code);
 }
 
-.art-builder {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  background: var(--adm-bg);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 14px;
+/* --- Tuiles de chiffres --- */
+
+.adm-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1px;
+  padding: 1px;
+  margin-block-end: 20px;
 }
-.art-preview {
-  flex-shrink: 0;
+@media (min-width: 72rem) {
+  .adm-cards-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .adm-cards-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
-.art-controls {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.adm-card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--surface);
+  outline: 1px solid var(--line);
 }
-.color-row {
+.adm-card-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.adm-card-val {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.adm-card-val.sm {
+  font-size: 20px;
+}
+.adm-card-top {
   display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+.adm-card-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+/* Le premier chiffre d'un écran est une plaque de vermillon, comme l'accroche de la boutique */
+.adm-cards:first-of-type > .adm-card:first-child {
+  background: var(--accent);
+  outline-color: var(--accent);
+  color: var(--on-accent);
+}
+.adm-cards:first-of-type > .adm-card:first-child :is(.adm-card-lbl, .adm-card-hint, .delta) {
+  color: var(--on-accent);
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.delta span {
+  font-size: 9px;
+}
+.delta-up {
+  color: var(--good);
+}
+.delta-down {
+  color: var(--accent);
+}
+.delta-none {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* --- Tableaux --- */
+
+.wh-cadre {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+.adm-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.adm-table th,
+.adm-table td {
+  padding: 9px 12px;
+  border-block-end: 1px solid var(--line);
+  text-align: start;
+  vertical-align: middle;
+}
+.adm-table th.num,
+.adm-table td.num {
+  text-align: end;
+}
+.adm-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--panel);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.adm-table tbody tr:last-child td,
+.adm-table tbody tr:last-child th {
+  border-block-end: 0;
+}
+@media (hover: hover) {
+  .adm-table tbody tr:hover {
+    background: var(--accent-soft);
+  }
+}
+.adm-row-off {
+  color: var(--muted);
+}
+.cell-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+th[aria-sort] .th-sort {
+  color: var(--ink);
+}
+
+.adm-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.adm-tag.ok {
+  border-color: var(--ink);
+}
+.adm-tag.off {
+  color: var(--muted);
+  border-style: dashed;
+}
+.adm-tag.admin {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.status-badge {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
-.color-row input[type="color"] {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  background: none;
-  padding: 0;
+.status-badge::before {
+  content: "";
+  inline-size: 8px;
+  block-size: 8px;
+  border: 1.5px solid currentColor;
 }
-.color-swatch {
-  width: 22px;
-  height: 22px;
-  border-radius: 2px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: 0.15s;
-  flex-shrink: 0;
+.status-badge[data-status="paid"]::before,
+.status-badge[data-status="shipped"]::before {
+  background: currentColor;
 }
-.color-swatch:hover {
-  transform: scale(1.15);
-  border-color: #fff;
+.status-badge[data-status="delivered"] {
+  color: var(--good);
+}
+.status-badge[data-status="delivered"]::before {
+  background: currentColor;
+  border-radius: 50%;
+}
+.status-badge[data-status="cancelled"],
+.status-badge[data-status="refunded"] {
+  color: var(--muted);
+}
+.status-badge[data-status="pending"] {
+  color: var(--accent);
 }
 
-.img-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-  max-height: 240px;
-  overflow-y: auto;
+.stock-badge {
+  font-weight: 700;
 }
-.img-item {
+.stock-badge.low,
+.stock-badge.out {
+  color: var(--accent);
+}
+
+.conv {
+  font-weight: 700;
+}
+.conv-ok {
+  color: var(--good);
+}
+.conv-mid {
+  color: var(--ink);
+}
+.conv-low {
+  color: var(--accent);
+}
+
+.adm-vignette {
+  display: block;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: var(--r-surface);
+  overflow: hidden;
+}
+.adm-vignette .art {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.adm-vignette img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/* --- Graphiques --- */
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 16px;
+}
+.viz-grid-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 60rem) {
+  .viz-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.viz-grid-1 {
+  grid-template-columns: 1fr;
+}
+.viz-spaced {
+  margin-block-start: 24px;
+}
+.viz-block {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+.viz-empty {
+  display: grid;
+  place-items: center;
+  min-block-size: 8rem;
+  color: var(--muted);
+  border-style: dashed;
+}
+
+.ch-card {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 10px;
+  min-inline-size: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+.ch-head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ch-title {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+}
+.ch-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ch-toggle {
+  min-block-size: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ch-toggle[aria-pressed="true"] {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.ch-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ch-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ch-swatch {
+  flex: none;
+  inline-size: 14px;
+  block-size: 3px;
+  background: var(--swatch);
+}
+.ch-swatch.pointille {
+  background: repeating-linear-gradient(90deg, var(--swatch) 0 4px, transparent 4px 7px);
+}
+.ch-plot {
+  position: relative;
+}
+.ch-plot svg {
+  display: block;
+  overflow: visible;
+  /* Le doigt fait glisser le repere ; la page defile toujours verticalement */
+  touch-action: pan-y;
+}
+.ch-axis {
+  fill: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ch-tip {
+  position: absolute;
+  z-index: 2;
+  min-inline-size: 9rem;
+  margin-inline-start: 12px;
+  padding: 8px 10px;
+  border-radius: var(--r-panel);
+  background: var(--lacquer-3);
+  color: var(--ivory);
+  box-shadow: var(--shadow-toast);
+  font-size: 12px;
+  pointer-events: none;
+}
+.ch-tip.left {
+  translate: calc(-100% - 24px) 0;
+}
+.ch-tip-key {
+  margin-block-end: 4px;
+  font-weight: 700;
+}
+.ch-tip-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+.ch-tip-lbl {
+  color: #d9c3ba;
+}
+.ch-table-wrap {
+  max-block-size: 18rem;
+  overflow: auto;
+}
+.ch-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ch-table th,
+.ch-table td {
+  padding: 5px 8px;
+  border-block-end: 1px solid var(--line);
+  text-align: start;
+}
+.ch-table td.num {
+  text-align: end;
+}
+.ch-table thead th {
+  color: var(--muted);
+}
+
+.ch-bars {
+  display: grid;
+  gap: 2px;
+}
+.ch-bar-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 34%) 1fr auto;
   align-items: center;
   gap: 10px;
-  background: var(--adm-bg);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 8px 10px;
-}
-.img-item.is-main {
-  border-color: var(--ch-warn);
-  background: rgba(185, 138, 46, 0.06);
-}
-.img-main-badge {
-  position: absolute;
-  top: -8px;
-  left: 10px;
-  background: var(--ch-warn);
-  color: var(--adm-panel);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 99px;
-}
-.img-item span.mono {
-  flex: 1;
+  inline-size: 100%;
+  min-block-size: 30px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--r-surface);
+  background: none;
   font-size: 12px;
-  color: var(--adm-ink-3);
+  text-align: start;
+}
+.ch-bar-row.cliquable:hover {
+  background: var(--accent-soft);
+}
+.ch-bar-row.choisi {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.ch-bar-key {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.img-thumb {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 2px;
-  flex-shrink: 0;
-  border: 1px solid var(--adm-line);
+.ch-bar-track {
+  block-size: 10px;
+  background: var(--line);
 }
-.img-actions {
+.ch-bar-fill {
+  display: block;
+  block-size: 100%;
+}
+.ch-bar-val {
+  min-inline-size: 4ch;
+  font-weight: 700;
+}
+
+.ch-scale {
   display: flex;
   align-items: center;
+  gap: 2px;
+  margin-block-start: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ch-scale-step {
+  inline-size: 28px;
+  block-size: 10px;
+}
+.ch-scale-lbl {
+  padding: 0 6px;
+}
+
+/* --- Tableau de bord : portrait de segment --- */
+
+.segment-panneau {
+  margin-block-start: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+.segment-panneau.filtre {
+  border-inline-start: 3px solid var(--accent);
+}
+.segment-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-block-end: 14px;
+}
+.segment-titre {
+  display: block;
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 18px;
+}
+.segment-chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 12px 20px;
+  margin-block-end: 16px;
+}
+.segment-val {
+  font-size: 18px;
+  font-weight: 700;
+}
+.segment-lbl {
+  font-size: 12px;
+  color: var(--muted);
+}
+.segment-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 16px;
+}
+.segment-bloc {
+  display: grid;
+  align-content: start;
   gap: 4px;
-  flex-shrink: 0;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--line);
 }
-.img-ord {
-  width: 24px;
-  height: 24px;
+.segment-liste {
+  display: grid;
+  gap: 4px;
+  counter-reset: rang;
+}
+.segment-liste li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  font-size: 13px;
+}
+.segment-nom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.segment-nom-fort {
+  font-size: 15px;
+}
+.segment-second {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* --- Rentabilité, segments, affinités --- */
+
+.abc-grid,
+.segment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1px;
+  padding: 1px;
+}
+.abc-card,
+.segment-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface);
+  outline: 1px solid var(--line);
+}
+.abc-head,
+.segment-head {
   display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.abc-val {
+  font-size: 22px;
+  font-weight: 700;
+}
+.abc-A {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.segment-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+.abc-tag {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border: 1px solid var(--line-strong);
+  font-weight: 700;
+  font-size: 12px;
+}
+.abc-tag.abc-A {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: none;
+}
+.segment-count {
+  font-weight: 700;
+}
+.segment-bar,
+.marge-bar,
+.lift-bar {
+  display: block;
+  block-size: 6px;
+  background: var(--line);
+}
+.segment-fill,
+.marge-fill,
+.lift-fill {
+  display: block;
+  block-size: 100%;
+  background: var(--ch-serie-1);
+}
+.lift-fill:not(.up) {
+  background: var(--muted);
+}
+.segment-stats {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+.marge-cell,
+.lift-cell {
+  display: grid;
+  grid-template-columns: 6rem auto;
   align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  background: var(--adm-track);
-  border: 1px solid var(--adm-line);
-  color: var(--adm-ink-2);
-  font-size: 10px;
-  transition: 0.15s;
+  gap: 10px;
 }
-.img-ord:hover:not(:disabled) {
-  border-color: var(--adm-ink-3);
-  color: #fff;
+.lift-val.up {
+  font-weight: 700;
 }
-.img-ord:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+
+.cohort-table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 12px;
 }
+.cohort-table th {
+  padding: 4px 8px;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: start;
+}
+.cohort-table th.num {
+  text-align: end;
+}
+.cohort-key {
+  white-space: nowrap;
+}
+.cohort-size {
+  padding: 4px 8px;
+  color: var(--muted);
+}
+.cohort-cell {
+  min-inline-size: 3.2rem;
+  padding: 6px 8px;
+  text-align: end;
+  color: var(--ink);
+}
+.cohort-cell.empty {
+  background: transparent;
+}
+.adm:not([data-theme="dark"]) .cohort-cell[data-fonce] {
+  color: var(--washi-light);
+}
+.adm[data-theme="dark"] .cohort-cell[data-fonce] {
+  color: var(--lacquer);
+}
+
+/* --- Formulaire produit --- */
+
+.adm-form-wrap {
+  display: grid;
+  gap: 20px;
+}
+.adm-form-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.adm-form-head h2 {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 22px;
+}
+.adm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 24px;
+}
+.adm-col {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.adm-form-actions {
+  padding-block-start: 16px;
+  border-block-start: 1px solid var(--line);
+}
+
+.art-builder {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.art-preview {
+  aspect-ratio: 1;
+  border-radius: var(--r-panel);
+  overflow: hidden;
+  outline: 1px solid var(--line);
+}
+.art-preview .art {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.art-controls {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+.art-controls .adm-field {
+  inline-size: 100%;
+}
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.color-swatch {
+  inline-size: 30px;
+  block-size: 30px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+}
+.color-swatch[aria-checked="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .img-hint {
   font-size: 12px;
-  color: var(--adm-ink-3);
-  margin-bottom: 10px;
+  color: var(--muted);
 }
 .img-upload-zone {
   display: block;
   cursor: pointer;
-  border: 2px dashed var(--adm-line);
-  border-radius: 2px;
-  margin-bottom: 10px;
-  transition: 0.2s;
-}
-.img-upload-zone:hover {
-  border-color: var(--adm-accent);
 }
 .img-upload-inner {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 16px;
-  color: var(--adm-ink-3);
-  font-size: 13px;
-}
-.img-upload-icon {
-  font-size: 24px;
-  flex-shrink: 0;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-panel);
+  color: var(--muted);
 }
 .img-upload-inner small {
-  font-size: 11px;
-  color: var(--adm-ink-3);
+  display: block;
+  font-size: 12px;
+}
+.img-upload-zone:focus-within .img-upload-inner {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .img-upload-zone:hover .img-upload-inner {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+}
+.img-list {
+  display: grid;
+  gap: 6px;
+}
+.img-item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+}
+.img-item.is-main {
+  border-color: var(--line-strong);
+}
+.img-libelle {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-inline-size: 0;
+  overflow: hidden;
+}
+.img-libelle .code {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.img-actions {
+  display: flex;
+  gap: 4px;
 }
 .img-add-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 8px;
 }
-.img-add-row input {
-  flex: 1;
-  background: var(--adm-bg);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 9px 12px;
-  color: var(--adm-ink);
-  outline: none;
-}
-.img-add-row input:focus {
-  border-color: var(--adm-accent);
-}
+
+/* --- Fenêtre de code promo --- */
 
 .adm-modal-wrap {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  z-index: var(--z-sheet);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.adm-modal-voile {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
 }
 .adm-modal {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 28px;
-  width: min(480px, 100%);
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: grid;
   gap: 12px;
+  inline-size: min(26rem, 100%);
+  max-block-size: 90dvh;
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: var(--r-panel);
+  background: var(--panel);
+  box-shadow: var(--shadow-sheet);
 }
 .adm-modal h3 {
-  font-family: var(--adm-font);
-  font-size: 18px;
-  margin-bottom: 4px;
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 20px;
 }
 .adm-modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-block-start: 6px;
 }
 
 .adm-alerts {
-  margin-bottom: 28px;
+  margin-block-end: 24px;
+}
+
+/* --- Notification --- */
+
+.adm-toast-zone {
+  position: fixed;
+  z-index: var(--z-toast);
+  inset-inline-end: 20px;
+  inset-block-end: 20px;
 }
 .adm-toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--ch-good);
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: 2px;
-  font-weight: 700;
-  font-size: 14px;
-  z-index: 999;
-  animation: fadein 0.2s;
+  padding: 12px 16px;
+  border-radius: var(--r-panel);
+  background: var(--lacquer-3);
+  color: var(--ivory);
+  box-shadow: var(--shadow-toast);
+  font-size: 13px;
+  font-weight: 600;
+  animation: adm-toast var(--dur-feedback) var(--ease-out);
 }
 .adm-toast.err {
-  background: var(--adm-accent);
+  box-shadow:
+    inset 3px 0 0 var(--vermilion-bright),
+    var(--shadow-toast);
 }
-@keyframes fadein {
+@keyframes adm-toast {
   from {
     opacity: 0;
     transform: translateY(8px);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
-@media (max-width: 900px) {
-  .adm {
-    flex-direction: column;
-  }
-  .adm-nav {
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    position: relative;
-    gap: 6px;
-    padding: 12px;
-  }
-  .adm-logo {
-    display: none;
-  }
-  .adm-back {
-    margin-top: 0;
-  }
-  .adm-cards,
-  .adm-cards-4,
-  .adm-cards-5 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .adm-periods {
-    margin-left: 0;
-    width: 100%;
-  }
-  .segment-grid {
-    grid-template-columns: 1fr;
-  }
-  /* Une colonne : deux courbes cote a cote sur un telephone reduisent chaque
-     point a moins d'un pixel d'ecart, et le palmares tronque ses libelles. */
-  .viz-grid,
-  .viz-grid-2,
-  .rank-grid,
-  .abc-grid {
-    grid-template-columns: 1fr;
-  }
-  .adm-form-grid {
-    grid-template-columns: 1fr;
-  }
-  .adm-main {
-    padding: 16px;
-  }
+/* --- Exploitation --- */
+
+.expl-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 1px;
+  padding: 1px;
+  margin-block-end: 16px;
+}
+.expl-carte {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  background: var(--surface);
+  outline: 1px solid var(--line);
+}
+.expl-carte.alerte {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.expl-libelle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.expl-valeur {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.expl-valeur.texte {
+  font-family: var(--font-code);
+  font-size: 18px;
+}
+.expl-note-carte {
+  font-size: 12px;
+  color: var(--muted);
+}
+.expl-note,
+.expl-intro {
+  max-inline-size: 72ch;
+  margin-block-end: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.expl-note.alerte {
+  padding: 10px 14px;
+  border-inline-start: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.expl-h {
+  margin-block: 28px 10px;
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 19px;
+}
+.expl-etat {
+  font-weight: 700;
+}
+.expl-etat.abandonne {
+  color: var(--accent);
+}
+.expl-motif {
+  max-inline-size: 28rem;
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: normal;
 }
 
-/* ---------------------------------------------------------------- */
-/* Entrepôt décisionnel                                              */
-/* ---------------------------------------------------------------- */
-/* Les trois couches gardent les noms de métaux que porte l'architecture en
-   médaillon, mais plus rien de métallique : ni bronze, ni argent, ni or nulle
-   part dans la palette. Ce sont trois étapes d'un même traitement, et c'est
-   ainsi qu'elles se donnent à lire. Voir `.wh-couche::after` pour ce qui porte
-   l'ordre depuis que la teinte ne le porte plus. */
+/* --- Entrepôt --- */
+
+.wh {
+  display: grid;
+  gap: 20px;
+}
+
+/* Bronze, silver, gold : dans l'ordre de la donnée */
 .wh-couches {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 1px;
+  padding: 1px;
+  counter-reset: couche;
+}
+@media (min-width: 64rem) {
+  .wh-couches {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 .wh-couche {
   position: relative;
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface);
+  outline: 1px solid var(--line);
 }
-
-/* L'ORDRE NE SE DIT PLUS PAR LA TEINTE.
- *
- * Les trois couches portaient chacune un vermillon différent, du brun sourd au
- * vif. Trois nuances voisines d'une même couleur ne se classent pas : côte à
- * côte elles se lisaient comme une seule, et il fallait comparer deux titres
- * pour deviner lequel venait avant. La teinte est un mauvais canal pour un
- * ordre (elle sait dire « autre », pas « ensuite »), et une direction qui ne
- * s'autorise qu'une couleur ne pouvait de toute façon pas en tirer trois.
- *
- * L'ordre passe donc dans la LONGUEUR d'un filet unique, en une seule couleur :
- * un tiers, deux tiers, la largeur entière. Trois panneaux l'un sous l'autre se
- * lisent alors comme une jauge qui se remplit le long du traitement, ce qui est
- * exactement ce que fait la chaîne bronze -> silver -> gold. Le numéro écrit
- * dans l'en-tête dit la même chose en toutes lettres : deux signaux valent
- * mieux qu'un quand le premier reproche fait à l'écran est la confusion. */
-.wh-couche::after {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  height: 2px;
-  width: var(--wh-part);
-  background: var(--adm-accent);
-}
-.wh-bronze {
-  --wh-part: 34%;
-}
-.wh-silver {
-  --wh-part: 67%;
+/* Flèche d'une couche à la suivante */
+@media (min-width: 64rem) {
+  .wh-couche + .wh-couche::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset-block-start: 22px;
+    inset-inline-start: -6px;
+    inline-size: 10px;
+    block-size: 10px;
+    border-block-start: 1.5px solid var(--line-strong);
+    border-inline-end: 1.5px solid var(--line-strong);
+    background: var(--surface);
+    rotate: 45deg;
+  }
 }
 .wh-gold {
-  --wh-part: calc(100% + 2px);
-}
-
-/* Le rang. En chiffres tabulaires et en creux : il classe sans jamais entrer en
-   concurrence avec l'intitulé, qui reste ce qu'on lit en premier. */
-.wh-couche-rang {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--adm-ink-3);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.06em;
-}
-/* La flèche entre deux couches. En pseudo-élément plutôt qu'en balise : le
-   sens de lecture est une information visuelle, pas un contenu à annoncer à
-   un lecteur d'écran, qui lit déjà les trois panneaux dans l'ordre. */
-.wh-couche + .wh-couche::before {
-  content: "→";
-  position: absolute;
-  left: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--adm-ink-3);
-  font-size: 13px;
+  box-shadow: inset 0 2px 0 var(--accent);
 }
 .wh-couche-tete {
   display: flex;
   align-items: baseline;
-  gap: 9px;
+  gap: 10px;
+}
+.wh-couche-tete .code {
+  color: var(--muted);
 }
 .wh-couche-titre {
-  font-size: 14px;
-  font-weight: 800;
-  /* Une seule et même couleur pour les trois : ce sont trois etapes d'un meme
-     traitement, pas trois natures differentes. */
-  color: var(--adm-accent);
-  letter-spacing: 0.02em;
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 19px;
 }
 .wh-couche-compte {
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  margin-left: auto;
+  margin-inline-start: auto;
+  font-weight: 700;
 }
 .wh-couche-resume {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--adm-ink-2);
-  margin: 6px 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+  text-wrap: pretty;
 }
 .wh-chips {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 4px;
-  margin-bottom: 10px;
 }
 .wh-chip {
-  font-family: var(--adm-mono);
-  font-size: 10.5px;
-  background: var(--adm-track);
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
   padding: 2px 6px;
-  color: var(--adm-ink-2);
-  white-space: nowrap;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  font-family: var(--font-code);
+  font-size: 11px;
 }
-/* Un modèle annoncé mais introuvable en base. Barré plutôt que masqué :
-   l'écart entre ce que le projet déclare et ce que la base contient est
-   exactement ce qu'on veut voir après une construction partielle. */
 .wh-chip.absent {
-  color: var(--adm-ink-3);
   border-style: dashed;
-  text-decoration: line-through;
-  opacity: 0.7;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .wh-couche-pied {
-  margin-top: auto;
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  border-top: 1px dashed var(--adm-line);
-  padding-top: 8px;
+  padding-block-start: 8px;
+  border-block-start: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .wh-fraicheur {
-  font-size: 12.5px;
-  color: var(--adm-ink-2);
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-left: 3px solid var(--adm-accent);
-  border-radius: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
   padding: 10px 14px;
-  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--ink);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  font-size: 13px;
 }
-.wh-note {
-  color: var(--adm-ink-3);
-  font-size: 12px;
-  line-height: 1.6;
+.wh-fraicheur time,
+.wh-fraicheur span {
+  color: var(--muted);
+}
+.wh-fraicheur[data-perime] {
+  border-inline-start-color: var(--accent);
+}
+.wh-fraicheur[data-perime] span {
+  color: var(--ink);
 }
 
-.wh-subnav .adm-subnav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* Contrôles Dagster : l'état est écrit en toutes lettres, la couleur ne fait que le doubler */
+.wh-controles {
+  display: grid;
+  gap: 10px;
 }
-.wh-subnav .adm-subnav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.wh-controles-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.wh-controles-tete h2 {
+  font-family: var(--font-voice);
+  font-size: 18px;
+  font-weight: 700;
+}
+.wh-controles-tete p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.wh-controles-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1px;
+  padding: 1px;
+}
+.wh-controle {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface);
+  outline: 1px solid var(--line);
+}
+.wh-controle[data-etat="echec"] {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.wh-controle-titre {
+  font-size: 14px;
+}
+.wh-controle-message {
+  font-size: 13px;
+}
+.wh-controle-attendu {
+  font-size: 12px;
+  color: var(--muted);
+}
+.status-badge[data-status="reussi"] {
+  color: var(--good);
+}
+.status-badge[data-status="reussi"]::before {
+  background: currentColor;
+  border-radius: 50%;
+}
+.status-badge[data-status="echec"] {
+  color: var(--accent);
+}
+.status-badge[data-status="echec"]::before {
+  background: currentColor;
+}
+
+/* Dix tables : toutes visibles, sans défilement horizontal */
+.wh-marts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
 }
 .wh-compte {
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--adm-ink-3);
-  background: var(--adm-track);
-  border-radius: 999px;
-  padding: 1px 6px;
+  padding: 0 5px;
+  border-radius: var(--r-surface);
+  background: var(--line);
+  color: var(--ink);
+  font-size: 11px;
+}
+.adm-subnav-btn[aria-pressed="true"] .wh-compte {
+  background: color-mix(in srgb, var(--on-accent) 22%, transparent);
+  color: var(--on-accent);
 }
 
-.wh-question {
-  font-size: 14px;
-  color: var(--adm-ink);
-  margin-bottom: 14px;
-  max-width: 90ch;
-  line-height: 1.5;
-}
-
-/* La requête envoyée, avec de quoi l'emporter. Le bloc était auparavant un
-   `pre` nu : le texte restait sélectionnable, mais rien ne le laissait deviner,
-   et un bloc inerte sous une invitation à « rejouer la requête » est une
-   promesse qu'on ne tient pas. L'en-tête donne le nom de ce qu'on regarde et
-   l'action qui va avec. */
-.wh-requete {
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-.wh-requete-tete {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 7px 10px 7px 14px;
-  background: var(--adm-panel);
-  border-bottom: 1px solid var(--adm-line);
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--adm-ink-3);
-}
-
-/* Le SQL lui-même. `pre` et non `code` : il est écrit sur plusieurs lignes côté
-   serveur, et l'indentation fait partie de ce qui le rend lisible. */
-.wh-sql {
-  font-family: var(--adm-mono);
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--adm-ink-2);
-  background: var(--adm-panel-2);
-  /* Ni bordure ni rayon : c'est le conteneur `.wh-requete` qui les porte
-     désormais, faute de quoi deux cadres se superposeraient. */
-  padding: 12px 14px;
-  overflow-x: auto;
-  white-space: pre;
-}
-
-/* Les tables de l'entrepôt comptent jusqu'à vingt-deux colonnes : elles
-   débordent, et c'est normal. Le débordement est confiné à ce cadre pour que
-   ce soit la table qui défile, jamais la page entière. */
-.wh-cadre {
-  overflow-x: auto;
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-}
-.wh-table {
-  margin: 0;
-  min-width: 100%;
-  white-space: nowrap;
-}
-.wh-table th.num,
-.wh-table td.num {
-  text-align: right;
-}
-.wh-table td.num {
-  font-family: var(--adm-mono);
-  font-variant-numeric: tabular-nums;
-}
-/* L'en-tête est un bouton : la colonne se trie au clic. En bouton plutôt qu'en
-   `th` cliquable, pour rester atteignable au clavier sans rien réinventer. */
-.wh-tri {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
+.wh-mart {
+  display: grid;
   gap: 4px;
 }
-.wh-tri:hover {
-  color: var(--adm-ink);
+.wh-mart-titre {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 22px;
 }
-.wh-tri.on {
-  color: var(--adm-accent);
-}
-.wh-sens {
-  font-size: 10px;
-}
-.wh-table th.num .wh-tri {
-  flex-direction: row-reverse;
+.wh-question {
+  max-inline-size: 70ch;
+  font-size: 15px;
+  color: var(--muted);
 }
 
-.wh-absent p {
-  margin: 8px 0;
-  line-height: 1.6;
-}
-.wh-absent .wh-requete {
-  margin: 12px 0;
-}
-/* La commande de construction se replie plutôt que de défiler : elle tient sur
-   une ligne courte, et un ascenseur horizontal sur quarante caractères serait
-   du bruit. */
-.wh-absent .wh-sql {
-  white-space: pre-wrap;
-}
-
-@media (max-width: 1100px) {
-  .wh-couches {
-    grid-template-columns: 1fr;
-  }
-  .wh-couche + .wh-couche::before {
-    content: "↓";
-    left: 50%;
-    top: -12px;
-    transform: translateX(-50%);
-  }
-}
-
-/* --- Déconnexion --- */
-/* Teintée en accent, mais discrètement : c'est une action de sortie, pas une
-   action destructrice. Le compte connecté s'affiche dessous, parce que la
-   première question avant de se déconnecter est « déconnecter qui ? ». */
-.adm-deconnexion {
-  width: 100%;
-  color: var(--adm-ink-2);
-}
-.adm-deconnexion:hover {
-  color: var(--adm-accent);
-}
-.adm-deconnexion:hover .adm-nav-ic {
-  color: var(--adm-accent);
-}
-.adm-compte {
-  display: block;
-  padding: 2px 12px 0 40px;
-  font-size: 11px;
-  color: var(--adm-ink-3);
+/* La console reste en laque dans les deux thèmes */
+.wh-console,
+.wh-code {
+  display: grid;
+  border: 1px solid #33201a;
+  border-radius: var(--r-panel);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: var(--lacquer);
+  color: var(--ivory);
 }
-
-/* --- Console SQL --- */
-.wh-console {
-  border: 1px solid var(--adm-line);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 18px;
+.wh-code-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 10px 8px 14px;
+  border-block-end: 1px solid #241511;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b3948b;
 }
 .wh-console-actions {
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
+  gap: 6px;
 }
-
-/* La zone de saisie hérite du style du bloc `pre` : même police, même corps,
-   même fond. Passer de la lecture à l'écriture ne doit pas donner l'impression
-   de changer d'outil. */
-.wh-saisie {
-  display: block;
-  width: 100%;
-  border: none;
-  border-radius: 2px;
+.adm-btn.on-lacquer {
+  border-color: #33201a;
+  color: var(--ivory);
+}
+@media (hover: hover) {
+  .adm-btn.on-lacquer:hover:not(:disabled) {
+    border-color: #b3948b;
+  }
+}
+.wh-console .adm-btn.primary {
+  border-color: var(--vermilion-bright);
+  background: var(--vermilion-bright);
+  color: var(--lacquer);
+}
+.wh-console :focus-visible,
+.wh-code :focus-visible {
+  outline-color: var(--vermilion-bright);
+}
+.wh-editeur {
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+.wh-gouttiere {
+  display: grid;
+  align-content: start;
+  padding: 12px 10px 12px 14px;
+  border-inline-end: 1px solid #241511;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6f524a;
+  text-align: end;
+  user-select: none;
+}
+.wh-sql {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.adm textarea.wh-saisie {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ivory);
   resize: vertical;
-  outline: none;
-  tab-size: 2;
-  white-space: pre;
-  overflow-wrap: normal;
-  overflow-x: auto;
+  outline-offset: -2px;
 }
-.wh-saisie:focus {
-  color: var(--adm-ink);
-  box-shadow: inset 3px 0 0 var(--adm-accent);
-}
-
 .wh-console-pied {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
-  padding: 7px 14px;
-  border-top: 1px solid var(--adm-line);
-  background: var(--adm-panel);
-  font-size: 11.5px;
-  color: var(--adm-ink-3);
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 8px 14px;
+  border-block-start: 1px solid #241511;
+  font-size: 12px;
+  color: #b3948b;
 }
 .wh-console-pied kbd {
-  font-family: var(--adm-mono);
-  font-size: 10.5px;
-  background: var(--adm-track);
-  border: 1px solid var(--adm-line);
-  border-bottom-width: 2px;
-  border-radius: 2px;
-  padding: 1px 5px;
-  color: var(--adm-ink-2);
+  padding: 0 5px;
+  border: 1px solid #33201a;
+  border-radius: var(--r-surface);
+  color: var(--ivory);
 }
-
 .wh-aide {
+  display: grid;
+  gap: 12px;
   padding: 12px 14px;
-  border-top: 1px solid var(--adm-line);
-  background: var(--adm-panel-2);
+  border-block-start: 1px solid #241511;
+  font-size: 13px;
 }
 .wh-regles {
-  margin: 0 0 12px 18px;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--adm-ink-2);
+  display: grid;
+  gap: 4px;
+  color: #d9c3ba;
+}
+.wh-regles li {
+  padding-inline-start: 14px;
+  position: relative;
+}
+.wh-regles li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0.6em;
+  inline-size: 5px;
+  block-size: 5px;
+  background: var(--vermilion-bright);
 }
 .wh-exemples {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
-/* Les exemples sont des boutons et non du texte : on les charge dans le champ
-   d'un clic pour les modifier ensuite. Une console SQL sans point de départ
-   suppose qu'on connaît déjà le schéma par cœur. */
-.wh-exemple {
-  background: var(--adm-track);
-  border: 1px solid var(--adm-line);
-  border-radius: 999px;
-  color: var(--adm-ink-2);
-  font: inherit;
-  font-size: 11.5px;
-  padding: 5px 12px;
-  cursor: pointer;
-  transition: 0.15s;
-  text-align: left;
-}
-.wh-exemple:hover {
-  border-color: var(--adm-accent);
-  color: var(--adm-ink);
-}
-
 .wh-erreur {
   margin: 0;
-  border-radius: 2px;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  font-size: 13px;
-  white-space: pre-wrap;
+  border-radius: 0;
+  border-inline: 0;
+  border-block-end: 0;
+  border-block-start: 1px solid #241511;
+  border-inline-start: 3px solid var(--vermilion-bright);
+  background: var(--lacquer-2);
+  color: var(--ivory);
+  font-family: var(--font-code);
 }
 .wh-resultat {
-  border-top: 1px solid var(--adm-line);
-  padding: 12px 14px;
-}
-.wh-resultat .adm-toolbar {
-  margin-bottom: 10px;
-}
-.wh-resultat .wh-cadre {
-  border-radius: 2px;
-}
-
-/* ---------------------------------------------------------------- */
-/* Exploitation                                                      */
-/* ---------------------------------------------------------------- */
-/* Ecran de SURVEILLANCE, pas de gestion : il se lit d'un coup d'oeil et
-   n'offre aucune action. Les quatre chiffres du haut repondent a la seule
-   question qui compte - est-ce que le courrier part - et le reste ne sert
-   qu'a comprendre pourquoi, quand la reponse est non. */
-.expl-cartes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-block-start: 1px solid #241511;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.wh-table td {
+  white-space: nowrap;
+}
+
+.wh-absent {
+  display: grid;
   gap: 12px;
-  margin-bottom: 20px;
+  max-inline-size: 60rem;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--r-panel);
+  background: var(--surface);
 }
-.expl-carte {
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-top: 2px solid var(--adm-line2);
-  border-radius: 2px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-/* Le vermillon ne sert QU'a l'anomalie. Colorer les quatre cartes en
-   permanence apprend a ne plus voir la couleur, ce qui est exactement
-   l'inverse du but. */
-.expl-carte.alerte {
-  border-top-color: var(--adm-accent);
-}
-.expl-libelle {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--adm-ink-3);
-}
-.expl-valeur {
-  font-family: var(--adm-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 26px;
-  line-height: 1.1;
-  color: var(--adm-ink);
-}
-.expl-carte.alerte .expl-valeur {
-  color: var(--adm-accent);
-}
-/* Un mot n'est pas un nombre : « fichier » a 26 px deborderait de sa carte. */
-.expl-valeur.texte {
-  font-size: 17px;
-  padding-top: 5px;
-}
-.expl-note-carte {
-  font-size: 11px;
-  color: var(--adm-ink-3);
-}
-
-.expl-note {
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--adm-ink-2);
-  background: var(--adm-panel);
-  border: 1px solid var(--adm-line);
-  border-left: 3px solid var(--adm-line2);
-  border-radius: 2px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-}
-.expl-note.alerte {
-  border-left-color: var(--adm-accent);
-  color: var(--adm-ink);
-}
-.expl-note code {
-  font-family: var(--adm-mono);
-  font-size: 11.5px;
-  background: var(--adm-track);
-  padding: 1px 5px;
-  border-radius: 2px;
-}
-
-.expl-h {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--adm-accent);
-  margin: 26px 0 8px;
-}
-.expl-intro {
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--adm-ink-2);
-  max-width: 80ch;
-  margin-bottom: 12px;
-}
-
-.expl-etat {
-  font-size: 10.5px;
+.wh-absent h2 {
+  font-family: var(--font-voice);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 7px;
-  border-radius: 2px;
-  border: 1px solid currentColor;
+  font-size: 22px;
 }
-.expl-etat.abandonne {
-  color: var(--adm-accent);
-}
-.expl-etat.en_attente {
-  color: var(--adm-ink-3);
+.wh-absent p {
+  max-inline-size: 72ch;
+  color: var(--muted);
 }
 
-/* LARGEURS FIXES, contrairement aux tables de l'entrepot.
- *
- * Celles-ci heritaient de `white-space: nowrap`, pense pour des tables a
- * vingt-deux colonnes qu'on fait defiler horizontalement - c'est le bon choix
- * pour explorer des donnees. Ici, non : la table n'a que cinq colonnes, dont
- * deux de texte libre, et le sujet d'un courriel poussait a lui seul la colonne
- * MOTIF hors du cadre. Or le motif est precisement ce qu'on vient lire ; le
- * masquer derriere un defilement horizontal, c'est cacher la reponse a la seule
- * question posee.
- *
- * Mesure a l'appui : 808 px de table pour 682 px de cadre, soit 126 px de
- * debordement, et la colonne perdue etait la derniere. */
-.expl-table {
-  table-layout: fixed;
-  width: 100%;
-  min-width: 0;
-}
-.expl-table td {
-  white-space: normal;
-  vertical-align: top;
-}
-/* Les EN-TETES ne se coupent jamais : « Essais » rendu « ESSA IS » sur deux
-   lignes est illisible, et une colonne dont on ne lit plus le titre ne se lit
-   plus du tout. */
-.expl-table th {
-  white-space: nowrap;
-}
-.expl-table .c-dest {
-  width: 22%;
-}
-.expl-table .c-sujet {
-  width: 26%;
-}
-.expl-table .c-etat {
-  width: 16%;
-}
-.expl-table .c-essais {
-  width: 11%;
-}
-.expl-table .c-motif {
-  width: 25%;
+/* --- Petits écrans : la navigation passe au-dessus --- */
+
+@media (max-width: 56rem) {
+  .adm {
+    flex-direction: column;
+  }
+  .adm-nav {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    padding: 12px;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--line);
+  }
+  .adm-logo {
+    padding-block-end: 10px;
+    margin-block-end: 8px;
+  }
+  .adm-nav-groupes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+  .adm-nav-groupe {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0;
+  }
+  .adm-nav-titre {
+    inline-size: 100%;
+    padding-inline: 4px;
+  }
+  .adm-nav-foot {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-block-start: 8px;
+  }
+  .adm-compte {
+    inline-size: 100%;
+  }
+  .art-builder {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* La coupure au milieu d'un mot est reservee aux DEUX colonnes qui portent des
-   chaines sans espaces : une adresse masquee et un message de pilote. Appliquee
-   partout, elle cassait « Essais » et la pastille « abandonne » en plein
-   milieu. */
-.expl-motif,
-.expl-table .mono {
-  overflow-wrap: anywhere;
-}
-
-.expl-motif {
-  font-family: var(--adm-mono);
-  font-size: 11px;
-  color: var(--adm-ink-3);
-  line-height: 1.5;
-}
-
-/* La pastille d'etat est un bloc indivisible : elle porte un seul mot, et le
-   couper en deux lignes lui fait perdre sa forme. */
-.expl-etat {
-  white-space: nowrap;
-  display: inline-block;
-}
-
-/* Le `<nav>` ajoute autour des groupes ne doit pas casser leur empilement : il
-   reprend la disposition que `.adm-nav` appliquait a ses enfants directs. */
-.adm-nav-groupes {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
+@media (prefers-reduced-motion: reduce) {
+  .adm *,
+  .adm *::before,
+  .adm *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }

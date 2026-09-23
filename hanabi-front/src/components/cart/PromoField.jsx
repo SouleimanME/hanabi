@@ -1,54 +1,67 @@
-/** Saisie et affichage d'un code promo.
- *
- * La validation est faite par le serveur : `onApply` renvoie un message
- * d'erreur, ou `null` si le code est accepte.
- */
-import { useState } from "react";
+/** Code promo. Le serveur valide : `onApply` rend un message d'erreur, ou
+ *  `null` si le code est accepte. */
+import { useId, useState } from "react";
 import { Tag } from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
 
 export function PromoField({ promo, promoLabel, onApply, onClear }) {
   const t = useT();
+  const id = useId();
   const [code, setCode] = useState("");
-  const [err, setErr] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const apply = async () => {
-    setBusy(true);
-    const m = await onApply(code);
-    setBusy(false);
-    setErr(m);
-    if (!m) setCode("");
+  const [erreur, setErreur] = useState(null);
+  const [envoi, setEnvoi] = useState(false);
+
+  const appliquer = async (e) => {
+    e.preventDefault();
+    setEnvoi(true);
+    const message = await onApply(code);
+    setEnvoi(false);
+    setErreur(message);
+    if (!message) setCode("");
   };
-  if (promo)
+
+  if (promo) {
     return (
       <div className="promo-on">
         <span>
-          <Tag size={14} /> <strong>{promo}</strong> · {promoLabel}
+          <Tag size={16} aria-hidden="true" /> <span className="code">{promo}</span>
+          {promoLabel ? ` · ${promoLabel}` : ""}
         </span>
-        <button className="link-del" onClick={onClear}>
+        <button className="link" onClick={onClear}>
           {t("removeC")}
         </button>
       </div>
     );
+  }
+
   return (
-    <div className="promo">
+    <form className="promo" onSubmit={appliquer}>
+      <label htmlFor={id}>{t("promoPh")}</label>
       <div className="promo-row">
         <input
+          id={id}
           value={code}
           onChange={(e) => {
             setCode(e.target.value);
-            setErr(null);
+            setErreur(null);
           }}
-          placeholder={t("promoPh")}
-          aria-label="Promo"
-          onKeyDown={(e) => e.key === "Enter" && apply()}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck="false"
+          aria-invalid={erreur ? true : undefined}
+          aria-describedby={`${id}-aide`}
         />
-        <button className="btn-ghost sm" onClick={apply} disabled={busy}>
+        <button className="btn btn-quiet" type="submit" disabled={envoi || !code.trim()}>
           {t("apply")}
         </button>
       </div>
-      {err && <span className="promo-err">{err}</span>}
-      <span className="promo-hint mono small">{t("promoHint")}</span>
-    </div>
+      <p
+        className={erreur ? "field-error" : "field-hint"}
+        id={`${id}-aide`}
+        role={erreur ? "alert" : undefined}
+      >
+        {erreur || t("promoHint")}
+      </p>
+    </form>
   );
 }

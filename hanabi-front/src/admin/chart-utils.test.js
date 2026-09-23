@@ -1,12 +1,4 @@
-/** Outils de mesure des graphiques.
- *
- * `smoothPath` merite mieux qu'un test de valeurs figees. Son commentaire
- * annonce une garantie - la courbe ne depasse jamais les points mesures - et
- * c'est cette garantie qu'on verifie, en echantillonnant les courbes de Bezier
- * produites. Un test qui comparerait la chaine `d` a une chaine attendue
- * casserait au moindre changement d'arrondi tout en laissant passer un vrai
- * depassement : il verifierait la sortie sans verifier la promesse.
- */
+/** Outils de mesure des graphiques. */
 import { describe, it, expect } from "vitest";
 
 import { niceTicks, axisNumber, axisEuro, smoothPath, heatColor } from "./chart-utils.js";
@@ -18,11 +10,7 @@ const bezierY = (p0, p1, p2, p3, t) => {
   return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
 };
 
-/**
- * Rejoue le trace et renvoie, pour chaque segment, les ordonnees echantillonnees.
- * On lit la chaine `d` plutot que de refaire le calcul : c'est bien la sortie
- * reelle du module qui est mise a l'epreuve.
- */
+/** Rejoue le trace et renvoie, pour chaque segment, les ordonnees echantillonnees. */
 function echantillonner(d, pas = 40) {
   const nombres = (s) => s.trim().split(",").map(Number);
   const segments = d.split(" C").slice(1);
@@ -119,9 +107,7 @@ describe("smoothPath", () => {
   });
 
   it("NE DEPASSE JAMAIS les points mesures", () => {
-    // La promesse du module : entre deux mois a 0 et 100, la courbe ne doit pas
-    // passer par 110. C'est ce qui distingue une spline monotone d'une spline
-    // ordinaire, et c'est la seule raison d'avoir implemente Fritsch-Carlson.
+    // La promesse du module : entre deux mois a 0 et 100, la courbe ne doit pas passer par 110
     const series = [
       [0, 100, 0, 100, 0],
       [10, 40, 20, 60, 15],
@@ -183,9 +169,7 @@ describe("heatColor", () => {
   });
 
   it("ne sort jamais de la rampe, valeur maximale comprise", () => {
-    // `Math.floor((value / max) * length)` vaut exactement `length` quand la
-    // valeur egale le maximum : sans le plafonnement, la case la plus chaude du
-    // graphique serait `undefined`.
+    // `Math.floor((value / max) * length)` vaut exactement `length` quand la valeur egale le maximum
     for (const v of [1, 25, 50, 99, 100]) {
       expect(SEQUENTIAL).toContain(heatColor(v, 100));
     }

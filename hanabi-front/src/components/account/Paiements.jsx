@@ -1,18 +1,6 @@
-/** Moyens de paiement enregistrés.
- *
- * CE QUI NE QUITTE JAMAIS CETTE PAGE : le numéro de carte et le cryptogramme.
- * Le formulaire les lit pour en déduire le réseau, les quatre derniers chiffres
- * et l'expiration - et c'est tout ce qui part sur le réseau. Le serveur n'a
- * donc rien à protéger qu'il ne détienne pas, ce qui maintient l'application
- * hors du périmètre PCI-DSS.
- *
- * Dans une boutique réelle, ces champs n'appartiendraient même pas au site :
- * on intègre l'iframe du prestataire (Stripe Elements et équivalents), qui rend
- * un jeton. Le partage des rôles est identique ici, le jeton étant simulé côté
- * serveur. Le reste du code ne changerait pas d'une ligne.
- */
+/** Moyens de paiement enregistrés. */
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, Plus, Star, Trash2, ShieldCheck } from "lucide-react";
+import { CreditCard, Plus, Trash2 } from "lucide-react";
 
 import { useT } from "../../i18n/context.jsx";
 import { Compte } from "../../lib/api.js";
@@ -51,28 +39,26 @@ export function Paiements({ flash }) {
     }
   };
 
-  if (erreur) return <p className="cpt-erreur">{erreur}</p>;
-  if (!liste) return <p className="muted small">…</p>;
+  if (erreur) return <p className="field-error">{erreur}</p>;
+  if (!liste) return <p className="muted">{t("loading")}</p>;
 
   return (
-    <div className="cpt-bloc">
-      <p className="cpt-avis">
-        <ShieldCheck size={14} /> {t("payNotice")}
-      </p>
+    <div className="stack">
+      <p className="muted">{t("payNotice")}</p>
 
-      {liste.length === 0 && !ouvert && <p className="muted small">{t("payEmpty")}</p>}
+      {liste.length === 0 && !ouvert && <p>{t("payEmpty")}</p>}
 
       {liste.length > 0 && (
-        <ul className="cartes">
+        <ul className="cards-list">
           {liste.map((m) => (
-            <li key={m.id} className={"carte" + (m.defaut ? " defaut" : "")}>
-              <CreditCard size={18} />
-              <div className="carte-info">
-                <span className="carte-nom">
+            <li key={m.id} className="saved-card">
+              <CreditCard size={20} aria-hidden="true" />
+              <div className="saved-card-main">
+                <span>
                   {NOMS_RESEAU[m.reseau] || t("payCard")}
-                  <span className="mono carte-num"> •••• {m.quatre_derniers}</span>
+                  <span className="code"> •••• {m.quatre_derniers}</span>
                 </span>
-                <span className="muted small">
+                <span className="muted">
                   {t("payExpires", {
                     d: `${String(m.exp_mois).padStart(2, "0")}/${String(m.exp_annee).slice(-2)}`,
                   })}
@@ -80,23 +66,21 @@ export function Paiements({ flash }) {
                 </span>
               </div>
               {m.defaut ? (
-                <span className="carte-defaut">
-                  <Star size={12} /> {t("payDefault")}
-                </span>
+                <span className="tag">{t("payDefault")}</span>
               ) : (
                 <button
-                  className="lien-oubli"
+                  className="link"
                   onClick={() => agir(() => Compte.paiementParDefaut(m.id), t("payDefaultSet"))}
                 >
                   {t("payMakeDefault")}
                 </button>
               )}
               <button
-                className="icon-btn carte-suppr"
+                className="icon-btn"
                 aria-label={t("payDelete")}
                 onClick={() => agir(() => Compte.supprimerPaiement(m.id), t("payDeleted"))}
               >
-                <Trash2 size={15} />
+                <Trash2 size={18} />
               </button>
             </li>
           ))}
@@ -113,15 +97,17 @@ export function Paiements({ flash }) {
           onAnnuler={() => setOuvert(false)}
         />
       ) : (
-        <button className="btn-ghost cpt-ajout" onClick={() => setOuvert(true)}>
-          <Plus size={15} /> {t("payAdd")}
-        </button>
+        <div>
+          <button className="btn btn-quiet" onClick={() => setOuvert(true)}>
+            <Plus size={16} aria-hidden="true" /> {t("payAdd")}
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-/** Saisie d'une carte. Ce composant est le seul du projet à voir un numéro. */
+/** Saisie d'une carte : le seul composant du projet qui voit un numéro. */
 function FormulaireCarte({ onAjoute, onAnnuler }) {
   const t = useT();
   const [numero, setNumero] = useState("");
@@ -135,7 +121,8 @@ function FormulaireCarte({ onAjoute, onAnnuler }) {
   const expOk = expiryValid(expiration);
   const pret = numeroOk && expOk && !envoi;
 
-  const envoyer = async () => {
+  const envoyer = async (e) => {
+    e.preventDefault();
     if (!pret) {
       setErreur(numeroOk ? t("payBadExpiry") : t("payBadNumber"));
       return;
@@ -143,9 +130,8 @@ function FormulaireCarte({ onAjoute, onAnnuler }) {
     setErreur("");
     setEnvoi(true);
 
-    // LE MOMENT QUI COMPTE. Le numéro est réduit ici, dans le navigateur, à ce
-    // qui sert à le reconnaître. Rien d'autre n'est construit, donc rien
-    // d'autre ne peut partir.
+    // Le numéro est réduit ici à ce qui sert à le reconnaître ; rien d'autre
+    // n'est construit, donc rien d'autre ne peut partir.
     const chiffres = digitsOnly(numero);
     const exp = digitsOnly(expiration);
 
@@ -158,33 +144,35 @@ function FormulaireCarte({ onAjoute, onAnnuler }) {
         libelle: libelle.trim() || null,
       });
       onAjoute();
-    } catch (e) {
-      setErreur(e.message);
+    } catch (err) {
+      setErreur(err.message);
       setEnvoi(false);
     }
   };
 
   return (
-    <div className="cpt-form carte-form">
+    <form className="form-stack" onSubmit={envoyer} noValidate>
       <label className="field">
         <span>{t("cardNumber")}</span>
-        <input
-          value={formatCardNumber(numero)}
-          onChange={(e) => setNumero(e.target.value)}
-          placeholder="4242 4242 4242 4242"
-          inputMode="numeric"
-          autoComplete="cc-number"
-        />
-        {reseau.label && <span className="carte-reseau muted small">{reseau.label}</span>}
+        <span className="card-input">
+          <input
+            value={formatCardNumber(numero)}
+            onChange={(e) => setNumero(e.target.value)}
+            placeholder="4242 4242 4242 4242"
+            inputMode="numeric"
+            autoComplete="cc-number"
+          />
+          {reseau.label && <span className="card-brand">{reseau.label}</span>}
+        </span>
       </label>
 
-      <div className="cpt-duo">
+      <div className="field-row">
         <label className="field">
           <span>{t("cardExpiry")}</span>
           <input
             value={formatExpiry(expiration)}
             onChange={(e) => setExpiration(e.target.value)}
-            placeholder="12/30"
+            placeholder={t("expPh")}
             inputMode="numeric"
             autoComplete="cc-exp"
           />
@@ -200,26 +188,24 @@ function FormulaireCarte({ onAjoute, onAnnuler }) {
         </label>
       </div>
 
-      {/* Aucun champ de cryptogramme : il ne sert qu'à autoriser un paiement,
-          jamais à enregistrer une carte, et le demander ici inviterait à le
-          transmettre pour rien. */}
-      <p className="muted small cpt-note">{t("payNoCvc")}</p>
+      {/* Pas de cryptogramme : il autorise un paiement, il n'enregistre pas une carte */}
+      <p className="muted">{t("payNoCvc")}</p>
 
       {erreur && (
-        <p className="cpt-erreur" role="alert">
+        <p className="field-error" role="alert">
           {erreur}
         </p>
       )}
 
-      <div className="cpt-actions">
-        <button className="btn-primary" onClick={envoyer} disabled={!pret}>
-          {envoi ? "…" : t("payAdd")}
+      <div className="actions">
+        <button className="btn btn-primary" type="submit" disabled={!pret}>
+          {envoi ? t("processing") : t("payAdd")}
         </button>
-        <button className="btn-ghost" onClick={onAnnuler}>
+        <button className="btn btn-quiet" type="button" onClick={onAnnuler}>
           {t("cancel")}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 

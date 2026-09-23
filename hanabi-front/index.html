@@ -3,27 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#EFE7D6" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0A0605" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#efe7d6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0605" media="(prefers-color-scheme: dark)" />
 
     <title>Hanabi 花火 · Objets japonais choisis</title>
     <meta
       name="description"
-      content="Une sélection resserrée d'objets japonais, renouvelée par petites séries. Compagnons, tradition, collection."
+      content="Douze objets japonais choisis un par un, renouvelés par petites séries."
     />
 
     <meta property="og:site_name" content="Hanabi" />
     <meta property="og:title" content="Hanabi 花火 · Objets japonais choisis" />
     <meta
       property="og:description"
-      content="Une sélection resserrée d'objets japonais, renouvelée par petites séries."
+      content="Douze objets japonais choisis un par un, renouvelés par petites séries."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://hanabi-6x9.pages.dev/" />
-    <!-- L'apercu partage exige une URL absolue : les reseaux sociaux recuperent
-         l'image depuis leurs propres serveurs, sans contexte de page, et un
-         chemin relatif ne mene alors nulle part. Le favicon qui tenait ce role
-         etait de surcroit un SVG, format qu'aucune plateforme ne rend. -->
+    <!-- Les reseaux sociaux recuperent l'apercu sans contexte de page : l'URL
+         doit etre absolue, et l'image un format matriciel. -->
     <meta property="og:image" content="https://hanabi-6x9.pages.dev/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -33,40 +31,14 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Polices : preconnect + link plutot qu'un @import CSS, qui creerait
-         une requete en cascade (CSS -> CSS -> police) au premier rendu.
-
-         Les familles reelles sont declarees une seule fois, dans les jetons
-         --font-* de src/index.css. Seules les graisses effectivement utilisees
-         sont demandees : chaque graisse d'une police japonaise pese lourd.
-
-         Manrope porte toute l'interface, boutique et back-office compris. Les
-         graisses vont de 300 a 800 : la hierarchie ne reposant plus sur deux
-         familles, elle a besoin de cette amplitude.
-
-         Le choix se lit contre celui d'avant. Inter est le reglage par defaut
-         de la quasi-totalite des interfaces dessinees depuis trois ans, et une
-         boutique d'objets choisis ne peut pas se permettre la police que tout
-         le monde emploie sans y penser. Manrope est une grotesque a tendance
-         geometrique : moins neutre, des rondeurs plus franches, une identite
-         qui se remarque sans s'imposer. C'est d'ailleurs celle que le
-         back-office employait avant l'unification, elle revient donc plus
-         qu'elle n'arrive.
-
-         Zen Kaku Gothic New n'est conservee qu'en 400, pour un seul service :
-         couvrir les ideogrammes, que Manrope ne dessine pas. Sans elle, 花火
-         tomberait sur la police par defaut du systeme.
-
-         Shippori Mincho B1 ne sert qu'a une seule ligne, le titre d'accueil.
-         Une graisse unique, la 800 : un mincho a des deliees tres fines, et
-         rien en dessous ne tient a soixante-dix pixels. Une police pour un
-         seul element se justifie quand cet element est le premier que voit
-         un visiteur. -->
+    <!-- Seules les graisses employees sont demandees. Shippori Mincho B1 porte
+         les titres et les noms d'objets, Manrope le corps, Zen Kaku Gothic New
+         les ideogrammes que Manrope ne dessine pas. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Shippori+Mincho+B1:wght@800&family=Zen+Kaku+Gothic+New:wght@400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@500&display=swap"
     />
   </head>
   <body>

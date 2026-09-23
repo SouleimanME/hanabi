@@ -1,0 +1,294 @@
+/* En-tete, menu des petits ecrans, pied de page. */
+
+/* --- En-tete --- */
+
+.hd {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-header);
+  background: var(--paper);
+  border-block-end: 1px solid var(--line);
+}
+
+.hd-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px var(--space-s);
+  padding-block: 8px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  padding: 0 4px;
+  margin-inline-start: -4px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  border-radius: var(--r-control);
+}
+
+/* Symetrie d'ordre trois : un tiers de tour repose l'embleme sur lui-meme */
+.brand-mark {
+  flex: none;
+  transition: rotate var(--dur-space) var(--ease-spring);
+}
+@media (hover: hover) {
+  .brand:hover .brand-mark {
+    rotate: 120deg;
+  }
+}
+
+.brand-word {
+  font-family: var(--font-voice);
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.18em;
+  line-height: 1;
+}
+.brand-word .jp {
+  margin-inline-start: 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.search {
+  position: relative;
+  order: 3;
+  flex: 1 1 100%;
+}
+.search > svg {
+  position: absolute;
+  inset-inline-start: 12px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  color: var(--muted);
+  pointer-events: none;
+}
+.shop .search input {
+  padding-inline: 40px 12px;
+  background: var(--field);
+}
+.search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.hd-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.lang select {
+  min-block-size: 40px;
+  padding: 6px 10px;
+  font-size: max(16px, var(--step--1));
+  background: transparent;
+  border-color: transparent;
+}
+
+.hide-sm {
+  display: none;
+}
+
+@media (min-width: 40rem) {
+  .hide-sm {
+    display: inline-grid;
+  }
+  .lang.hide-sm {
+    display: block;
+  }
+  .only-sm {
+    display: none;
+  }
+  .hd-row {
+    flex-wrap: nowrap;
+  }
+  .search {
+    order: 0;
+    flex: 1 1 auto;
+    max-inline-size: 26rem;
+    margin-inline-start: auto;
+  }
+}
+
+/* --- Menu des petits ecrans --- */
+
+.menu-body {
+  display: grid;
+  gap: var(--space-m);
+}
+.menu-section h2 {
+  margin-block-end: 8px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+}
+.menu-list {
+  display: grid;
+}
+.menu-list button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 0 4px;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  background: none;
+  font-weight: 600;
+  text-align: start;
+}
+.menu-list button[aria-current="page"] {
+  color: var(--accent);
+}
+.menu-count {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.menu-legal button {
+  font-weight: 500;
+}
+.menu-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  padding-block: 6px;
+}
+.menu-row .select {
+  inline-size: 11rem;
+}
+
+/* --- Pied de page : la tranche de laque, identique dans les deux themes --- */
+
+.ft {
+  margin-block-start: var(--space-2xl);
+  background: var(--lacquer);
+  color: #b3948b;
+  font-size: var(--step--1);
+}
+.ft-grid {
+  display: grid;
+  gap: var(--space-l);
+  padding-block: var(--space-xl) var(--space-l);
+}
+@media (min-width: 40rem) {
+  .ft-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 56rem) {
+  .ft-grid {
+    grid-template-columns: 1.2fr 0.7fr 0.8fr 1.5fr;
+  }
+}
+
+.ft-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ivory);
+}
+.ft .brand-word .jp {
+  color: var(--vermilion-bright);
+}
+.ft-brand p {
+  max-inline-size: 36ch;
+  margin-block-start: var(--space-xs);
+}
+
+.ft h2 {
+  margin-block-end: var(--space-2xs);
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--ivory);
+}
+.ft-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #d9c3ba;
+  text-align: start;
+}
+@media (hover: hover) {
+  .ft-link:hover {
+    color: var(--vermilion-bright);
+  }
+}
+.ft :focus-visible {
+  outline-color: var(--vermilion-bright);
+}
+
+.ft-news p + p,
+.ft-news-row,
+.ft-news-note {
+  margin-block-start: var(--space-2xs);
+}
+.ft-news-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.shop .ft-news-row input {
+  background: var(--lacquer-2);
+  border-color: #33201a;
+  color: var(--ivory);
+}
+.shop .ft-news-row input::placeholder {
+  color: #b3948b;
+}
+.ft-news-err {
+  margin-block-start: 6px;
+  color: var(--vermilion-bright);
+  font-weight: 600;
+}
+.ft-news-note {
+  font-size: 12px;
+}
+.ft-news-done p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ivory);
+}
+.ft-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  margin-block-start: var(--space-2xs);
+  padding: 0 14px;
+  border: 1px dashed var(--vermilion-bright);
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--ivory);
+}
+.ft .code {
+  color: var(--ivory);
+}
+
+.ft-base {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px var(--space-m);
+  padding-block: var(--space-s) var(--space-m);
+  border-block-start: 1px solid #241511;
+}

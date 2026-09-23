@@ -1,9 +1,4 @@
-/** Diffusion de la fonction de traduction dans l'arbre React.
- *
- * Passer `t` en prop a chaque composant deviendrait vite illisible : un
- * contexte evite le "prop drilling" sur une valeur dont presque tous les
- * composants ont besoin.
- */
+/** Diffusion de la fonction de traduction dans l'arbre React. */
 import { createContext, useContext } from "react";
 
 // Valeur par defaut : identite. Un composant rendu hors du provider

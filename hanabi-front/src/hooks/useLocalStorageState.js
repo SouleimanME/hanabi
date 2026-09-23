@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import { storage } from "../lib/storage.js";
 
-/**
- * `useState` dont la valeur survit au rechargement de la page.
- *
- * La lecture initiale est paresseuse : elle ne touche au localStorage qu'au
- * premier rendu, pas a chaque re-rendu.
- *
+/** `useState` dont la valeur survit au rechargement de la page.
  * @param {string} key cle de stockage (prefixee par la couche `storage`)
  * @param {*} initialValue valeur utilisee si rien n'est stocke
  */

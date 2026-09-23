@@ -1,12 +1,4 @@
-/** Sécurité du compte : mot de passe et adresse de connexion.
- *
- * CES DEUX-LÀ SONT ENSEMBLE, et pas avec les informations personnelles, parce
- * qu'ils ne relèvent pas de la même chose : le nom et l'adresse postale sont le
- * CONTENU du compte, le mot de passe et l'e-mail en sont l'ACCÈS. Les deux
- * exigent donc le mot de passe courant : une session prouve qu'on était là il y
- * a douze heures, pas qu'on est là maintenant, et un poste laissé ouvert
- * quelques minutes suffirait sinon à verrouiller le propriétaire dehors.
- */
+/** Sécurité du compte : mot de passe et adresse de connexion. */
 import { useState } from "react";
 import { KeyRound, Mail } from "lucide-react";
 
@@ -18,17 +10,22 @@ import { isPasswordStrong } from "../../lib/password.js";
 export function Securite({ user, onProfil, flash }) {
   const t = useT();
   const [section, setSection] = useState(null); // null | "mdp" | "email"
+  const basculer = (nom) => setSection((s) => (s === nom ? null : nom));
 
   return (
-    <div className="cpt-bloc">
-      <div className="cpt-ligne">
+    <div className="stack">
+      <div className="setting">
         <div>
-          <span className="cpt-ligne-titre">
-            <KeyRound size={15} /> {t("password")}
-          </span>
-          <span className="muted small">{t("secPwHint")}</span>
+          <p className="setting-title">
+            <KeyRound size={16} aria-hidden="true" /> {t("password")}
+          </p>
+          <p className="muted">{t("secPwHint")}</p>
         </div>
-        <button className="btn-ghost" onClick={() => setSection(section === "mdp" ? null : "mdp")}>
+        <button
+          className="btn btn-quiet"
+          onClick={() => basculer("mdp")}
+          aria-expanded={section === "mdp"}
+        >
           {t("change")}
         </button>
       </div>
@@ -42,16 +39,17 @@ export function Securite({ user, onProfil, flash }) {
         />
       )}
 
-      <div className="cpt-ligne">
+      <div className="setting">
         <div>
-          <span className="cpt-ligne-titre">
-            <Mail size={15} /> {t("email")}
-          </span>
-          <span className="muted small mono">{user.email}</span>
+          <p className="setting-title">
+            <Mail size={16} aria-hidden="true" /> {t("email")}
+          </p>
+          <p className="muted">{user.email}</p>
         </div>
         <button
-          className="btn-ghost"
-          onClick={() => setSection(section === "email" ? null : "email")}
+          className="btn btn-quiet"
+          onClick={() => basculer("email")}
+          aria-expanded={section === "email"}
         >
           {t("change")}
         </button>
@@ -81,7 +79,8 @@ function FormMotDePasse({ onFini, onAnnuler }) {
   const identiques = nouveau !== "" && nouveau === confirmation;
   const pret = ancien !== "" && isPasswordStrong(nouveau) && identiques && !envoi;
 
-  const envoyer = async () => {
+  const envoyer = async (e) => {
+    e.preventDefault();
     if (!pret) {
       setErreur(identiques ? t("pwTooWeak") : t("pwMismatch"));
       return;
@@ -91,14 +90,14 @@ function FormMotDePasse({ onFini, onAnnuler }) {
     try {
       await Compte.changerMotDePasse(ancien, nouveau);
       onFini();
-    } catch (e) {
-      setErreur(e.message);
+    } catch (err) {
+      setErreur(err.message);
       setEnvoi(false);
     }
   };
 
   return (
-    <div className="cpt-form">
+    <form className="form-stack" onSubmit={envoyer}>
       <PwField
         label={t("secCurrentPw")}
         value={ancien}
@@ -121,24 +120,23 @@ function FormMotDePasse({ onFini, onAnnuler }) {
         label={t("pwConfirmLabel")}
         value={confirmation}
         onChange={(e) => setConfirmation(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && envoyer()}
         autoComplete="new-password"
         invalid={confirmation !== "" && !identiques}
       />
       {erreur && (
-        <p className="cpt-erreur" role="alert">
+        <p className="field-error" role="alert">
           {erreur}
         </p>
       )}
-      <div className="cpt-actions">
-        <button className="btn-primary" onClick={envoyer} disabled={!pret}>
-          {envoi ? "…" : t("save")}
+      <div className="actions">
+        <button className="btn btn-primary" type="submit" disabled={!pret}>
+          {envoi ? t("processing") : t("save")}
         </button>
-        <button className="btn-ghost" onClick={onAnnuler}>
+        <button className="btn btn-quiet" type="button" onClick={onAnnuler}>
           {t("cancel")}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -151,29 +149,29 @@ function FormEmail({ onFini, onAnnuler }) {
 
   const pret = email.includes("@") && password !== "" && !envoi;
 
-  const envoyer = async () => {
+  const envoyer = async (e) => {
+    e.preventDefault();
+    if (!pret) return;
     setErreur("");
     setEnvoi(true);
     try {
       onFini(await Compte.changerEmail(email.trim(), password));
-    } catch (e) {
-      setErreur(e.message);
+    } catch (err) {
+      setErreur(err.message);
       setEnvoi(false);
     }
   };
 
   return (
-    <div className="cpt-form">
-      {/* Dit AVANT la saisie ce qui va se passer : la nouvelle adresse repart
-          non confirmée, et un lien y sera envoyé. Découvrir cela après coup
-          ressemblerait à une régression. */}
-      <p className="muted small cpt-note">{t("secMailHint")}</p>
+    <form className="form-stack" onSubmit={envoyer}>
+      {/* Dit avant la saisie que la nouvelle adresse devra être confirmée */}
+      <p className="muted">{t("secMailHint")}</p>
       <label className="field">
         <span>{t("secNewMail")}</span>
         <input
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="toi@exemple.fr"
           inputMode="email"
           autoCapitalize="none"
           spellCheck="false"
@@ -184,23 +182,22 @@ function FormEmail({ onFini, onAnnuler }) {
         label={t("secCurrentPw")}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && envoyer()}
         autoComplete="current-password"
       />
       {erreur && (
-        <p className="cpt-erreur" role="alert">
+        <p className="field-error" role="alert">
           {erreur}
         </p>
       )}
-      <div className="cpt-actions">
-        <button className="btn-primary" onClick={envoyer} disabled={!pret}>
-          {envoi ? "…" : t("save")}
+      <div className="actions">
+        <button className="btn btn-primary" type="submit" disabled={!pret}>
+          {envoi ? t("processing") : t("save")}
         </button>
-        <button className="btn-ghost" onClick={onAnnuler}>
+        <button className="btn btn-quiet" type="button" onClick={onAnnuler}>
           {t("cancel")}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 

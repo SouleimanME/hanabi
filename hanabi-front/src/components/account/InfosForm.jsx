@@ -1,16 +1,6 @@
-/** Modification des informations personnelles.
- *
- * N'ENVOIE QUE CE QUI A CHANGE. Le formulaire compare chaque champ a sa valeur
- * d'origine et ne transmet que les differences. Ce n'est pas une optimisation :
- * le serveur distingue « champ absent » de « champ vide », et reposter l'objet
- * entier ecraserait avec des valeurs perimees ce qu'un autre onglet vient de
- * modifier. Envoyer moins, c'est ecraser moins.
- *
- * L'ADRESSE E-MAIL N'EST PAS ICI. Elle engage l'acces au compte, pas son
- * contenu, et se change dans la section Sécurité - mot de passe a l'appui.
- */
+/** Modification des informations personnelles. */
 import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { useT } from "../../i18n/context.jsx";
 import { Compte } from "../../lib/api.js";
@@ -34,14 +24,15 @@ export function InfosForm({ user, onEnregistre, onAnnuler }) {
   );
   const rienAEnvoyer = Object.keys(changes).length === 0;
 
-  const enregistrer = async () => {
+  const enregistrer = async (e) => {
+    e.preventDefault();
     if (rienAEnvoyer) return onAnnuler();
     setErreur("");
     setEnvoi(true);
     try {
       onEnregistre(await Compte.majProfil(changes));
-    } catch (e) {
-      setErreur(e.message);
+    } catch (err) {
+      setErreur(err.message);
       setEnvoi(false);
     }
   };
@@ -53,24 +44,26 @@ export function InfosForm({ user, onEnregistre, onAnnuler }) {
   ];
 
   return (
-    <div className="cpt-form">
-      <div className="civ-row">
-        {CIVILITES.map((c) => (
-          <button
-            key={c.value}
-            type="button"
-            className={"civ-btn" + (valeurs.civility === c.value ? " on" : "")}
-            onClick={() =>
-              // Un second clic retire la civilite : elle est facultative, et
-              // sans cela on ne pourrait plus revenir en arriere une fois
-              // choisie.
-              setValeurs((v) => ({ ...v, civility: v.civility === c.value ? "" : c.value }))
-            }
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+    <form className="form-stack" onSubmit={enregistrer}>
+      <fieldset className="field">
+        <legend>{t("civility")}</legend>
+        <div className="chips">
+          {CIVILITES.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              className="chip"
+              aria-pressed={valeurs.civility === c.value}
+              // Un second clic retire la civilite : elle est facultative
+              onClick={() =>
+                setValeurs((v) => ({ ...v, civility: v.civility === c.value ? "" : c.value }))
+              }
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
 
       <label className="field">
         <span>{t("fullName")}</span>
@@ -79,17 +72,8 @@ export function InfosForm({ user, onEnregistre, onAnnuler }) {
 
       <DatePicker value={valeurs.birthdate} onChange={(v) => poser("birthdate")(v)} />
 
-      {/* Champ simple, et non `PhoneField`.
-       *
-       * `PhoneField` est NON CONTROLE : il detient son propre etat, n'accepte
-       * pas de valeur initiale, et emet « +33 » des le montage. Deux
-       * consequences, toutes deux fautives ici : le numero deja enregistre ne
-       * s'affichait pas - donc enregistrer l'ecrasait en silence - et le
-       * formulaire croyait le telephone modifie alors que personne n'y avait
-       * touche, ce qui envoyait « +33 » comme numero.
-       *
-       * Il est fait pour la SAISIE, a l'inscription, pas pour la RELECTURE. Un
-       * formulaire d'edition doit d'abord montrer ce qui existe. */}
+      {/* Champ simple plutot que PhoneField : ce dernier est fait pour la
+          saisie et n'affiche pas un numero existant. */}
       <label className="field">
         <span>{t("phone")}</span>
         <input
@@ -114,7 +98,7 @@ export function InfosForm({ user, onEnregistre, onAnnuler }) {
           autoComplete="address-line2"
         />
       </label>
-      <div className="cpt-duo">
+      <div className="field-row">
         <label className="field">
           <span>{t("cp")}</span>
           <input value={valeurs.cp} onChange={poser("cp")} autoComplete="postal-code" />
@@ -126,25 +110,23 @@ export function InfosForm({ user, onEnregistre, onAnnuler }) {
       </div>
 
       {erreur && (
-        <p className="cpt-erreur" role="alert">
+        <p className="field-error" role="alert">
           {erreur}
         </p>
       )}
 
-      <div className="cpt-actions">
-        <button className="btn-primary" onClick={enregistrer} disabled={envoi}>
-          <Check size={15} /> {envoi ? "…" : t("save")}
+      <div className="actions">
+        <button className="btn btn-primary" type="submit" disabled={envoi}>
+          <Check size={16} aria-hidden="true" /> {envoi ? t("processing") : t("save")}
         </button>
-        <button className="btn-ghost" onClick={onAnnuler}>
-          <X size={15} /> {t("cancel")}
+        <button className="btn btn-quiet" type="button" onClick={onAnnuler}>
+          {t("cancel")}
         </button>
-        {/* Dire ce qui va partir, plutot que de laisser deviner. Le compte
-            change aussi la reponse a « pourquoi Enregistrer ne fait rien ». */}
-        <span className="cpt-compte muted small">
+        <span className="muted" aria-live="polite">
           {rienAEnvoyer ? t("noChange") : t("nChanges", { n: Object.keys(changes).length })}
         </span>
       </div>
-    </div>
+    </form>
   );
 }
 

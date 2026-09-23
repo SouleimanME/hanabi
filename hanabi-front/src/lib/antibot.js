@@ -1,41 +1,8 @@
-/** Resolution des defis anti-robots, cote navigateur.
- *
- * Le serveur exige, pour chaque formulaire public, une preuve de travail : il
- * faut trouver un `nonce` tel que sha256(sel + nonce) commence par N bits a
- * zero. Le calcul coute quelques centaines de millisecondes.
- *
- * Deux precautions pour que l'utilisateur ne le sente jamais :
- *
- *   1. Le defi est demande et resolu des l'ouverture du formulaire, pendant la
- *      saisie. Au moment de valider, la preuve est deja prete : la latence
- *      percue est nulle.
- *
- *   2. La recherche tourne dans un WEB WORKER, sur un fil separe. Le fil
- *      principal n'en voit rien : ni image perdue, ni frappe en retard.
- *
- * Le point 2 corrigeait auparavant le probleme a l'envers. Le calcul vivait
- * dans la page et rendait la main toutes les deux mille tentatives, mais chaque
- * tentative faisait `await crypto.subtle.digest(...)` : une promesse deja
- * resolue ne cede qu'a la file de MICROTACHES, videe entierement avant que le
- * navigateur ne puisse peindre. Le fil principal restait donc fige par blocs de
- * deux mille hachages - des dizaines de millisecondes chacun, quand une image a
- * soixante par seconde n'en dispose que de seize.
- *
- * Le symptome se voyait partout parce que la preuve est demandee partout :
- * ouverture de l'accueil, ouverture du formulaire de connexion, fiche produit,
- * et une nouvelle preuve relancee en arriere-plan apres chaque usage.
- *
- * Web Crypto (`crypto.subtle.digest`) est natif et disponible dans un worker,
- * donc pas de dependance ni de portage de SHA-256 en JavaScript.
- */
+/** Resolution des defis anti-robots, cote navigateur. */
 
 import { request } from "./api.js";
 
-/** Fil de calcul partage, cree au premier besoin.
- *
- * Un seul worker suffit : les preuves sont demandees l'une apres l'autre, et en
- * garder un vivant evite de payer un demarrage a chaque formulaire ouvert.
- */
+/** Fil de calcul partage, cree au premier besoin. */
 let worker = null;
 let workerIndisponible = false;
 let compteur = 0;
@@ -45,9 +12,7 @@ function obtenirWorker() {
   try {
     worker = new Worker(new URL("./antibot.worker.js", import.meta.url), { type: "module" });
   } catch {
-    // Navigateur sans worker de module, ou contexte qui l'interdit. On retombe
-    // sur le calcul dans la page : moins fluide, mais le formulaire reste
-    // utilisable, ce qui prime.
+    // Navigateur sans worker de module, ou contexte qui l'interdit
     workerIndisponible = true;
   }
   return worker;
@@ -68,12 +33,7 @@ function leadingZeroBits(bytes) {
   return bits;
 }
 
-/** Recherche du nonce dans la page, uniquement si le worker est indisponible.
- *
- * Conserve la respiration periodique : sans worker, c'est le seul moyen de ne
- * pas figer completement l'onglet. Elle ne suffit pas a garantir la fluidite -
- * c'est precisement pourquoi le worker existe - mais elle evite le pire.
- */
+/** Recherche du nonce dans la page, uniquement si le worker est indisponible. */
 const CHUNK = 500;
 const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -93,9 +53,7 @@ async function minerDansLaPage(salt, difficulty, signal) {
   }
 }
 
-/**
- * Cherche un nonce satisfaisant la difficulte demandee.
- *
+/** Cherche un nonce satisfaisant la difficulte demandee.
  * @param {string} salt
  * @param {number} difficulty bits a zero exiges
  * @param {{signal?: AbortSignal}} [opts]
@@ -147,12 +105,7 @@ function mine(salt, difficulty, { signal } = {}) {
   });
 }
 
-/**
- * Obtient un defi pour un usage donne et le resout.
- *
- * Le bloc renvoye se joint tel quel au corps de la requete, sous la cle
- * `antibot`. `honeypot` part vide : seul un robot le remplit.
- *
+/** Obtient un defi pour un usage donne et le resout.
  * @param {"register"|"login"|"notify"|"review"} purpose
  * @param {{signal?: AbortSignal}} [opts]
  * @returns {Promise<object>}

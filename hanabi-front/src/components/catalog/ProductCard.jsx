@@ -1,101 +1,77 @@
-/** Carte produit de la grille de la selection.
- *
- * La carte est concue pour donner envie de cliquer : elle s'incline en 3D sous
- * le curseur (useTilt), un reflet balaye le visuel, et elle apparait en fondu
- * quand elle entre dans le champ de vision (useReveal), decalee selon son rang
- * pour un effet de cascade. L'ajout au panier declenche une gerbe d'etincelles
- * a l'endroit du clic - le petit plaisir qui transforme un achat en geste.
- */
-import { memo } from "react";
-import { Plus, Heart, Eye } from "lucide-react";
+/** Case du plateau : un objet, son blason, son prix. */
+import { memo, useEffect, useRef, useState } from "react";
+import { Plus, Check } from "lucide-react";
+import { PictoFavori } from "../brand/Pictos.jsx";
 import { useT } from "../../i18n/context.jsx";
 import { ProductArt } from "../brand/ProductArt.jsx";
-import { Stars } from "../ui/Stars.jsx";
 import { StockBadge } from "../ui/StockBadge.jsx";
-import { useReveal } from "../../hooks/useReveal.js";
-import { useTilt } from "../../hooks/useTilt.js";
-import { burstFromElement } from "../../lib/burst.js";
 
-export const ProductCard = memo(function ProductCard({
-  p,
-  onOpen,
-  onAdd,
-  wished,
-  onWish,
-  eur,
-  index = 0,
-}) {
+const DUREE_CONFIRMATION = 1600;
+
+export const ProductCard = memo(function ProductCard({ p, onOpen, onAdd, wished, onWish, eur }) {
   const t = useT();
-  const [revealRef, visible] = useReveal();
-  const tilt = useTilt();
+  const [ajoute, setAjoute] = useState(false);
+  const minuteur = useRef(null);
+  const epuise = p.stock === 0;
 
-  const handleAdd = (e) => {
-    burstFromElement(e.currentTarget);
+  useEffect(() => () => clearTimeout(minuteur.current), []);
+
+  const ajouter = () => {
     onAdd(p.id);
+    setAjoute(true);
+    clearTimeout(minuteur.current);
+    minuteur.current = setTimeout(() => setAjoute(false), DUREE_CONFIRMATION);
   };
 
-  // Enveloppe et carte portent chacune leur transform : l'enveloppe anime
-  // l'apparition (translation lente), la carte l'inclinaison (rotation rapide).
-  // Les melanger sur un seul noeud ferait bouger le tilt a la vitesse du fondu.
   return (
-    <div
-      ref={revealRef}
-      className={"card-wrap reveal" + (visible ? " in" : "")}
-      style={{ transitionDelay: `${Math.min(index, 8) * 55}ms` }}
-    >
-      <article
-        ref={tilt.ref}
-        className="card"
-        onMouseEnter={tilt.onMouseEnter}
-        onMouseMove={tilt.onMouseMove}
-        onMouseLeave={tilt.onMouseLeave}
-      >
-        <button className="card-art" onClick={() => onOpen(p)} aria-label={p.name}>
-          <ProductArt art={p.art} />
-          <span className="card-sheen" aria-hidden="true" />
-          <span className="card-cat">{t("cat_" + p.category)}</span>
-          {p.is_new && <span className="card-new">{t("neuf")}</span>}
-          <span className="card-peek">
-            <Eye size={15} /> {t("discover")}
-          </span>
-        </button>
+    <li className={"case" + (epuise ? " is-out" : "")}>
+      <div className="case-art">
+        <ProductArt art={p.art} />
+      </div>
+      {p.is_new && <span className="case-new">{t("neuf")}</span>}
+      {onWish && (
         <button
-          className={"wish" + (wished ? " on" : "")}
-          onClick={(e) => {
-            if (!wished) burstFromElement(e.currentTarget, { count: 14, power: 5 });
-            onWish(p.id);
-          }}
-          aria-label="Favori"
+          className="fav"
+          onClick={() => onWish(p.id)}
           aria-pressed={wished}
+          aria-label={wished ? t("favRemove", { name: p.name }) : t("favAdd", { name: p.name })}
         >
-          <Heart size={17} fill={wished ? "currentColor" : "none"} />
+          <PictoFavori taille={18} plein={wished} />
         </button>
-        <div className="card-body">
-          <div className="card-top">
-            <span className="mono small muted">{p.code}</span>
-            <span className="mono price">{eur(p.price_cents)}</span>
-          </div>
-          <button className="card-name" onClick={() => onOpen(p)}>
+      )}
+      <div className="case-body">
+        <div className="case-meta">
+          <span className="code">{p.code}</span>
+          <StockBadge stock={p.stock} quiet />
+        </div>
+        <h3 className="case-name">
+          <button className="case-open" onClick={() => onOpen(p)}>
             {p.name}
           </button>
-          <div className="card-rate">
-            <Stars value={p.rating_avg} count={p.rating_count} />
-          </div>
-          <p className="card-blurb">{p.blurb}</p>
-          <div className="card-foot">
-            <StockBadge stock={p.stock} />
-            <button className="btn-add" onClick={handleAdd} disabled={p.stock === 0}>
-              {p.stock === 0 ? (
-                t("sold")
-              ) : (
-                <>
-                  <Plus size={15} strokeWidth={2.5} /> {t("add")}
-                </>
-              )}
-            </button>
-          </div>
+        </h3>
+        <div className="case-foot">
+          <span className="price">{eur(p.price_cents)}</span>
+          <button
+            className="btn btn-quiet btn-sm case-add"
+            onClick={ajouter}
+            disabled={epuise}
+            aria-label={epuise ? undefined : t("addNamed", { name: p.name })}
+          >
+            {epuise ? (
+              t("sold")
+            ) : (
+              <span className="swap" data-state={ajoute ? "done" : "idle"}>
+                <span className="swap-idle">
+                  <Plus size={15} strokeWidth={2.2} aria-hidden="true" /> {t("add")}
+                </span>
+                <span className="swap-done" aria-hidden="true">
+                  <Check size={15} strokeWidth={2.2} /> {t("added")}
+                </span>
+              </span>
+            )}
+          </button>
         </div>
-      </article>
-    </div>
+      </div>
+    </li>
   );
 });

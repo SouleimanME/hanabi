@@ -1,16 +1,4 @@
-/** Confirmation d'adresse, atteinte depuis le lien recu par courriel.
- *
- * La confirmation part AU MONTAGE, sans bouton. La personne a deja cliqué dans
- * son courriel : lui demander de cliquer une seconde fois sur « confirmer »
- * ajoute une etape qui ne decide de rien. Le geste a eu lieu, il ne reste qu'a
- * l'executer et a dire ce qui s'est passe.
- *
- * L'echec n'est pas une impasse. Un lien expire ou deja utilise est le cas
- * ORDINAIRE ici - sept jours passent vite, et beaucoup de clients de messagerie
- * previsualisent les liens, ce qui les consomme. L'ecran propose donc toujours
- * une suite : se connecter pour en redemander un, ou simplement continuer,
- * puisque le compte fonctionne sans.
- */
+/** Confirmation d'adresse, depuis le lien recu par courriel. */
 import { useEffect, useRef, useState } from "react";
 import { Check, AlertCircle, ArrowRight, Loader } from "lucide-react";
 
@@ -22,21 +10,7 @@ export function ConfirmerAdresse({ jeton, onContinue, onSeConnecter, onConfirme,
   const [etat, setEtat] = useState("en_cours"); // en_cours | ok | echec
   const [erreur, setErreur] = useState("");
 
-  // Le mode strict de React monte deux fois en developpement. Sans ce garde,
-  // le jeton - a USAGE UNIQUE - serait consomme par le premier appel et le
-  // second afficherait « lien invalide » sur une confirmation qui a reussi.
-  // AUCUNE ANNULATION AU DEMONTAGE, et c'est deliberé.
-  //
-  // La version precedente combinait ce garde et un drapeau `annule` pose par le
-  // nettoyage de l'effet. Les deux se neutralisaient exactement : en mode
-  // strict, le premier montage lance la requete, le nettoyage leve `annule`, le
-  // second montage ressort aussitot sur le garde - et quand la reponse arrive,
-  // elle est jetee par un drapeau que plus personne ne remettra a zero. L'ecran
-  // restait sur « Confirmation en cours » alors que l'API avait repondu 200.
-  //
-  // Le garde suffit a lui seul : il garantit un appel unique, ce qui est la
-  // seule chose qui compte pour un jeton a usage unique. Ecrire dans l'etat d'un
-  // composant demonte n'a aucun effet en React 18.
+  // Le mode strict monte deux fois en developpement
   const envoye = useRef(false);
 
   useEffect(() => {
@@ -56,27 +30,27 @@ export function ConfirmerAdresse({ jeton, onContinue, onSeConnecter, onConfirme,
   }, [jeton, onConfirme]);
 
   return (
-    <main className="jeton-page">
-      <div className="jeton-carte">
+    <main id="contenu" className="wrap page">
+      <section className="token-card" aria-live="polite">
         {etat === "en_cours" && (
           <>
-            <div className="jeton-pastille attente">
-              <Loader size={26} strokeWidth={2.5} />
-            </div>
+            <span className="token-mark" aria-hidden="true">
+              <Loader size={26} />
+            </span>
             <h1>{t("verifyChecking")}</h1>
           </>
         )}
 
         {etat === "ok" && (
           <>
-            <div className="jeton-pastille ok">
-              <Check size={28} strokeWidth={3} />
-            </div>
+            <span className="token-mark" aria-hidden="true">
+              <Check size={28} strokeWidth={2.4} />
+            </span>
             <h1>{t("verifyOkTitle")}</h1>
             <p>{t("verifyOkBody")}</p>
-            <div className="jeton-actions">
-              <button className="btn-primary" onClick={onContinue}>
-                {t("continueShop")} <ArrowRight size={16} />
+            <div className="actions actions-center">
+              <button className="btn btn-primary" onClick={onContinue}>
+                {t("continueShop")} <ArrowRight size={18} aria-hidden="true" />
               </button>
             </div>
           </>
@@ -84,28 +58,26 @@ export function ConfirmerAdresse({ jeton, onContinue, onSeConnecter, onConfirme,
 
         {etat === "echec" && (
           <>
-            <div className="jeton-pastille echec">
-              <AlertCircle size={28} strokeWidth={2.5} />
-            </div>
+            <span className="token-mark token-mark-alert" aria-hidden="true">
+              <AlertCircle size={28} />
+            </span>
             <h1>{t("verifyFailTitle")}</h1>
-            {/* Le message du serveur, pas une reformulation : il distingue
-                l'expiration de l'invalidite, ce qui n'appelle pas la meme
-                reaction. */}
+            {/* Le message du serveur distingue l'expiration de l'invalidite */}
             <p>{erreur || t("verifyFailBody")}</p>
-            <p className="jeton-rassure">{t("verifyFailHint")}</p>
-            <div className="jeton-actions">
+            <p className="muted">{t("verifyFailHint")}</p>
+            <div className="actions actions-center">
               {!loggedIn && (
-                <button className="btn-primary" onClick={onSeConnecter}>
+                <button className="btn btn-primary" onClick={onSeConnecter}>
                   {t("login")}
                 </button>
               )}
-              <button className="btn-ghost" onClick={onContinue}>
+              <button className="btn btn-quiet" onClick={onContinue}>
                 {t("continueShop")}
               </button>
             </div>
           </>
         )}
-      </div>
+      </section>
     </main>
   );
 }

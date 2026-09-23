@@ -1,10 +1,4 @@
-/** Regles commerciales partagees par l'interface.
- *
- * Attention : ces valeurs servent uniquement a l'affichage optimiste
- * (estimation du panier avant la reponse du serveur). Le montant qui fait
- * foi est toujours celui renvoye par `POST /orders/quote`, calcule cote
- * backend dans `app/pricing.py`. Toute divergence doit etre corrigee la-bas.
- */
+/** Regles commerciales partagees par l'interface. */
 
 /** Frais de port appliques sous le seuil de gratuite, en centimes. */
 export const SHIPPING_CENTS = 690;

@@ -1,29 +1,6 @@
-/** Preparation des photos produit, dans le navigateur.
- *
- * Deux problemes distincts sont traites ici.
- *
- * 1. Le poids. Les photos etaient envoyees telles quelles, encodees en base64
- *    dans le corps JSON. Or le base64 gonfle la taille d'un tiers : une photo
- *    de telephone de 3 Mo depassait la limite de corps de requete de l'API, qui
- *    repondait « Requete trop volumineuse ». On redimensionne donc avant envoi.
- *
- * 2. L'uniformite du visuel principal. Une photo verticale et une photo
- *    horizontale placees dans la meme grille ne se cadrent pas pareil. Le
- *    visuel principal est donc recadre sur un carre de cote fixe : toutes les
- *    fiches ont exactement la meme resolution, et la grille reste reguliere
- *    quelle que soit la photo d'origine.
- *
- * Le recadrage ne concerne QUE le visuel principal. Les photos de la galerie
- * gardent leur cadrage d'origine - on ne fait que les reduire - car rien ne
- * justifie d'amputer une photo que l'on regarde en grand sur la fiche produit.
- *
- * Tout se passe dans un canvas, sans dependance ni traitement serveur.
- */
+/** Preparation des photos produit, dans le navigateur. */
 
-/** Cote du visuel principal, en pixels.
- *
- * 1200 couvre le plus grand usage - la fiche produit, environ 560 px de large,
- * soit 1120 px sur un ecran a densite double - sans peser inutilement. */
+/** Cote du visuel principal, en pixels. */
 export const MAIN_SIZE = 1200;
 
 /** Cote le plus long tolere pour une photo de galerie. */
@@ -45,10 +22,7 @@ function loadImage(src) {
   });
 }
 
-/** Prepare un canvas rempli de blanc.
- *
- * Le fond est indispensable : un PNG transparent aplati en JPEG sans fond
- * donnerait des zones noires. */
+/** Prepare un canvas rempli de blanc. */
 function makeCanvas(width, height) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -62,14 +36,7 @@ function makeCanvas(width, height) {
   return { canvas, ctx };
 }
 
-/**
- * Recadre une photo sur un carre de `MAIN_SIZE`, centre, sans deformation.
- *
- * Le cadrage suit la logique de `object-fit: cover` : on couvre tout le carre
- * et l'on rogne le debordement. Une photo horizontale perd donc ses bords
- * gauche et droit, une verticale son haut et son bas - mais aucune n'est
- * etiree, et toutes ressortent a la meme resolution.
- *
+/** Recadre une photo sur un carre de `MAIN_SIZE`, centre, sans deformation.
  * @param {string} src URL ou data URI
  * @returns {Promise<string>} data URI JPEG de MAIN_SIZE x MAIN_SIZE
  */
@@ -87,13 +54,7 @@ export async function toCanonicalMain(src) {
   return canvas.toDataURL("image/jpeg", QUALITY);
 }
 
-/**
- * Reduit une photo sans la recadrer, cote le plus long plafonne.
- *
- * Sert aux photos de galerie : la proportion d'origine est conservee, seul le
- * poids est ramene a une valeur raisonnable. Une image deja assez petite est
- * quand meme reencodee, ce qui compresse un PNG lourd.
- *
+/** Reduit une photo sans la recadrer, cote le plus long plafonne.
  * @param {string} src URL ou data URI
  * @param {number} [maxSide]
  * @returns {Promise<string>} data URI JPEG

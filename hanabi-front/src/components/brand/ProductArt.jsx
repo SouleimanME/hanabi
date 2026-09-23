@@ -1,362 +1,299 @@
-/** Visuel d'un produit : photo si disponible, composition generee sinon.
- *
- * Le champ `art` est stocke en base sous la forme "forme,couleur1,couleur2"
- * (ex. "enso,#224A3F,#E4D7BF"), ou directement une URL d'image. Les photos
- * televersees depuis le back-office prennent toujours le dessus.
- *
- * Les compositions generees ne sont pas un pis-aller en attendant des photos :
- * elles tiennent lieu d'identite visuelle. Un catalogue de douze aplats a deux
- * couleurs se lit comme un gabarit non rempli ; on cherche ici l'inverse, une
- * serigraphie sur papier - profondeur, matiere, lumiere rasante - qui donne au
- * catalogue l'air d'avoir ete dessine plutot que reserve.
- *
- * PARTI PRIS DE PERFORMANCE : aucun filtre SVG. `feGaussianBlur` et
- * `feTurbulence` donneraient du flou et du grain a moindre effort, mais un
- * filtre se rastérise a chaque changement de taille et douze cartes en
- * afficheraient douze. Toute la profondeur vient donc de degrades et de
- * superpositions, que le navigateur rastérise une fois et compose ensuite sans
- * repeindre.
- */
-import { memo } from "react";
+/** Visuel d'un produit : photo si l'on en a une, blason sinon. */
+import { memo, useId } from "react";
 
-/** Eclaircit ou assombrit une couleur hexadecimale.
- *
- * `facteur` negatif assombrit, positif eclaircit, sur une echelle de -1 a 1.
- * Sert a fabriquer les deux bouts d'un degrade a partir d'une seule teinte :
- * la palette du catalogue n'en fournit que deux par produit, et un volume
- * demande au moins une lumiere et une ombre.
- */
-function teinte(hex, facteur) {
-  const propre = /^#[0-9a-f]{6}$/i.test(hex || "") ? hex : "#888888";
+const KIRI = 2.4;
+
+/* Formes des premieres versions du catalogue, encore presentes dans des lignes
+   de commande anciennes. */
+const FORMES_ANCIENNES = { enso: "kitsune", wave: "seigaiha", asanoha: "bandana" };
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/** Eclaircit une couleur hexadecimale vers le blanc, de `facteur` (0 a 1). */
+function eclaircir(hex, facteur) {
   const canal = (i) => {
-    const v = parseInt(propre.slice(1 + i * 2, 3 + i * 2), 16);
-    const cible = facteur < 0 ? 0 : 255;
-    return Math.round(v + (cible - v) * Math.abs(facteur));
+    const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+    return Math.round(v + (255 - v) * facteur);
   };
   return `#${[0, 1, 2].map((i) => canal(i).toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Identifiant stable et unique par combinaison forme/couleurs.
- *
- * Les degrades d'un SVG vivent dans un espace de noms partage par tout le
- * document : deux cartes qui declareraient `id="grad"` se voleraient leur
- * remplissage. La cle derive donc du contenu - deux visuels identiques
- * partagent alors le meme degrade, ce qui est exactement ce qu'on veut.
- */
-function cle(art) {
-  let h = 0;
-  for (let i = 0; i < art.length; i++) h = (h * 31 + art.charCodeAt(i)) | 0;
-  return `a${(h >>> 0).toString(36)}`;
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-export const ProductArt = memo(function ProductArt({ art, small }) {
-  // Si c'est une vraie photo (URL ou base64), on l'affiche directement.
-  if (typeof art === "string" && (art.startsWith("http") || art.startsWith("data:"))) {
-    return (
-      <img
-        src={art}
-        alt=""
-        className="art"
-        style={{ objectFit: "cover", width: "100%", height: "100%", display: "block" }}
-        loading="lazy"
-      />
-    );
-  }
+const n2 = (v) => +v.toFixed(2);
+const polaire = (cx, cy, r, deg) => [
+  n2(cx + r * Math.cos((deg * Math.PI) / 180)),
+  n2(cy + r * Math.sin((deg * Math.PI) / 180)),
+];
+const gelule = (x1, x2, y1, y2) => {
+  const r = (y2 - y1) / 2;
+  return `M${x1 + r} ${y1}H${x2 - r}A${r} ${r} 0 0 1 ${x2 - r} ${y2}H${x1 + r}A${r} ${r} 0 0 1 ${x1 + r} ${y1}Z`;
+};
 
-  const brut = typeof art === "string" ? art : Array.isArray(art) ? art.join(",") : "";
-  const [shape, c1 = "#D8452B", c2 = "#EFE7D6"] = brut.split(",");
-  const id = cle(brut);
-  const r = small ? 6 : 8;
-
-  // Trois teintes tirees de la couleur principale : la lumiere, la couleur
-  // pleine, l'ombre. C'est ce qui donne du volume a une forme plate.
-  const clair = teinte(c1, 0.28);
-  const sombre = teinte(c1, -0.3);
-
-  const defs = (
-    <defs>
-      {/* Lumiere rasante venant du haut-gauche, comme un objet pose pres d'une
-          fenetre. Le meme angle sur tout le catalogue fait tenir l'ensemble. */}
-      <linearGradient id={`${id}-f`} x1="0" y1="0" x2="0.75" y2="1">
-        <stop offset="0" stopColor={clair} />
-        <stop offset="0.55" stopColor={c1} />
-        <stop offset="1" stopColor={sombre} />
-      </linearGradient>
-      {/* Fond : halo tres doux, decentre, qui detache le motif du papier. */}
-      <radialGradient id={`${id}-b`} cx="0.34" cy="0.28" r="0.92">
-        <stop offset="0" stopColor={c2} stopOpacity="0.5" />
-        <stop offset="0.6" stopColor={c2} stopOpacity="0.16" />
-        <stop offset="1" stopColor={c2} stopOpacity="0.03" />
-      </radialGradient>
-      {/* Ombre portee, en degrade plutot qu'en flou : meme resultat a l'oeil,
-          sans le cout d'un filtre. */}
-      <radialGradient id={`${id}-o`} cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0" stopColor={sombre} stopOpacity="0.34" />
-        <stop offset="0.62" stopColor={sombre} stopOpacity="0.12" />
-        <stop offset="1" stopColor={sombre} stopOpacity="0" />
-      </radialGradient>
-    </defs>
+/** Dessine le blason `forme` avec l'encre `t`, la coupe etant peinte en `f`. */
+function Blason({ forme, t, f }) {
+  let cle = 0;
+  const k = () => cle++;
+  const plein = (d) => <path key={k()} d={d} fill={t} />;
+  const creux = (d) => <path key={k()} d={d} fill={f} />;
+  const trait = (d, l, c = t, bout = "round") => (
+    <path
+      key={k()}
+      d={d}
+      fill="none"
+      stroke={c}
+      strokeWidth={l}
+      strokeLinecap={bout}
+      strokeLinejoin="round"
+    />
   );
+  const coupe = (d, l = KIRI, bout = "butt") => trait(d, l, f, bout);
+  /* Detourage : la forme est d'abord cernee d'une coupe, puis posee */
+  const detoure = (d) => [trait(d, KIRI * 2, f), plein(d)];
+  const rond = (x, y, r, c = t) => <circle key={k()} cx={x} cy={y} r={r} fill={c} />;
+  const decale = (x, y, enfants) => <g transform={`translate(${x} ${y})`}>{enfants}</g>;
 
-  const remplissage = `url(#${id}-f)`;
+  switch (forme) {
+    case "torii":
+      return decale(0, -5, [
+        plein("M9 24Q30 33 50 32Q70 33 91 24L88 32Q70 39.5 50 39Q30 39.5 12 32Z"),
+        plein("M20 41.5H80V46.5H20Z"),
+        plein("M47 49H53V56H47Z"),
+        plein("M28 49H34L33 86H25Z"),
+        plein("M66 49H72L75 86H67Z"),
+        creux("M12 56.1H88V66.4H12Z"),
+        plein("M14 58.5H86V64H14Z"),
+      ]);
 
-  let body = null;
+    case "baguettes": {
+      const baguette = (y) =>
+        `M11 ${y - 3.2}L87 ${y - 1.2}A1.2 1.2 0 0 1 87 ${y + 1.2}L11 ${y + 3.2}Z`;
+      return (
+        <g transform="rotate(38 50 50)">
+          {plein(baguette(45))}
+          {plein(baguette(55))}
+          {coupe("M24 38V62", 1.6)}
+          {coupe("M28 38V62", 1.6)}
+        </g>
+      );
+    }
 
-  if (shape === "enso") {
-    // Cercle zen trace d'un seul geste : l'ouverture et l'inegalite du trait
-    // sont le sujet, on les accentue par une seconde passe plus fine.
-    body = (
-      <g>
-        <circle
-          cx="100"
-          cy="100"
-          r="60"
-          fill="none"
-          stroke={remplissage}
-          strokeWidth="17"
-          strokeLinecap="round"
-          strokeDasharray="322 100"
-          transform="rotate(40 100 100)"
-        />
-        <circle
-          cx="100"
-          cy="100"
-          r="60"
-          fill="none"
-          stroke={clair}
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeDasharray="150 272"
-          opacity="0.5"
-          transform="rotate(52 100 100)"
-        />
-        <circle cx="150" cy="64" r={r + 2} fill={c2} />
-      </g>
-    );
-  } else if (shape === "wave") {
-    // Seigaiha : les rangees s'eclaircissent vers le haut, ce qui creuse une
-    // perspective la ou toutes les vagues avaient auparavant le meme poids.
-    body = (
-      <g fill="none" strokeLinecap="round">
-        {[52, 100, 148].map((y, ri) => (
-          <g
-            key={ri}
-            stroke={ri === 1 ? remplissage : ri === 0 ? clair : sombre}
-            strokeWidth={5 + ri * 0.9}
-            opacity={0.55 + ri * 0.22}
-          >
-            {[5, 55, 105, 155].map((x) => (
-              <g key={x}>
-                <path d={`M${x - 26} ${y} A26 26 0 0 1 ${x + 26} ${y}`} />
-                <path d={`M${x - 14} ${y} A14 14 0 0 1 ${x + 14} ${y}`} />
-              </g>
-            ))}
+    case "moon":
+      return decale(0, 4, [
+        rond(52, 44, 30),
+        ...detoure(gelule(62, 92, 45, 50)),
+        ...detoure(gelule(8, 60, 55, 60)),
+        ...detoure(gelule(34, 88, 65, 70)),
+      ]);
+
+    case "bol": {
+      const baguette = (y) => `M20 ${y - 2.4}L78 ${y - 1}A1 1 0 0 1 78 ${y + 1}L20 ${y + 2.4}Z`;
+      return (
+        <>
+          <g transform="rotate(-32 50 50)">
+            {detoure(baguette(36))}
+            {detoure(baguette(44))}
           </g>
-        ))}
-      </g>
-    );
-  } else if (shape === "fan") {
-    const pv = [100, 170];
-    const ribs = [-72, -48, -24, 0, 24, 48, 72].map((a) => {
-      const rad = ((a - 90) * Math.PI) / 180;
-      return [pv[0] + 98 * Math.cos(rad), pv[1] + 98 * Math.sin(rad)];
-    });
-    body = (
-      <g>
-        <ellipse cx="100" cy="176" rx="62" ry="9" fill={`url(#${id}-o)`} />
-        <path
-          d={`M${pv[0]} ${pv[1]} L${ribs[0][0]} ${ribs[0][1]} A98 98 0 0 1 ${ribs[6][0]} ${ribs[6][1]} Z`}
-          fill={remplissage}
-        />
-        {/* Liseré clair sur le bord exterieur : un eventail a une tranche. */}
-        <path
-          d={`M${ribs[0][0]} ${ribs[0][1]} A98 98 0 0 1 ${ribs[6][0]} ${ribs[6][1]}`}
-          fill="none"
-          stroke={clair}
-          strokeWidth="3.5"
-          opacity="0.7"
-        />
-        {ribs.map((p, i) => (
-          <line
-            key={i}
-            x1={pv[0]}
-            y1={pv[1]}
-            x2={p[0]}
-            y2={p[1]}
-            stroke={c2}
-            strokeWidth="2.2"
-            opacity="0.55"
-          />
-        ))}
-        <circle cx={pv[0]} cy={pv[1]} r={r} fill={sombre} />
-      </g>
-    );
-  } else if (shape === "asanoha") {
-    const cx = 100;
-    const cy = 100;
-    const R = 66;
-    const pts = [0, 60, 120, 180, 240, 300].map((a) => [
-      cx + R * Math.cos((a * Math.PI) / 180),
-      cy + R * Math.sin((a * Math.PI) / 180),
-    ]);
-    body = (
-      <g strokeLinejoin="round" strokeLinecap="round" fill="none">
-        {/* Trame secondaire en retrait : le motif du chanvre se repete a
-            l'infini sur un tissu, un seul hexagone isolé faisait maquette. */}
-        <g stroke={c2} strokeWidth="2" opacity="0.45">
-          <polygon
-            points={pts
-              .map((p) => [cx + (p[0] - cx) * 1.7, cy + (p[1] - cy) * 1.7].join(","))
-              .join(" ")}
-          />
-        </g>
-        <polygon
-          points={pts.map((p) => p.join(",")).join(" ")}
-          stroke={remplissage}
-          strokeWidth="4.5"
-        />
-        {pts.map((p, i) => (
-          <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke={remplissage} strokeWidth="4" />
-        ))}
-        {pts.map((p, i) => (
-          <line
-            key={`e${i}`}
-            x1={p[0]}
-            y1={p[1]}
-            x2={pts[(i + 2) % 6][0]}
-            y2={pts[(i + 2) % 6][1]}
-            stroke={c2}
-            strokeWidth="2.4"
-            opacity="0.8"
-          />
-        ))}
-        <circle cx={cx} cy={cy} r={r - 2} fill={clair} stroke="none" />
-      </g>
-    );
-  } else if (shape === "torii") {
-    body = (
-      <g>
-        <ellipse cx="100" cy="166" rx="58" ry="8" fill={`url(#${id}-o)`} />
-        <g fill={remplissage}>
-          <rect x="28" y="44" width="144" height="16" rx="4" />
-          <rect x="44" y="74" width="112" height="11" rx="2.5" />
-          <rect x="57" y="60" width="16" height="102" rx="1.5" />
-          <rect x="127" y="60" width="16" height="102" rx="1.5" />
-        </g>
-        {/* Aretes eclairees : sans elles, le portique reste une silhouette. */}
-        <g fill={clair} opacity="0.62">
-          <rect x="28" y="44" width="144" height="4" rx="2" />
-          <rect x="57" y="60" width="4.5" height="102" />
-          <rect x="127" y="60" width="4.5" height="102" />
-        </g>
-        <circle cx="100" cy="32" r={r} fill={c2} />
-      </g>
-    );
-  } else if (shape === "moon") {
-    body = (
-      <g>
-        <circle cx="100" cy="88" r="56" fill={remplissage} />
-        {/* Croissant d'ombre : un disque plat n'est pas une lune. */}
-        <circle cx="122" cy="76" r="50" fill={sombre} opacity="0.22" />
-        <circle cx="82" cy="72" r="9" fill={clair} opacity="0.35" />
-        <circle cx="112" cy="104" r="6" fill={clair} opacity="0.22" />
-        {/* Bandes de brume, degradees vers l'exterieur. */}
-        <g fill={c2}>
-          <rect x="24" y="122" width="84" height="11" rx="5.5" opacity="0.55" />
-          <rect x="84" y="142" width="88" height="11" rx="5.5" opacity="0.4" />
-          <rect x="44" y="160" width="58" height="9" rx="4.5" opacity="0.26" />
-        </g>
-      </g>
-    );
-  } else if (shape === "sakura") {
-    // Fleur de cerisier : cinq petales echancres, la signature florale du
-    // catalogue. Chaque petale porte son propre degrade par rotation.
-    const petale = "M100 100 C 88 74, 88 50, 100 34 C 112 50, 112 74, 100 100 Z";
-    body = (
-      <g transform="translate(0,-8)">
-        <ellipse cx="100" cy="168" rx="46" ry="7" fill={`url(#${id}-o)`} />
-        {[0, 72, 144, 216, 288].map((a) => (
-          <g key={a} transform={`rotate(${a} 100 100)`}>
-            <path d={petale} fill={remplissage} />
-            <path d={petale} fill={clair} opacity="0.28" transform="scale(0.62) translate(62,62)" />
-          </g>
-        ))}
-        <circle cx="100" cy="100" r={r + 3} fill={c2} />
-        <circle cx="100" cy="100" r={r - 1} fill={clair} opacity="0.7" />
-      </g>
-    );
-  } else if (shape === "bol") {
-    // Bol : une ellipse pour l'ouverture, une calotte pour le corps. Le liseré
-    // clair sur la levre est ce qui fait lire un contenant plutot qu'un demi-
-    // disque.
-    body = (
-      <g>
-        <ellipse cx="100" cy="164" rx="54" ry="8" fill={`url(#${id}-o)`} />
-        <path d="M42 92 A58 58 0 0 0 158 92 Z" fill={remplissage} />
-        <ellipse cx="100" cy="92" rx="58" ry="15" fill={sombre} />
-        <ellipse cx="100" cy="92" rx="58" ry="15" fill="none" stroke={clair} strokeWidth="3" />
-        <ellipse cx="100" cy="94" rx="44" ry="10" fill={c2} opacity="0.32" />
-        <rect x="86" y="150" width="28" height="9" rx="4" fill={sombre} />
-      </g>
-    );
-  } else if (shape === "baguettes") {
-    body = (
-      <g>
-        <ellipse cx="100" cy="170" rx="50" ry="7" fill={`url(#${id}-o)`} />
-        {[-9, 9].map((dx, i) => (
-          <g key={dx} transform={`rotate(${dx} 100 100)`}>
-            <rect x={96 + dx * 1.6} y="32" width="9" height="128" rx="4.5" fill={remplissage} />
-            <rect
-              x={96 + dx * 1.6}
-              y="32"
-              width="3"
-              height="128"
-              rx="1.5"
-              fill={clair}
-              opacity={0.5 - i * 0.14}
-            />
-          </g>
-        ))}
-        <circle cx="100" cy="172" r={r - 1} fill={c2} />
-      </g>
-    );
-  } else if (shape === "neko") {
-    // Silhouette de chat assis, oreilles marquees : le motif le plus lisible
-    // du catalogue en petit format.
-    body = (
-      <g>
-        <ellipse cx="100" cy="170" rx="48" ry="8" fill={`url(#${id}-o)`} />
-        <path d="M74 74 L68 40 L94 60 Z" fill={remplissage} />
-        <path d="M126 74 L132 40 L106 60 Z" fill={remplissage} />
-        <circle cx="100" cy="86" r="34" fill={remplissage} />
-        <path d="M70 116 Q100 106 130 116 L138 164 Q100 174 62 164 Z" fill={remplissage} />
-        <circle cx="88" cy="82" r="4.5" fill={sombre} />
-        <circle cx="112" cy="82" r="4.5" fill={sombre} />
-        <circle cx="100" cy="94" r="3.5" fill={c2} />
-        <path d="M78 60 A34 34 0 0 1 122 60" fill={clair} opacity="0.24" />
-      </g>
-    );
-  } else {
-    // Forme inconnue : composition neutre plutot qu'un cadre vide. Le catalogue
-    // ne doit jamais afficher de trou, meme si la base contient une valeur
-    // inattendue.
-    body = (
-      <g>
-        <ellipse cx="100" cy="164" rx="50" ry="8" fill={`url(#${id}-o)`} />
-        <circle cx="100" cy="96" r="52" fill={remplissage} />
-        <circle cx="100" cy="96" r="52" fill="none" stroke={clair} strokeWidth="3" opacity="0.5" />
-        <circle cx="100" cy="96" r="22" fill={c2} opacity="0.35" />
-      </g>
-    );
+          {detoure(gelule(11, 89, 43, 50))}
+          {plein("M17 52H83A33 28 0 0 1 17 52Z")}
+          {coupe("M14 61H86")}
+          {coupe("M14 66.5H86")}
+          {plein("M39 82.5H61V88H39Z")}
+        </>
+      );
+    }
+
+    case "suzu": {
+      const cordon = "M8 15Q50 33 92 15";
+      return (
+        <>
+          <circle cx="50" cy="25" r="6.5" fill="none" stroke={t} strokeWidth="3.6" />
+          {rond(50, 59, 26)}
+          {coupe("M20 57H80", 3)}
+          {coupe("M50 67V85", 2.6)}
+          {rond(50, 67, 3.6, f)}
+          {trait(cordon, 3 + KIRI * 2, f)}
+          {trait(cordon, 3)}
+        </>
+      );
+    }
+
+    case "fan": {
+      const cx = 50;
+      const cy = 78;
+      const R = 50;
+      const r = 23;
+      const plis = 10;
+      const angle = (i) => -152 + (124 * i) / plis;
+      const bord = [];
+      for (let i = 0; i <= plis; i++) bord.push(polaire(cx, cy, i % 2 ? R - 3 : R, angle(i)));
+      const [ix0, iy0] = polaire(cx, cy, r, angle(0));
+      const [ix1, iy1] = polaire(cx, cy, r, angle(plis));
+      const papier = `M${ix0} ${iy0}L${bord.map((p) => p.join(" ")).join("L")}L${ix1} ${iy1}A${r} ${r} 0 0 0 ${ix0} ${iy0}Z`;
+      const traits = [];
+      for (let i = 0; i <= plis; i++) {
+        const [bx, by] = polaire(cx, cy, r - KIRI, angle(i));
+        traits.push(trait(`M${cx} ${cy}L${bx} ${by}`, 2));
+        if (i > 0 && i < plis) {
+          const [px, py] = polaire(cx, cy, r, angle(i));
+          const [qx, qy] = polaire(cx, cy, R, angle(i));
+          traits.push(coupe(`M${px} ${py}L${qx} ${qy}`, 1.6));
+        }
+      }
+      return decale(0, -6, [plein(papier), ...traits, rond(cx, cy, 5.5), rond(cx, cy, 2, f)]);
+    }
+
+    case "kitsune":
+      return (
+        <>
+          {plein(
+            "M50 88L66 68L80 62L73 57Q83 49 81 40L79 12L60 29Q50 26 40 29L21 12L19 40Q17 49 27 57L20 62L34 68Z",
+          )}
+          {creux("M76.5 20L65 31L77 36Z")}
+          {creux("M23.5 20L35 31L23 36Z")}
+          {creux("M55 53Q63 44 73 43Q67 53 55 53Z")}
+          {creux("M45 53Q37 44 27 43Q33 53 45 53Z")}
+          {creux("M50 34L53.5 40.5L50 47L46.5 40.5Z")}
+        </>
+      );
+
+    case "sakura": {
+      const petale =
+        "M50 44C35 39 28 29 30 19Q33 11.5 42 11.5Q47 11.5 50 17.5Q53 11.5 58 11.5Q67 11.5 70 19C72 29 65 39 50 44Z";
+      const petales = [];
+      const coupes = [];
+      for (let i = 0; i < 5; i++) {
+        petales.push(<path key={k()} transform={`rotate(${i * 72} 50 50)`} d={petale} fill={t} />);
+        const a = -54 + i * 72;
+        const [x0, y0] = polaire(50, 50, 5, a);
+        const [x1, y1] = polaire(50, 50, 42, a);
+        coupes.push(coupe(`M${x0} ${y0}L${x1} ${y1}`));
+      }
+      return decale(0, 3.6, [
+        ...petales,
+        rond(50, 50, 9),
+        ...coupes,
+        rond(50, 50, 5, f),
+        rond(50, 50, 2.2),
+      ]);
+    }
+
+    /* Bandana Sushi : le motif imprime plutot que le tissu. Un triangle seme de
+       pois se lisait comme une part de pizza. */
+    case "bandana":
+      return decale(0, -2, [
+        plein(gelule(22, 78, 52, 72)),
+        ...detoure("M12 52Q22 34 50 32Q78 30 88 46Q70 54 50 53Q30 54 12 52Z"),
+        coupe("M31 36.5L25 51"),
+        coupe("M47 33.5L41 52.5"),
+        coupe("M63 33L57 52.5"),
+        coupe("M77 36.5L72 50"),
+      ]);
+
+    /* Chaque rang recouvre le precedent ; ce qui deborde du medaillon est
+       repeint par un anneau de coupe. */
+    case "seigaiha": {
+      const vagues = [];
+      for (let rang = 0, y = 4; y <= 106; rang++, y += 6.5) {
+        for (let x = rang % 2 ? 0 : -13; x <= 113; x += 26) {
+          vagues.push(
+            rond(x, y, 13),
+            rond(x, y, 10.6, f),
+            rond(x, y, 8.2),
+            rond(x, y, 5.8, f),
+            rond(x, y, 3.4),
+          );
+        }
+      }
+      return (
+        <>
+          {vagues}
+          <circle cx="50" cy="50" r="58" fill="none" stroke={f} strokeWidth="44" />
+        </>
+      );
+    }
+
+    case "neko":
+      return decale(5, 0, [
+        plein("M13 26A6 6 0 0 1 25 26V50Q25 56 36 58L34 66Q13 62 13 50Z"),
+        plein("M34 32L33 12L47 23Z"),
+        plein("M70 32L71 12L57 23Z"),
+        <ellipse key={k()} cx="52" cy="38" rx="20" ry="16.5" fill={t} />,
+        plein("M31 86Q27 64 36 53H68Q77 64 73 86Z"),
+        trait("M40.5 39.5Q44.5 35 48.5 39.5", 2.4, f),
+        trait("M55.5 39.5Q59.5 35 63.5 39.5", 2.4, f),
+        coupe("M33 54Q52 62 71 54"),
+        rond(52, 63, 6.8, f),
+        rond(52, 63, 4.4),
+        coupe("M49 64H55", 1.2),
+      ]);
+
+    case "futon": {
+      const coussin = "M16 17Q50 26 84 17Q75 52 84 87Q50 78 16 87Q25 52 16 17Z";
+      return (
+        <>
+          {plein(coussin)}
+          {trait(coussin, 4)}
+          <ellipse cx="55" cy="58" rx="19" ry="14" fill={f} />
+          {rond(37, 51, 9.5, f)}
+          {creux("M29.5 47L28 35.5L37 42Z")}
+          {creux("M38 41.5L44 33L46.5 44Z")}
+          {trait("M73 63Q69 76 52 75.5Q38 75 34.5 64", 5, f)}
+          {trait("M47.5 44.5Q53 52 48.5 61", 2)}
+          {trait("M71 63.5Q66.5 72 52 71.5Q42 71 38.5 64", 2)}
+          {trait("M31 53.5q2.8 1.8 5.6 0", 1.8)}
+        </>
+      );
+    }
+
+    /* Forme inconnue : l'embleme de la maison plutot qu'un cadre vide */
+    default:
+      return (
+        <>
+          <circle cx="50" cy="50" r="34" fill="none" stroke={t} strokeWidth="4" />
+          {rond(50, 50, 12)}
+        </>
+      );
   }
+}
+
+const estPhoto = (art) =>
+  typeof art === "string" && (art.startsWith("http") || art.startsWith("data:"));
+
+export const ProductArt = memo(function ProductArt({ art, alt = "" }) {
+  const idBrut = useId();
+
+  if (estPhoto(art)) {
+    return <img src={art} alt={alt} className="art art-photo" loading="lazy" decoding="async" />;
+  }
+
+  const [formeBrute = "", c1 = "", c2 = "", option = ""] = String(art || "").split(",");
+  const forme = FORMES_ANCIENNES[formeBrute] || formeBrute;
+  const trace = HEX.test(c1) ? c1 : "#E0452A";
+  const fond = HEX.test(c2) ? c2 : "#0A0605";
+  const clair = eclaircir(fond, luminance(fond) > 0.5 ? 0.45 : 0.1);
+  const id = `blason${idBrut.replace(/:/g, "")}`;
+  const cadre = option === "gros-plan" ? "25 25 50 50" : "0 0 100 100";
 
   return (
-    <svg viewBox="0 0 200 200" className="art" aria-hidden="true">
-      {defs}
-      {/* Papier : un aplat, puis le halo qui decentre la lumiere. */}
-      <rect width="200" height="200" fill={c2} opacity="0.09" />
-      <rect width="200" height="200" fill={`url(#${id}-b)`} />
-      {body}
+    <svg
+      className="art"
+      viewBox={cadre}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <radialGradient id={id} gradientUnits="userSpaceOnUse" cx="30" cy="22" r="85">
+          <stop offset="0" stopColor={clair} />
+          <stop offset="1" stopColor={fond} />
+        </radialGradient>
+      </defs>
+      <rect width="100" height="100" fill={`url(#${id})`} />
+      <Blason forme={forme} t={trace} f={`url(#${id})`} />
     </svg>
   );
 });

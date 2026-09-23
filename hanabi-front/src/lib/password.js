@@ -1,17 +1,4 @@
-/** Regles de robustesse du mot de passe.
- *
- * Ces regles sont un confort d'interface : elles guident l'utilisateur en
- * direct. La contrainte qui fait foi est celle du serveur
- * (`app/passwords.py`), qui refuse en plus les mots de passe notoirement
- * compromis et ceux qui reprennent le nom ou l'e-mail du titulaire.
- *
- * Les deux jeux de regles doivent rester alignes : une regle plus permissive
- * ici produirait le pire des parcours - une jauge toute verte, puis un refus
- * du serveur sans que l'utilisateur comprenne pourquoi.
- *
- * Les libelles sont des fonctions prenant `t` : les regles sont definies une
- * fois, et traduites au moment de l'affichage.
- */
+/** Regles de robustesse du mot de passe. */
 
 /** Doit rester egal a MIN_LENGTH dans app/passwords.py. */
 export const MIN_PASSWORD_LENGTH = 10;

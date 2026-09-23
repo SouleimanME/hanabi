@@ -1,13 +1,4 @@
-/** Internationalisation de l'interface.
- *
- * Repartition des responsabilites :
- *   - les libelles de l'interface sont traduits ici, cote client ;
- *   - le contenu produit (nom, description) est traduit cote serveur, dans
- *     `app/translations.py`, car il vient de la base.
- *
- * Pour ajouter une langue : creer `dictionaries/<code>.js`, l'enregistrer
- * dans DICTIONARIES et LANGS ci-dessous, puis ajouter la langue cote backend.
- */
+/** Internationalisation de l'interface. */
 import fr from "./dictionaries/fr.js";
 import en from "./dictionaries/en.js";
 import es from "./dictionaries/es.js";
@@ -21,20 +12,25 @@ export const LANGS = [
 const DICTIONARIES = { fr, en, es };
 const FALLBACK = "fr";
 
-/**
- * Construit la fonction de traduction pour une langue.
+/** Construit la fonction de traduction pour une langue.
  *
- * Une cle manquante retombe sur le francais, puis sur la cle elle-meme :
- * l'interface reste lisible meme si une traduction a ete oubliee.
- *
+ * Une entrée peut porter ses formes de pluriel, `{ one, other }` : la forme
+ * suit `vars.n` selon les règles de la langue (en français, 0 et 1 sont au
+ * singulier, en anglais seul 1 l'est).
  * @param {string} lang code de langue
  * @returns {(key: string, vars?: Record<string, unknown>) => string}
  */
 export function translator(lang) {
-  const dict = DICTIONARIES[lang] ?? DICTIONARIES[FALLBACK];
+  const code = DICTIONARIES[lang] ? lang : FALLBACK;
+  const dict = DICTIONARIES[code];
+  const regles = new Intl.PluralRules(code);
 
   return (key, vars) => {
     let text = dict[key] ?? DICTIONARIES[FALLBACK][key] ?? key;
+    if (typeof text === "object") {
+      const forme = regles.select(Number(vars?.n ?? 0));
+      text = text[forme] ?? text.other;
+    }
     if (vars) {
       for (const name of Object.keys(vars)) {
         text = text.replaceAll(`{${name}}`, vars[name]);

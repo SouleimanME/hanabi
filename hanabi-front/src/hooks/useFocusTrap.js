@@ -1,10 +1,6 @@
 import { useEffect, useRef } from "react";
 
-/** Elements qui peuvent recevoir le focus au clavier.
- *
- * `:not([disabled])` et `tabindex="-1"` sont exclus : un bouton desactive ou
- * volontairement retire du parcours ne doit pas capter la tabulation. C'est ce
- * qui ecarte aussi le champ piege anti-robots (voir useAntiBot). */
+/** Elements qui peuvent recevoir le focus au clavier. */
 const FOCUSABLE = [
   "a[href]",
   "button:not([disabled])",
@@ -14,19 +10,7 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-/**
- * Enferme le focus clavier dans une fenetre modale.
- *
- * Sans cela, la tabulation sort de la fenetre et continue de parcourir la page
- * situee derriere : une personne naviguant au clavier ou au lecteur d'ecran se
- * retrouve a remplir un formulaire qu'elle ne voit plus, sous un voile qui lui
- * cache tout. C'est le comportement attendu de `aria-modal="true"`, que
- * l'attribut declare mais n'implemente pas - il informe la technologie
- * d'assistance, il ne contraint pas le navigateur.
- *
- * Le focus precedent est rendu a la fermeture, pour que la navigation reprenne
- * ou elle s'etait arretee et non en haut de page.
- *
+/** Enferme le focus clavier dans une fenetre modale.
  * @param {boolean} [active] permet de conditionner le piege
  * @returns {React.RefObject} ref a poser sur le conteneur de la fenetre
  */
@@ -42,9 +26,7 @@ export function useFocusTrap(active = true) {
 
     const focusable = () => [...node.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent);
 
-    // Le premier champ recoit le focus a l'ouverture : la saisie commence sans
-    // avoir a viser a la souris. A defaut, la fenetre elle-meme le prend, pour
-    // que la touche Echap et le lecteur d'ecran aient un point d'ancrage.
+    // Le premier champ recoit le focus a l'ouverture : la saisie commence sans avoir a viser a la souris
     const first = focusable()[0];
     if (first) first.focus();
     else {

@@ -1,49 +1,27 @@
 import { useEffect, useRef } from "react";
 import { parsePath, pathFor } from "../lib/routes.js";
 
-/**
- * Maintient l'URL et l'ecran affiche en accord, dans les deux sens.
- *
- * Trois responsabilites, volontairement reunies : elles partagent un garde-fou
- * commun et les separer ferait boucler la synchronisation.
- *
- *   1. Au chargement, l'URL fait foi - c'est ce qui rend une fiche produit
- *      partageable et memorisable dans les favoris.
- *   2. Quand l'ecran change, l'URL est mise a jour (pushState).
- *   3. Aux boutons Retour et Suivant, l'URL fait foi de nouveau (popstate).
- *
- * Le garde-fou est `applyingUrl` : sans lui, appliquer une URL modifierait
- * l'etat, ce qui declencherait l'ecriture d'une nouvelle entree d'historique,
- * qui redeclencherait l'application... Le drapeau coupe la boucle en marquant
- * les changements d'etat qui viennent deja de l'URL.
- *
- * @param {{
- *   view: string,
- *   setView: (v: string) => void,
- *   activeProduct: {id: number}|null,
- *   openProductById: (id: number) => void,
- *   onJeton?: (jeton: string) => void,
- * }} params
+/** Maintient l'URL et l'ecran affiche en accord, dans les deux sens.
+ * `onJeton` et `onLien` recoivent ce qu'un lien de courriel porte dans sa requete.
  */
-export function useUrlSync({ view, setView, activeProduct, openProductById, onJeton }) {
+export function useUrlSync({ view, setView, activeProduct, openProductById, onJeton, onLien }) {
   const applyingUrl = useRef(false);
   const ready = useRef(false);
 
   // Les fonctions changent a chaque rendu ; on lit toujours la derniere version
   // sans reabonner l'ecouteur popstate pour autant.
-  const latest = useRef({ setView, openProductById, onJeton });
-  latest.current = { setView, openProductById, onJeton };
+  const latest = useRef({ setView, openProductById, onJeton, onLien });
+  latest.current = { setView, openProductById, onJeton, onLien };
 
   const applyPath = (pathname, search) => {
-    const { view: nextView, productId, jeton } = parsePath(pathname, search);
+    const { view: nextView, productId, jeton, lien } = parsePath(pathname, search);
     applyingUrl.current = true;
     if (nextView === "product" && productId) {
       latest.current.openProductById(productId);
     } else {
-      // Transmis AVANT le changement d'ecran : l'ecran de confirmation lit le
-      // jeton des son premier rendu, et l'y trouver deja evite un aller-retour
-      // ou il s'afficherait vide.
+      // Transmis avant le changement d'ecran
       if (jeton) latest.current.onJeton?.(jeton);
+      if (lien) latest.current.onLien?.(lien);
       latest.current.setView(nextView);
     }
   };
@@ -68,10 +46,7 @@ export function useUrlSync({ view, setView, activeProduct, openProductById, onJe
 
     const path = pathFor(view, activeProduct);
     if (path !== window.location.pathname) {
-      // `pathFor` ne produit jamais de requete : quitter un ecran a jeton
-      // efface donc celui-ci de la barre d'adresse. C'est voulu - un jeton qui
-      // traine dans l'historique, dans un signet ou dans un lien repartage est
-      // un jeton qu'on finit par donner a quelqu'un d'autre.
+      // `pathFor` ne produit jamais de requete
       window.history.pushState(null, "", path);
     }
   }, [view, activeProduct]);

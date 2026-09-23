@@ -1,32 +1,18 @@
-/** Menu principal en tiroir, ouvert par le bouton burger de l'en-tete.
- *
- * Reserve aux petits ecrans : sous 640 px, l'en-tete masque la moitie de ses
- * actions (classe .hide-sm) et la barre du bas n'en reprend que quatre. Les
- * categories, la langue, le theme et les pages legales n'etaient alors
- * atteignables qu'en faisant defiler toute la page. Ce panneau les rassemble.
- *
- * Au-dessus de 640 px, la barre d'actions de l'en-tete suffit : le tiroir et
- * son voile sont masques en CSS (voir responsive.css).
- */
-import {
-  X,
-  Home as HomeIcon,
-  Heart,
-  User,
-  Moon,
-  Sun,
-  Globe,
-  Palette,
-  Bookmark,
-  ReceiptText,
-  ContactRound,
-} from "lucide-react";
+/** Menu des petits ecrans : ce que l'en-tete replie sous 40rem. */
+import { X, ChevronDown } from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
+import {
+  PictoBoutique,
+  PictoCommandes,
+  PictoCompte,
+  PictoFavori,
+  PictoGarde,
+  PictoTheme,
+} from "../brand/Pictos.jsx";
 import { LANGS } from "../../i18n/index.js";
 import { CATEGORIES } from "../../lib/constants.js";
 import { useFocusTrap } from "../../hooks/useFocusTrap.js";
 import { LogoMark } from "../brand/LogoMark.jsx";
-import { Dropdown } from "../ui/Dropdown.jsx";
 
 const LEGAL_PAGES = ["mentions", "cgv", "confidentialite", "cookies"];
 
@@ -54,8 +40,6 @@ export function MenuSheet({
   const t = useT();
   const ref = useFocusTrap(open);
 
-  /** Toute navigation referme le panneau : le laisser ouvert masquerait
-   *  l'ecran qu'on vient de demander. */
   const go = (action) => () => {
     action();
     onClose();
@@ -63,118 +47,138 @@ export function MenuSheet({
 
   return (
     <>
-      <div className={"scrim menu-scrim" + (open ? " show" : "")} onClick={onClose} />
+      <div className="scrim" data-open={open} onClick={onClose} aria-hidden="true" />
       <aside
         ref={ref}
-        className={"msheet" + (open ? " open" : "")}
-        aria-hidden={!open}
+        className="sheet sheet-menu"
+        data-open={open}
+        role="dialog"
+        aria-modal="true"
         aria-label={t("menu")}
+        inert={open ? undefined : ""}
       >
-        <div className="msheet-hd">
-          <div className="logo msheet-logo">
+        <div className="sheet-head">
+          <span className="sheet-brand">
             <LogoMark size={26} />
-            HANABI<span className="logo-jp">花火</span>
-          </div>
+            <span className="brand-word">HANABI</span>
+          </span>
           <button className="icon-btn" onClick={onClose} aria-label={t("close")}>
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="msheet-body">
-          <nav className="msheet-nav" aria-label={t("menu")}>
-            <button className={view === "home" ? "on" : ""} onClick={go(onGoHome)}>
-              <HomeIcon size={18} />
-              {t("shop")}
-            </button>
-            <button className={view === "wishlist" ? "on" : ""} onClick={go(onGoWishlist)}>
-              <Heart size={18} fill={wishlistCount ? "currentColor" : "none"} />
-              {t("favs")}
-              {wishlistCount > 0 && <i className="msheet-count">{wishlistCount}</i>}
-            </button>
-            <button className={view === "saved" ? "on" : ""} onClick={go(onGoSaved)}>
-              <Bookmark size={18} />
-              {t("saved")}
-              {savedCount > 0 && <i className="msheet-count">{savedCount}</i>}
-            </button>
+        <div className="sheet-body menu-body">
+          <nav aria-label={t("menu")}>
+            <ul className="menu-list">
+              <li>
+                <button aria-current={view === "home" ? "page" : undefined} onClick={go(onGoHome)}>
+                  <PictoBoutique /> {t("shop")}
+                </button>
+              </li>
+              <li>
+                <button
+                  aria-current={view === "wishlist" ? "page" : undefined}
+                  onClick={go(onGoWishlist)}
+                >
+                  <PictoFavori plein={wishlistCount > 0} /> {t("favs")}
+                  {wishlistCount > 0 && <span className="menu-count">{wishlistCount}</span>}
+                </button>
+              </li>
+              <li>
+                <button
+                  aria-current={view === "saved" ? "page" : undefined}
+                  onClick={go(onGoSaved)}
+                >
+                  <PictoGarde /> {t("saved")}
+                  {savedCount > 0 && <span className="menu-count">{savedCount}</span>}
+                </button>
+              </li>
+            </ul>
           </nav>
 
-          <section className="msheet-sec">
-            <h4>{t("myAccount")}</h4>
-            <nav className="msheet-nav" aria-label={t("myAccount")}>
-              {/* Hors session, les deux entrees meneraient a un ecran vide :
-                  on ne propose alors que la porte d'entree. */}
+          <section className="menu-section">
+            <h2>{t("myAccount")}</h2>
+            <ul className="menu-list">
               {user ? (
                 <>
-                  <button onClick={go(onGoOrders)}>
-                    <ReceiptText size={18} />
-                    {t("myOrders")}
-                  </button>
-                  <button onClick={go(onGoInfo)}>
-                    <ContactRound size={18} />
-                    {t("myInfo")}
-                  </button>
+                  <li>
+                    <button onClick={go(onGoOrders)}>
+                      <PictoCommandes /> {t("myOrders")}
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={go(onGoInfo)}>
+                      <PictoCompte /> {t("myInfo")}
+                    </button>
+                  </li>
                 </>
               ) : (
-                <button onClick={go(onGoAccount)}>
-                  <User size={18} />
-                  {t("signin")}
-                </button>
+                <li>
+                  <button onClick={go(onGoAccount)}>
+                    <PictoCompte /> {t("signin")}
+                  </button>
+                </li>
               )}
-            </nav>
+            </ul>
           </section>
 
-          <section className="msheet-sec">
-            <h4>{t("categories")}</h4>
-            <div className="msheet-chips">
+          <section className="menu-section">
+            <h2>{t("categories")}</h2>
+            <ul className="menu-chips">
               {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  className={"chip" + (category === c ? " on" : "")}
-                  onClick={go(() => onGoCategory(c))}
-                >
-                  {t("cat_" + c)}
-                </button>
+                <li key={c}>
+                  <button
+                    className="chip"
+                    aria-pressed={category === c}
+                    onClick={go(() => onGoCategory(c))}
+                  >
+                    {t("cat_" + c)}
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
 
-          <section className="msheet-sec">
-            <h4>{t("settings")}</h4>
-            <div className="msheet-row">
-              <span>
-                <Globe size={15} />
-                {t("language")}
+          <section className="menu-section">
+            <h2>{t("settings")}</h2>
+            <div className="menu-row">
+              <label htmlFor="menu-langue">{t("language")}</label>
+              <span className="select">
+                <select
+                  id="menu-langue"
+                  value={lang}
+                  onChange={(e) => onLangChange(e.target.value)}
+                >
+                  {LANGS.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
               </span>
-              <Dropdown
-                pill
-                value={lang}
-                onChange={onLangChange}
-                options={LANGS.map((l) => ({ value: l.code, label: l.label }))}
-              />
             </div>
-            <div className="msheet-row">
-              <span>
-                <Palette size={15} />
-                {t("theme")}
-              </span>
-              {/* Le theme reste visible derriere le panneau : pas de fermeture,
-                  pour pouvoir comparer les deux teintes d'un coup d'oeil. */}
-              <button className="btn-ghost sm" onClick={onToggleTheme}>
-                {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            <div className="menu-row">
+              <span>{t("theme")}</span>
+              <button className="btn btn-quiet" onClick={onToggleTheme}>
+                <PictoTheme
+                  taille={18}
+                  className={theme === "dark" ? "picto-theme is-dark" : "picto-theme"}
+                />
                 {theme === "dark" ? t("themeLight") : t("themeDark")}
               </button>
             </div>
           </section>
 
-          <section className="msheet-sec">
-            <h4>{t("information")}</h4>
-            <div className="msheet-legal">
+          <section className="menu-section">
+            <h2>{t("information")}</h2>
+            <ul className="menu-list menu-legal">
               {LEGAL_PAGES.map((page) => (
-                <button key={page} onClick={go(() => onOpenLegal(page))}>
-                  {t("legal_" + page)}
-                </button>
+                <li key={page}>
+                  <button onClick={go(() => onOpenLegal(page))}>{t("legal_" + page)}</button>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         </div>
       </aside>

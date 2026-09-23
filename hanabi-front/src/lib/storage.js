@@ -1,9 +1,4 @@
-/** Acces au localStorage tolerant aux pannes.
- *
- * Le localStorage leve une exception dans plusieurs cas reels : navigation
- * privee sur Safari, quota depasse, cookies tiers bloques. On absorbe l'erreur
- * et on retombe sur la valeur par defaut plutot que de casser le rendu.
- */
+/** Acces au localStorage tolerant aux pannes. */
 
 const PREFIX = "hanabi:";
 

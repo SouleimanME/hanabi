@@ -42,10 +42,7 @@ export default [
     },
   },
 
-  // Les tests tournent sous Node, pas dans le navigateur : ils lisent des
-  // fichiers et interrogent des chemins. Sans ce bloc, `process` ou `console`
-  // seraient signales comme indefinis dans les seuls fichiers qui ont le droit
-  // de s'en servir.
+  // Les tests tournent sous Node, pas dans le navigateur
   {
     files: ["**/*.test.{js,jsx}", "src/tests/**/*.js"],
     languageOptions: {
@@ -61,10 +58,7 @@ export default [
       globals: { ...globals.node },
     },
     rules: {
-      // La fixture de Playwright se declare `async ({ page }, use) => ...` :
-      // `use` y est un parametre, pas le hook React du meme nom. La regle ne
-      // peut pas faire la difference, et n'a de toute facon rien a verifier
-      // dans un fichier sans composant.
+      // La fixture de Playwright se declare `async ({ page }, use) => ...`
       "react-hooks/rules-of-hooks": "off",
     },
   },

@@ -2,14 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Orders } from "../lib/api.js";
 import { SHIPPING_CENTS, FREE_SHIPPING_CENTS } from "../lib/constants.js";
 
-/**
- * Montants du panier, calcules par le serveur.
- *
- * Regle de securite : le total qui fait foi vient toujours de l'API, jamais du
- * navigateur. L'estimation locale ci-dessous ne sert qu'a eviter un panier
- * vide a l'ecran pendant l'aller-retour reseau, et est remplacee des que la
- * reponse arrive.
- *
+/** Montants du panier, calcules par le serveur.
  * @param {{id: number, qty: number}[]} items lignes du panier (etat stable)
  * @param {string|null} promoCode code promo applique
  * @param {number} localSubtotalCents sous-total estime localement

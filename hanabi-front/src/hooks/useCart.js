@@ -8,13 +8,7 @@ export const ADD_RESULT = {
   UNAVAILABLE: "unavailable",
 };
 
-/**
- * Panier persistant.
- *
- * Seuls l'identifiant et la quantite sont stockes : prix, nom et stock sont
- * relus depuis le catalogue a chaque rendu. Un prix modifie en base est donc
- * immediatement repercute, au lieu de rester fige dans le localStorage.
- *
+/** Panier persistant.
  * @param {Record<number, object>} catalog index id -> produit
  */
 export function useCart(catalog) {
@@ -35,8 +29,7 @@ export function useCart(catalog) {
     [lines],
   );
 
-  /**
-   * Ajoute `qty` unites, en plafonnant au stock disponible.
+  /** Ajoute `qty` unites, en plafonnant au stock disponible.
    * @returns {string} une valeur de ADD_RESULT
    */
   const add = useCallback(

@@ -1,10 +1,4 @@
-/** Correspondance entre l'etat d'affichage et l'URL.
- *
- * Le risque ici n'est pas qu'une entree soit fausse - la table est courte et se
- * relit - mais qu'elle DERIVE : un ecran ajoute a `SEGMENTS` sans etre ajoute a
- * la table inverse, ou un segment renomme qui casse silencieusement les liens
- * deja partages. C'est ce que verifie l'aller-retour ci-dessous.
- */
+/** Correspondance entre l'etat d'affichage et l'URL. */
 import { describe, it, expect } from "vitest";
 
 import { pathFor, parsePath } from "./routes.js";
@@ -47,7 +41,12 @@ describe("pathFor", () => {
 
 describe("parsePath", () => {
   it("lit une fiche produit et son identifiant", () => {
-    expect(parsePath("/produit/42")).toEqual({ view: "product", productId: 42, jeton: null });
+    expect(parsePath("/produit/42")).toEqual({
+      view: "product",
+      productId: 42,
+      jeton: null,
+      lien: null,
+    });
   });
 
   it.each([
@@ -57,7 +56,7 @@ describe("parsePath", () => {
     ["/produit/1.5", "decimal"],
     ["/produit/", "identifiant absent"],
   ])("renvoie a l'accueil pour %s (%s)", (chemin) => {
-    expect(parsePath(chemin)).toEqual({ view: "home", productId: null, jeton: null });
+    expect(parsePath(chemin)).toEqual({ view: "home", productId: null, jeton: null, lien: null });
   });
 
   it("renvoie a l'accueil pour une adresse inconnue", () => {
@@ -83,6 +82,7 @@ describe("aller-retour", () => {
         view: "product",
         productId: id,
         jeton: null,
+        lien: null,
       });
     }
   });
@@ -99,7 +99,7 @@ describe("ecrans atteints depuis un courriel", () => {
     ["verifyEmail", "/confirmer-adresse"],
     ["resetPassword", "/nouveau-mot-de-passe"],
   ])("%s vit a %s", (vue, chemin) => {
-    // Ces segments figurent dans des messages DEJA PARTIS, que personne ne peut
+    // Ces segments figurent dans des messages deja partis, que personne ne peut
     // corriger. Les renommer casserait tous les liens en circulation.
     expect(pathFor(vue)).toBe(chemin);
   });
@@ -109,6 +109,7 @@ describe("ecrans atteints depuis un courriel", () => {
       view: "verifyEmail",
       productId: null,
       jeton: JETON,
+      lien: null,
     });
   });
 
@@ -138,5 +139,31 @@ describe("ecrans atteints depuis un courriel", () => {
     // `pathFor` ne produit pas de requete : quitter l'ecran efface le jeton de
     // la barre d'adresse, de l'historique et des signets.
     expect(pathFor("resetPassword")).not.toMatch(/jeton/);
+  });
+});
+
+describe("lien de desinscription", () => {
+  const SIGNATURE = "ab".repeat(32);
+
+  it("vit a /desinscription, segment ecrit dans chaque lettre deja partie", () => {
+    expect(pathFor("unsubscribe")).toBe("/desinscription");
+  });
+
+  it("lit le numero et la signature", () => {
+    expect(parsePath("/desinscription", `?i=42&s=${SIGNATURE}`)).toEqual({
+      view: "unsubscribe",
+      productId: null,
+      jeton: null,
+      lien: { id: 42, signature: SIGNATURE },
+    });
+  });
+
+  it.each([
+    ["?s=" + "ab".repeat(32), "numero absent"],
+    ["?i=0&s=" + "ab".repeat(32), "numero nul"],
+    ["?i=4&s=court", "signature tronquee par la messagerie"],
+    ["?i=4&s=" + "zz".repeat(32), "signature hors hexadecimal"],
+  ])("retombe sur l'accueil (%s : %s)", (requete) => {
+    expect(parsePath("/desinscription", requete).view).toBe("home");
   });
 });

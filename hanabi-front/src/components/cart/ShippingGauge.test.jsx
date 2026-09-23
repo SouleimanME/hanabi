@@ -1,15 +1,4 @@
-/** Jauge de livraison offerte.
- *
- * Teste a travers le DOM, contrairement au reste : ce composant n'expose aucune
- * fonction, sa sortie EST son rendu. Ce qu'on verifie est ce qu'un visiteur
- * percoit - la phrase affichee, le montant restant, l'etat de la barre - et non
- * la forme interne du calcul.
- *
- * Les assertions passent par les roles d'accessibilite (`progressbar`) plutot
- * que par les classes CSS. Une classe renommee casserait alors le test sans
- * qu'aucun comportement ait change ; un role disparu, lui, est bien une
- * regression, puisqu'il est ce qu'un lecteur d'ecran annonce.
- */
+/** Jauge de livraison offerte. */
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 
@@ -80,9 +69,7 @@ describe("franchissement du seuil", () => {
 
 describe("prise en compte de la remise", () => {
   it("retranche la remise du sous-total", () => {
-    // Coherence avec `app/pricing.py`, qui applique le seuil APRES remise. Un
-    // code promo qui repasse le panier sous les 80 € doit rendre le port
-    // payant, et la jauge doit le dire avant la page de paiement.
+    // Coherence avec `app/pricing.py`, qui applique le seuil apres remise
     afficher({ subtotalCents: FREE_SHIPPING_CENTS + 1000, discountCents: 2000 });
     expect(barre()).not.toHaveAttribute("aria-valuenow", "100");
     expect(screen.getByText(/10,00 €/)).toBeInTheDocument();

@@ -1,14 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Auth, Orders, setToken, getToken } from "../lib/api.js";
 
-/**
- * Session utilisateur et historique de commandes.
- *
- * Les fonctions `login` / `signup` suivent la meme convention que le reste du
- * projet : elles renvoient `null` en cas de succes, ou le message d'erreur a
- * afficher. Cela evite d'avoir a envelopper chaque appel dans un try/catch
- * cote composant.
- */
+/** Session utilisateur et historique de commandes. */
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -73,12 +66,7 @@ export function useAuth() {
     setOrders([]);
   }, []);
 
-  /** Relit le profil depuis l'API, sans toucher au jeton.
-   *
-   * Sert apres une confirmation d'adresse : le drapeau `email_verified` a
-   * change cote serveur, et l'interface doit cesser de proposer un lien deja
-   * suivi. Recharger la page entiere pour un booleen serait disproportionne.
-   */
+  /** Relit le profil depuis l'API, sans toucher au jeton. */
   const refreshUser = useCallback(async () => {
     if (!getToken()) return;
     try {
@@ -88,20 +76,10 @@ export function useAuth() {
     }
   }, []);
 
-  /** Adopte la session rendue par une route qui authentifie d'elle-meme.
-   *
-   * La reinitialisation de mot de passe renvoie un jeton d'acces : la personne
-   * vient de prouver son identite et de choisir un mot de passe, la renvoyer
-   * vers l'ecran de connexion serait une etape de trop.
-   */
+  /** Adopte la session rendue par une route qui authentifie d'elle-meme. */
   const adopterSession = useCallback((response) => applySession(response), [applySession]);
 
-  /** Remplace le profil en memoire par celui que le serveur vient de rendre.
-   *
-   * Les routes de modification renvoient le profil a jour : le relire aussitot
-   * par `/auth/me` serait un aller-retour pour une information qu'on tient
-   * deja, et laisserait l'ecran afficher l'ancienne valeur entre les deux.
-   */
+  /** Remplace le profil en memoire par celui que le serveur vient de rendre. */
   const poserProfil = useCallback((profil) => setUser(profil), []);
 
   return {

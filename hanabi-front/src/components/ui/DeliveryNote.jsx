@@ -1,9 +1,5 @@
-/** Date de livraison estimee, affichee la ou la question se pose.
- *
- * Sur la fiche produit et dans le panier : ce sont les deux moments ou l'on
- * hesite, et « est-ce que ce sera la a temps » est la question qui reste sans
- * reponse quand on n'annonce qu'un delai.
- */
+/** Date de livraison estimee, la ou la question se pose : fiche, panier,
+ *  paiement. Avant l'heure limite, la date s'accompagne de sa condition. */
 import { Truck } from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
 import {
@@ -13,18 +9,15 @@ import {
   isBeforeCutoff,
 } from "../../lib/delivery.js";
 
-export function DeliveryNote({ lang }) {
+export function DeliveryNote({ lang, icone = true }) {
   const t = useT();
   const now = new Date();
   const date = formatDeliveryDate(estimateDelivery(now), lang);
-
-  // Avant l'heure limite, la date s'accompagne de sa condition : c'est une
-  // raison de commander maintenant, et elle est vraie.
   const key = isBeforeCutoff(now) ? "deliveryCutoff" : "deliveryBy";
 
   return (
     <span className="delivery-note">
-      <Truck size={14} />
+      {icone && <Truck size={16} aria-hidden="true" />}
       <span>{t(key, { date, hour: CUTOFF_HOUR })}</span>
     </span>
   );

@@ -1,75 +1,68 @@
-/** Affichage des pages legales en modale. */
-import { X, Info } from "lucide-react";
+/** Pages legales en fenetre. Les textes non traduits retombent sur le
+ *  francais, qui fait foi. */
+import { X } from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
 import { LEGAL_CONTENT, LEGAL_UPDATED } from "../../content/legal.js";
 import { useFocusTrap } from "../../hooks/useFocusTrap.js";
 
-const FALLBACK_LANG = "fr";
-
-/**
- * Transforme le texte legal en elements React.
- *
- * Mini-format maison plutot qu'un moteur Markdown complet : le besoin se
- * limite a des titres et des puces, et cela evite une dependance de plus.
- */
-function renderLegal(text) {
-  return text.split("\n").map((line, i) => {
-    if (line.startsWith("**") && line.endsWith("**")) {
-      return (
-        <h3 key={i} className="legal-h3">
-          {line.slice(2, -2)}
-        </h3>
+/** Mini-format maison : titres entre ** et puces. Un moteur Markdown serait
+ *  une dependance pour deux regles. */
+function rendreTexte(text) {
+  const blocs = [];
+  let puces = [];
+  const viderPuces = (cle) => {
+    if (puces.length) {
+      blocs.push(
+        <ul key={`l${cle}`} className="bullets">
+          {puces}
+        </ul>,
       );
+      puces = [];
     }
-    if (line.startsWith("•")) {
-      return (
-        <p key={i} className="legal-bullet">
-          {line}
-        </p>
-      );
+  };
+  text.split("\n").forEach((ligne, i) => {
+    if (ligne.startsWith("•")) {
+      puces.push(<li key={i}>{ligne.replace(/^•\s*/, "")}</li>);
+      return;
     }
-    if (line.trim() === "") return <div key={i} className="legal-gap" />;
-    return (
-      <p key={i} className="legal-p">
-        {line}
-      </p>
-    );
+    viderPuces(i);
+    if (ligne.startsWith("**") && ligne.endsWith("**")) {
+      blocs.push(<h3 key={i}>{ligne.slice(2, -2)}</h3>);
+    } else if (ligne.trim()) {
+      blocs.push(<p key={i}>{ligne}</p>);
+    }
   });
+  viderPuces("fin");
+  return blocs;
 }
 
 export function LegalModal({ page, lang, onClose }) {
   const t = useT();
   const trapRef = useFocusTrap();
   const content = LEGAL_CONTENT[page];
-  // Toutes les pages ne sont pas traduites dans toutes les langues :
-  // on retombe sur le francais, qui fait foi juridiquement.
-  const localized = content[lang] ?? content[FALLBACK_LANG];
+  const localized = content[lang] ?? content.fr;
 
   return (
-    <div className="modal-scrim" onClick={onClose}>
+    <div className="modal-layer">
+      <div className="scrim" data-open="true" onClick={onClose} aria-hidden="true" />
       <div
         ref={trapRef}
-        className="modal legal-modal"
-        onClick={(e) => e.stopPropagation()}
+        className="modal modal-wide"
         role="dialog"
         aria-modal="true"
-        aria-label={localized.title}
+        aria-labelledby="legal-titre"
       >
-        <button className="icon-btn modal-x" onClick={onClose} aria-label={t("close")}>
-          <X size={18} />
-        </button>
-        <h2 className="modal-h">{localized.title}</h2>
-        {/* Les textes contiennent des champs a renseigner par l'exploitant.
-            Le signaler explicitement evite de laisser croire que la boutique
-            est juridiquement prete a encaisser de vraies commandes. */}
-        <div className="legal-notice">
-          <Info size={15} />
-          <span>{t("legalDraft")}</span>
+        <div className="sheet-head">
+          <h2 id="legal-titre">{localized.title}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label={t("close")}>
+            <X size={20} />
+          </button>
         </div>
-        <div className="legal-body">{renderLegal(localized.body)}</div>
-        <p className="legal-updated mono small muted">
-          {t("legalUpdated", { date: LEGAL_UPDATED })}
-        </p>
+        <div className="modal-body legal">
+          <p className="notice">{t("legalDraft")}</p>
+          {rendreTexte(localized.body)}
+          <p className="muted">{t("legalUpdated", { date: LEGAL_UPDATED })}</p>
+        </div>
       </div>
     </div>
   );

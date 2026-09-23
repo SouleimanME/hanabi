@@ -1,14 +1,4 @@
-/** Estimation de la date de livraison.
- *
- * Un delai (« expedie sous 48 h ») laisse le calcul a la charge du visiteur, qui
- * doit deviner si les week-ends comptent. Une date (« chez toi mardi 4 aout »)
- * repond directement a la seule question qu'il se pose : est-ce que ce sera la
- * a temps.
- *
- * L'estimation reste volontairement prudente et n'est jamais presentee comme un
- * engagement : annoncer une date qu'on ne tient pas coute plus cher que de ne
- * rien annoncer.
- */
+/** Estimation de la date de livraison. */
 
 /** Heure limite, au-dela de laquelle la preparation commence le lendemain. */
 export const CUTOFF_HOUR = 15;
@@ -19,12 +9,7 @@ const TRANSIT_DAYS = 2;
 const SATURDAY = 6;
 const SUNDAY = 0;
 
-/** Ajoute un nombre de jours ouvres, en sautant samedi et dimanche.
- *
- * Les jours feries ne sont pas geres : ils dependent du pays de livraison, et
- * une table de dates en dur vieillirait mal. La marge de transport les absorbe
- * dans la plupart des cas.
- */
+/** Ajoute un nombre de jours ouvres, en sautant samedi et dimanche. */
 function addBusinessDays(from, days) {
   const date = new Date(from);
   let left = days;
@@ -43,18 +28,7 @@ export function isBeforeCutoff(from = new Date()) {
   return from.getHours() < CUTOFF_HOUR;
 }
 
-/**
- * Date de livraison estimee pour une commande passee maintenant.
- *
- * La valeur rendue est ramenee a minuit. Seul le JOUR est estime - il n'existe
- * aucune heure de livraison ici - et conserver l'heure de la commande donnait
- * une precision fictive, avec une consequence mesurable : une commande du
- * samedi 0 h et une du vendredi 16 h arrivent le meme jeudi, mais la premiere
- * portait 00:00 et la seconde 16:00. Comparees comme instants, commander PLUS
- * TARD livrait donc PLUS TOT. L'affichage n'en montrait rien, puisqu'il ne lit
- * que le jour, mais tout appelant qui compare deux estimations - un tri, un
- * « livre avant le », un test - obtenait une reponse fausse.
- *
+/** Date de livraison estimee pour une commande passee maintenant.
  * @param {Date} [from]
  * @returns {Date} minuit, le jour de livraison estime
  */
@@ -65,12 +39,7 @@ export function estimateDelivery(from = new Date()) {
   return date;
 }
 
-/**
- * Date lisible dans la langue affichee : « mardi 4 aout ».
- *
- * L'annee est omise : une estimation a quatre jours ne franchit un changement
- * d'annee qu'une fois sur cent, et la porter alourdirait la phrase.
- *
+/** Date lisible dans la langue affichee : « mardi 4 aout ».
  * @param {Date} date
  * @param {string} lang
  * @returns {string}

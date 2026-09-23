@@ -1,10 +1,4 @@
-/** Panier persistant.
- *
- * Le hook est teste directement plutot qu'a travers un composant : ce qui est
- * en jeu ici est une regle de gestion - le plafonnement au stock, l'oubli d'un
- * produit disparu - et non un rendu. Passer par l'interface ajouterait des
- * clics entre le test et ce qu'il verifie.
- */
+/** Panier persistant. */
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 

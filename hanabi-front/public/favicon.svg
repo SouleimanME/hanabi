@@ -1,74 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="48 48 584 584">
-  <defs>
-    <clipPath id="c"><circle cx="340" cy="340" r="296"/></clipPath>
-    <radialGradient id="pg" cx="50%" cy="85%" r="75%">
-      <stop offset="0%" stop-color="#FBE3EC"/><stop offset="55%" stop-color="#F6C6D8"/><stop offset="100%" stop-color="#EBA7C2"/>
-    </radialGradient>
-    <g id="petal">
-      <path d="M0,2 C -7,0 -9,-7 -7,-12 C -5,-17 -2,-20 0,-22 C 2,-20 5,-17 7,-12 C 9,-7 7,0 0,2 Z" fill="url(#pg)"/>
-    </g>
-    <g id="bloom">
-      <use href="#petal" transform="rotate(0)"/><use href="#petal" transform="rotate(72)"/>
-      <use href="#petal" transform="rotate(144)"/><use href="#petal" transform="rotate(216)"/><use href="#petal" transform="rotate(288)"/>
-      <circle r="3" fill="#F4C04E"/>
-    </g>
-  </defs>
-  <circle cx="340" cy="340" r="340" fill="#100E0B"/>
-  <circle cx="340" cy="340" r="296" fill="#15120D"/>
-  <g clip-path="url(#c)">
-    <circle cx="340" cy="312" r="150" fill="#EDE7D6"/>
-    <g>
-      <rect x="268" y="250" width="27" height="210" fill="#C2362A" rx="2"/>
-      <rect x="385" y="250" width="27" height="210" fill="#C2362A" rx="2"/>
-      <rect x="287" y="250" width="8" height="210" fill="#A12A20" rx="2"/>
-      <rect x="404" y="250" width="8" height="210" fill="#A12A20" rx="2"/>
-      <path d="M 228 220 Q 340 192 452 220 L 452 236 Q 340 210 228 236 Z" fill="#C2362A"/>
-      <path d="M 228 236 Q 340 210 452 236 L 450 248 Q 340 224 230 248 Z" fill="#A12A20"/>
-      <rect x="256" y="258" width="168" height="18" fill="#C2362A" rx="2"/>
-      <rect x="334" y="240" width="12" height="20" fill="#C2362A"/>
-    </g>
-    <g>
-      <path d="M 150 506 L 330 372 L 340 385 L 160 519 C 153 524 144 521 142 513 C 141 510 144 508 150 506 Z" fill="#221E18"/>
-      <path d="M 322 378 L 340 365 L 348 376 L 330 389 Z" fill="#3a3329"/>
-      <path d="M 330 372 L 506 178 L 514 187 L 340 385 Z" fill="#1a1a1a"/>
-      <path d="M 332 374 L 505 182 L 509 186 L 336 379 Z" fill="#dcdcdc"/>
-      <path d="M 506 178 L 524 158 L 520 182 L 514 187 Z" fill="#1a1a1a"/>
-      <path d="M 507 180 L 523 160 L 519 180 Z" fill="#e6e6e6"/>
-      <g transform="rotate(-38 318 372)">
-        <ellipse cx="318" cy="372" rx="13" ry="34" fill="#1d1d1d"/>
-        <ellipse cx="318" cy="372" rx="9" ry="28" fill="#2b2b2b"/>
-      </g>
-      <path d="M 158 500 L 322 376 L 332 388 L 168 512 Z" fill="#171717"/>
-      <g fill="#dad3c4" transform="rotate(-37 245 444)">
-        <rect x="-86" y="-7" width="11" height="14" rx="2"/><rect x="-66" y="-7" width="11" height="14" rx="2"/>
-        <rect x="-46" y="-7" width="11" height="14" rx="2"/><rect x="-26" y="-7" width="11" height="14" rx="2"/>
-        <rect x="-6" y="-7" width="11" height="14" rx="2"/><rect x="14" y="-7" width="11" height="14" rx="2"/>
-      </g>
-      <circle cx="245" cy="444" r="3.6" fill="#C9A24B"/>
-      <path d="M 152 504 L 168 512 L 162 520 C 156 524 148 520 147 513 C 146 508 148 505 152 504 Z" fill="#1d1d1d"/>
-    </g>
-    <g transform="translate(680,0) scale(-1,1)">
-      <path d="M 150 506 L 330 372 L 340 385 L 160 519 C 153 524 144 521 142 513 C 141 510 144 508 150 506 Z" fill="#1f1b16"/>
-      <path d="M 322 378 L 340 365 L 348 376 L 330 389 Z" fill="#352f26"/>
-      <path d="M 330 372 L 506 178 L 514 187 L 340 385 Z" fill="#161616"/>
-      <path d="M 332 374 L 505 182 L 509 186 L 336 379 Z" fill="#d4d4d4"/>
-      <path d="M 506 178 L 524 158 L 520 182 L 514 187 Z" fill="#161616"/>
-      <path d="M 507 180 L 523 160 L 519 180 Z" fill="#dedede"/>
-      <g transform="rotate(-38 318 372)">
-        <ellipse cx="318" cy="372" rx="13" ry="34" fill="#1a1a1a"/>
-        <ellipse cx="318" cy="372" rx="9" ry="28" fill="#282828"/>
-      </g>
-      <path d="M 158 500 L 322 376 L 332 388 L 168 512 Z" fill="#141414"/>
-      <g fill="#d2cbbc" transform="rotate(-37 245 444)">
-        <rect x="-86" y="-7" width="11" height="14" rx="2"/><rect x="-66" y="-7" width="11" height="14" rx="2"/>
-        <rect x="-46" y="-7" width="11" height="14" rx="2"/><rect x="-26" y="-7" width="11" height="14" rx="2"/>
-        <rect x="-6" y="-7" width="11" height="14" rx="2"/><rect x="14" y="-7" width="11" height="14" rx="2"/>
-      </g>
-      <circle cx="245" cy="444" r="3.6" fill="#C9A24B"/>
-      <path d="M 152 504 L 168 512 L 162 520 C 156 524 148 520 147 513 C 146 508 148 505 152 504 Z" fill="#1a1a1a"/>
-    </g>
-    <use href="#bloom" transform="translate(116,150) scale(1.7)"/>
-    <use href="#bloom" transform="translate(500,470) scale(1.3)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 104">
+  <!-- Favicon Hanabi : l'embleme en vermillon sur un carre de laque.
+       L'anneau passe de 5 a 8 : a 16 px, un trait de 5 tombe sous le pixel
+       et disparait. Le carre de laque garde l'embleme lisible sur un onglet
+       clair comme sur un onglet sombre. -->
+  <rect width="104" height="104" fill="#0a0605"/>
+  <g fill="#f4643f" transform="translate(52 52) scale(1.06) translate(-52 -52)">
+    <circle cx="52" cy="52" r="43.5" fill="none" stroke="#f4643f" stroke-width="8"/>
+    <path d="M52.00 14.30L49.62 15.16L47.36 16.18L45.21 17.33L43.20 18.61L41.32 20.00L39.58 21.50L38.00 23.09L36.56 24.76L35.29 26.49L34.17 28.28L33.22 30.10L32.42 31.95L31.79 33.81L31.32 35.67L31.01 37.51L30.86 39.33L30.85 41.12L30.99 42.85L31.28 44.52L31.70 46.12L32.25 47.64L32.93 49.06L33.74 50.38L34.66 51.58L35.73 52.66L37.08 53.57L37.08 53.57L37.33 52.59L37.42 51.65L37.51 50.71L37.62 49.78L37.76 48.85L37.94 47.93L38.17 47.01L38.45 46.10L38.78 45.20L39.16 44.31L39.59 43.44L40.08 42.58L40.62 41.76L41.22 40.95L41.86 40.18L42.56 39.44L43.31 38.74L44.11 38.08L44.96 37.47L45.85 36.90L46.79 36.39L47.76 35.93L48.77 35.52L49.82 35.18L50.90 34.91A10.2 10.2 0 1 1 52.00 14.30Z"/>
+    <path d="M84.65 70.85L85.09 68.36L85.34 65.89L85.42 63.46L85.32 61.07L85.05 58.75L84.62 56.50L84.04 54.33L83.31 52.25L82.45 50.28L81.46 48.42L80.36 46.68L79.16 45.07L77.86 43.60L76.48 42.26L75.04 41.07L73.54 40.02L72.00 39.13L70.43 38.38L68.84 37.79L67.24 37.36L65.65 37.08L64.08 36.96L62.54 36.99L61.03 37.20L59.57 37.58L58.10 38.30L58.10 38.30L58.82 39.00L59.59 39.55L60.36 40.09L61.11 40.65L61.85 41.24L62.55 41.86L63.24 42.52L63.89 43.22L64.50 43.95L65.08 44.73L65.62 45.54L66.11 46.39L66.56 47.27L66.96 48.19L67.30 49.13L67.59 50.11L67.83 51.11L68.00 52.13L68.11 53.17L68.15 54.23L68.13 55.29L68.04 56.37L67.88 57.44L67.65 58.52L67.35 59.59A10.2 10.2 0 1 1 84.65 70.85Z"/>
+    <path d="M19.35 70.85L21.29 72.48L23.30 73.93L25.37 75.21L27.48 76.32L29.63 77.25L31.80 78.00L33.97 78.58L36.13 78.99L38.26 79.23L40.37 79.30L42.42 79.22L44.42 78.98L46.35 78.60L48.19 78.07L49.95 77.42L51.60 76.65L53.15 75.76L54.58 74.77L55.88 73.69L57.06 72.52L58.09 71.28L58.99 69.98L59.73 68.63L60.31 67.22L60.70 65.76L60.82 64.14L60.82 64.14L59.84 64.41L58.98 64.80L58.13 65.19L57.27 65.57L56.40 65.91L55.50 66.21L54.59 66.47L53.66 66.68L52.72 66.85L51.76 66.96L50.79 67.03L49.81 67.03L48.82 66.98L47.82 66.86L46.83 66.69L45.84 66.45L44.86 66.15L43.89 65.79L42.93 65.36L42.00 64.87L41.08 64.32L40.20 63.71L39.34 63.03L38.53 62.29L37.75 61.50A10.2 10.2 0 1 1 19.35 70.85Z"/>
   </g>
-  <circle cx="340" cy="340" r="294" fill="none" stroke="#C2362A" stroke-width="1.4" opacity="0.35"/>
 </svg>

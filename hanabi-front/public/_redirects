@@ -1,16 +1,3 @@
-# Repli SPA.
-#
-# La boutique resout ses chemins dans le navigateur (voir src/lib/routes.js).
-# Sans cette regle, ouvrir directement /produit/5 - un lien partage, un favori,
-# un rechargement - demanderait a l'hebergeur un fichier qui n'existe pas et
-# renverrait 404. On sert index.html a la place, et le code prend le relais.
-#
-# 200 et non 301 : l'URL doit rester celle demandee, pas etre redirigee.
-#
-# Ce format est celui que lisent Cloudflare Pages, GitHub Pages et la plupart
-# des hebergeurs statiques. Le site reste ainsi deployable ailleurs sans rien
-# reconfigurer - ce qui, apres avoir du quitter un hebergeur en urgence pour
-# cause de quota epuise, n'est pas une precaution theorique.
-#
-# Depose dans `public/`, il est recopie tel quel a la racine de `dist/` par Vite.
+# Repli SPA : les chemins se résolvent dans le navigateur (src/lib/routes.js).
+# 200 et non 301, pour garder l'URL demandée. Recopié à la racine de dist/ par Vite.
 /*    /index.html   200

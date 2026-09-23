@@ -1,16 +1,14 @@
-/** Notification breve, en bas d'ecran.
- *
- * Le noeud reste monte en permanence et joue sur l'opacite : cela permet la
- * transition de sortie, et `aria-live="polite"` annonce le message aux
- * lecteurs d'ecran sans interrompre la lecture en cours.
- */
-import { Check } from "lucide-react";
-
-export function Toast({ message }) {
+/** Notification breve, annoncee sans interrompre la lecture. */
+export function Toast({ toast, onAction }) {
+  const message = toast?.message;
   return (
-    <div className={"toast" + (message ? " show" : "")} aria-live="polite">
-      <Check size={15} strokeWidth={3} />
-      {message}
+    <div className="toast" data-open={Boolean(message)} role="status" aria-live="polite">
+      {message && <span>{message}</span>}
+      {toast?.action && (
+        <button className="toast-action" onClick={onAction}>
+          {toast.action.label}
+        </button>
+      )}
     </div>
   );
 }

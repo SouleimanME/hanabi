@@ -1,57 +1,58 @@
-/** Saisie d'une date de naissance via trois listes deroulantes.
- *
- * Choix delibere face a <input type="date"> : rendu identique sur tous les
- * navigateurs, et bien plus rapide pour remonter de plusieurs decennies.
- */
+/** Date de naissance en trois listes natives. */
+import { ChevronDown } from "lucide-react";
 import { useT } from "../../i18n/context.jsx";
-import { Dropdown } from "./Dropdown.jsx";
+
+function nomsDesMois() {
+  const langue = document.documentElement.lang || "fr";
+  const format = new Intl.DateTimeFormat(langue, { month: "long" });
+  return Array.from({ length: 12 }, (_, i) => format.format(new Date(2000, i, 1)));
+}
+
+function Liste({ label, value, onChange, options }) {
+  return (
+    <span className="select">
+      <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{label}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown size={16} aria-hidden="true" />
+    </span>
+  );
+}
 
 export function DatePicker({ value, onChange }) {
   const t = useT();
-  const MONTHS = [
-    "Janvier",
-    "Février",
-    "Mars",
-    "Avril",
-    "Mai",
-    "Juin",
-    "Juillet",
-    "Août",
-    "Septembre",
-    "Octobre",
-    "Novembre",
-    "Décembre",
-  ];
-  const parts = value ? value.split("-") : ["", "", ""];
-  const [y, m, d] = parts;
-  const setY = (v) => onChange([v, m, d].join("-"));
-  const setM = (v) => onChange([y, v, d].join("-"));
-  const setD = (v) => onChange([y, m, v].join("-"));
-  const curYear = new Date().getFullYear();
-  const years = Array.from({ length: 100 }, (_, i) => String(curYear - 16 - i));
-  const months = MONTHS.map((lbl, i) => ({ value: String(i + 1).padStart(2, "0"), label: lbl }));
-  const daysInMonth = m && y ? new Date(parseInt(y), parseInt(m), 0).getDate() : 31;
-  const days = Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, "0"));
+  const [y = "", m = "", d = ""] = value ? value.split("-") : [];
+  const poser = (annee, mois, jour) => onChange([annee, mois, jour].join("-"));
+
+  const anneeCourante = new Date().getFullYear();
+  const annees = Array.from({ length: 100 }, (_, i) => String(anneeCourante - 16 - i));
+  const mois = nomsDesMois().map((label, i) => ({ value: String(i + 1).padStart(2, "0"), label }));
+  const joursDansMois = m && y ? new Date(Number(y), Number(m), 0).getDate() : 31;
+  const jours = Array.from({ length: joursDansMois }, (_, i) => String(i + 1).padStart(2, "0"));
+
   return (
-    <div className="datepick">
-      <span className="field-lbl">{t("birthdate")}</span>
-      <div className="datepick-col">
-        <Dropdown
-          value={d || ""}
-          onChange={setD}
-          options={[{ value: "", label: t("day") }, ...days.map((v) => ({ value: v, label: v }))]}
+    <fieldset className="field date-field">
+      <legend>{t("birthdate")}</legend>
+      <div className="date-row">
+        <Liste
+          label={t("day")}
+          value={d}
+          onChange={(v) => poser(y, m, v)}
+          options={jours.map((v) => ({ value: v, label: String(Number(v)) }))}
         />
-        <Dropdown
-          value={m || ""}
-          onChange={setM}
-          options={[{ value: "", label: t("month") }, ...months]}
-        />
-        <Dropdown
-          value={y || ""}
-          onChange={setY}
-          options={[{ value: "", label: t("year") }, ...years.map((v) => ({ value: v, label: v }))]}
+        <Liste label={t("month")} value={m} onChange={(v) => poser(y, v, d)} options={mois} />
+        <Liste
+          label={t("year")}
+          value={y}
+          onChange={(v) => poser(v, m, d)}
+          options={annees.map((v) => ({ value: v, label: v }))}
         />
       </div>
-    </div>
+    </fieldset>
   );
 }

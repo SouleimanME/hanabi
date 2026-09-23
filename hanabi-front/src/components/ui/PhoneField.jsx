@@ -1,91 +1,52 @@
-/** Champ telephone : indicatif pays a drapeau + numero national.
- *
- * Composant non controle : il detient l'indicatif et le numero, et remonte
- * au parent la chaine complete ("+33 6 12 34 56 78") via `onChange`. Le parent
- * n'a donc pas de valeur a repousser vers le bas.
- */
-import { useState, useEffect, useRef } from "react";
+/** Telephone : indicatif en liste native, numero national a cote. */
+import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useT } from "../../i18n/context.jsx";
 import { DIAL_CODES } from "../../lib/dialCodes.js";
 
 export function PhoneField({ onChange, label }) {
-  const [selected, setSelected] = useState(DIAL_CODES[0]);
-  const [num, setNum] = useState("");
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const t = useT();
+  const id = useId();
+  const [indicatif, setIndicatif] = useState(DIAL_CODES[0].code);
+  const [numero, setNumero] = useState("");
 
-  // `onChange` est garde dans une ref : le parent le recree a chaque rendu,
-  // l'inclure dans les dependances relancerait l'effet en boucle.
-  const notify = useRef(onChange);
-  notify.current = onChange;
-
-  useEffect(() => {
-    const fn = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", fn);
-    return () => document.removeEventListener("mousedown", fn);
-  }, []);
+  // Le parent recree `onChange` a chaque rendu : on le garde dans une ref pour
+  // ne pas relancer l'effet en boucle.
+  const notifier = useRef(onChange);
+  notifier.current = onChange;
 
   useEffect(() => {
-    notify.current(selected.dial + " " + num);
-  }, [selected, num]);
+    const pays = DIAL_CODES.find((d) => d.code === indicatif) ?? DIAL_CODES[0];
+    notifier.current(`${pays.dial} ${numero}`);
+  }, [indicatif, numero]);
 
   return (
     <div className="field">
-      <span>{label}</span>
-      <div className="phone-wrap" ref={ref}>
-        <button type="button" className="phone-dial" onClick={() => setOpen((s) => !s)}>
-          <img
-            src={`https://flagcdn.com/24x18/${selected.code.toLowerCase()}.png`}
-            alt={selected.label}
-            className="phone-flag-img"
-            width="24"
-            height="18"
-          />
-          <span className="phone-code mono">{selected.dial}</span>
-          <ChevronDown
-            size={12}
-            style={{
-              color: "var(--muted)",
-              flexShrink: 0,
-              transform: open ? "rotate(180deg)" : "none",
-              transition: ".2s",
-            }}
-          />
-        </button>
+      <label htmlFor={id}>{label}</label>
+      <div className="phone-row">
+        <span className="select">
+          <select
+            aria-label={t("dialCode")}
+            value={indicatif}
+            onChange={(e) => setIndicatif(e.target.value)}
+          >
+            {DIAL_CODES.map((d) => (
+              <option key={d.code} value={d.code}>
+                {d.code} {d.dial}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} aria-hidden="true" />
+        </span>
         <input
+          id={id}
           type="tel"
-          className="phone-num"
-          value={num}
-          onChange={(e) => setNum(e.target.value.replace(/[^\d\s-]/g, ""))}
+          value={numero}
+          onChange={(e) => setNumero(e.target.value.replace(/[^\d\s-]/g, ""))}
           placeholder="6 12 34 56 78"
           inputMode="tel"
+          autoComplete="tel-national"
         />
-        {open && (
-          <ul className="phone-menu">
-            {DIAL_CODES.map((d) => (
-              <li
-                key={d.code}
-                className={"phone-item" + (d.code === selected.code ? " on" : "")}
-                onClick={() => {
-                  setSelected(d);
-                  setOpen(false);
-                }}
-              >
-                <img
-                  src={`https://flagcdn.com/24x18/${d.code.toLowerCase()}.png`}
-                  alt={d.label}
-                  width="24"
-                  height="18"
-                  style={{ borderRadius: 2, flexShrink: 0 }}
-                />
-                <span className="phone-item-label">{d.label}</span>
-                <span className="mono phone-item-dial">{d.dial}</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   );

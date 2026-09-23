@@ -1,27 +1,6 @@
-/** Client HTTP de l'API Hanabi.
- *
- * Un seul point de passage pour tous les appels reseau : la gestion du jeton,
- * des erreurs et de l'URL de base est faite ici, et nulle part ailleurs.
- *
- * Le jeton vit en memoire et est replique dans le localStorage pour survivre
- * a un rechargement. En production reelle, un cookie httpOnly serait plus sur
- * (inaccessible au JavaScript, donc insensible au vol par XSS) ; le choix du
- * localStorage est assume ici pour garder un backend sans etat de session.
- */
+/** Client HTTP de l'API Hanabi. */
 
-/** Normalise l'URL de l'API donnee par l'environnement.
- *
- * Deux erreurs de configuration classiques, qui echouent silencieusement une
- * fois le site en ligne :
- *   - l'URL collee depuis un tableau de bord d'hebergeur arrive souvent sans
- *     protocole (« mon-api.onrender.com »), ce qui produit une requete relative
- *     vers un chemin inexistant ;
- *   - une barre oblique finale produit des URL a double barre avant le chemin,
- *     que certains serveurs refusent.
- *
- * On corrige les deux ici, une fois, plutot que de compter sur une saisie
- * parfaite. En developpement l'URL locale reste en http.
- */
+/** Normalise l'URL de l'API donnee par l'environnement. */
 function normaliseBase(raw) {
   const value = (raw || "").trim();
   if (!value) return "http://localhost:8000";
@@ -45,13 +24,7 @@ try {
 
 export const getToken = () => token;
 
-/** Tire une cle d'idempotence pour une tentative d'achat.
- *
- * `randomUUID` n'existe que sur les origines sures - HTTPS, ou localhost. Le
- * repli n'est pas un detail : sans lui, la fonction leverait sur un site servi
- * en HTTP, et la commande echouerait au lieu de simplement perdre sa protection
- * contre le double envoi.
- */
+/** Tire une cle d'idempotence pour une tentative d'achat. */
 export function nouvelleCleIdempotence() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   const octets = new Uint8Array(16);
@@ -70,9 +43,37 @@ export function setToken(value) {
   }
 }
 
-/**
- * Effectue un appel a l'API et renvoie le corps JSON.
- *
+// Noms lisibles des champs, pour les refus de validation du serveur
+const CHAMPS = {
+  email: "l'e-mail",
+  password: "le mot de passe",
+  name: "le nom",
+  birthdate: "la date de naissance",
+  phone: "le téléphone",
+  cp: "le code postal",
+  prenom: "le prénom",
+  nom: "le nom",
+  adresse: "l'adresse",
+  ville: "la ville",
+  code: "le code",
+  text: "le texte",
+};
+
+/** Message d'un refus de validation (422) : le texte écrit pour l'humain s'il
+ *  y en a un, sinon le champ en cause, jamais le jargon anglais de Pydantic. */
+export function messageDeValidation(erreurs) {
+  const premiere = erreurs?.[0];
+  if (!premiere) return null;
+  if (typeof premiere.msg === "string" && premiere.msg.startsWith("Value error, ")) {
+    return premiere.msg.slice("Value error, ".length);
+  }
+  const champ = [...(premiere.loc ?? [])].reverse().find((p) => typeof p === "string" && CHAMPS[p]);
+  return champ
+    ? `Vérifie ${CHAMPS[champ]} : la valeur n'est pas acceptée.`
+    : "Une valeur saisie n'est pas acceptée.";
+}
+
+/** Effectue un appel a l'API et renvoie le corps JSON.
  * @throws {Error} avec `.status` (code HTTP) ou `.network` (serveur injoignable)
  */
 export async function request(path, { method = "GET", body, auth = false, idempotencyKey } = {}) {
@@ -107,7 +108,7 @@ export async function request(path, { method = "GET", body, auth = false, idempo
   if (!res.ok) {
     // FastAPI renvoie soit une chaine, soit la liste d'erreurs de validation
     // Pydantic. On extrait le premier message lisible dans les deux cas.
-    const detail = Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail;
+    const detail = Array.isArray(data.detail) ? messageDeValidation(data.detail) : data.detail;
     const err = new Error(detail || `Erreur ${res.status}`);
     err.status = res.status;
     throw err;
@@ -129,9 +130,7 @@ export const Products = {
   get: (id, lang) => request(`/products/${id}?${query({ lang })}`),
   featured: (lang) => request(`/products/featured?${query({ lang })}`),
   reviews: (id) => request(`/products/${id}/reviews`),
-  // Produits reellement achetes avec celui-ci, tires de l'entrepot decisionnel.
-  // Rend une liste vide si l'entrepot n'est pas construit : l'appelant n'affiche
-  // alors simplement rien.
+  // Produits reellement achetes avec celui-ci, tires de l'entrepot decisionnel
   affinites: (id, lang) => request(`/products/${id}/affinites?${query({ lang })}`),
   addReview: (id, rating, text, antibot) =>
     request(`/products/${id}/reviews`, {
@@ -139,12 +138,10 @@ export const Products = {
       auth: true,
       body: { rating, text, antibot },
     }),
-  notify: (id, email, antibot) =>
-    request(`/products/${id}/notify`, { method: "POST", body: { email, antibot } }),
-  // Mesure d'audience, alimentee a l'ouverture d'une fiche. `auth: true` pour
-  // rattacher la vue au compte quand il y en a un ; sinon la ligne enregistree
-  // est anonyme. Les erreurs sont avalees par l'appelant : une mesure ratee ne
-  // doit jamais gener la consultation du produit.
+  // `lang` : le courriel de retour en stock part dans la langue de la page
+  notify: (id, email, antibot, lang) =>
+    request(`/products/${id}/notify`, { method: "POST", body: { email, antibot, lang } }),
+  // Mesure d'audience, alimentee a l'ouverture d'une fiche
   view: (id) => request(`/products/${id}/view`, { method: "POST", auth: true }),
 };
 
@@ -160,14 +157,7 @@ export const Auth = {
   /** Renvoie un lien de confirmation au compte connecte. */
   resendVerification: () => request("/auth/resend-verification", { method: "POST", auth: true }),
 
-  /**
-   * Demande un lien de reinitialisation.
-   *
-   * Repond toujours succes, compte connu ou non : c'est ce qui empeche ce
-   * formulaire de servir a tester une liste d'adresses. L'interface doit donc
-   * afficher le meme message dans les deux cas, sans quoi elle reintroduirait
-   * cote client la fuite que le serveur refuse.
-   */
+  /** Demande un lien de reinitialisation. */
   forgotPassword: (email) => request("/auth/forgot-password", { method: "POST", body: { email } }),
 
   /** Fixe un nouveau mot de passe. Rend un jeton d'acces : on est connecte. */
@@ -175,13 +165,9 @@ export const Auth = {
     request("/auth/reset-password", { method: "POST", body: { jeton, password } }),
 };
 
-/** Gestion de son propre compte.
- *
- * Toutes ces routes agissent sur le porteur du jeton : aucune ne prend
- * d'identifiant de compte, donc aucune ne se detourne vers celui d'un autre.
- */
+/** Gestion de son propre compte. */
 export const Compte = {
-  /** Modifie SEULEMENT les champs passes. Un champ absent n'est pas touche. */
+  /** Modifie seulement les champs passes. Un champ absent n'est pas touche. */
   majProfil: (champs) => request("/compte/profil", { method: "PATCH", auth: true, body: champs }),
 
   changerMotDePasse: (ancien, nouveau) =>
@@ -192,14 +178,7 @@ export const Compte = {
 
   paiements: () => request("/compte/paiements", { auth: true }),
 
-  /**
-   * Enregistre une carte.
-   *
-   * `carte` ne contient NI numero NI cryptogramme : le navigateur en tire de
-   * quoi reconnaitre la carte a l'ecran, et rien d'autre ne part. C'est le
-   * partage des roles d'une integration reelle, ou le numero ne quitte jamais
-   * l'iframe du prestataire.
-   */
+  /** Enregistre une carte. */
   ajouterPaiement: (carte) =>
     request("/compte/paiements", { method: "POST", auth: true, body: carte }),
 
@@ -212,13 +191,7 @@ export const Compte = {
   exporterMesDonnees: (password) =>
     request("/compte/export", { method: "POST", auth: true, body: { password } }),
 
-  /**
-   * Efface le compte (RGPD art. 17). IRRÉVERSIBLE.
-   *
-   * Deux confirmations, exigées par le serveur : le mot de passe prouve qu'on
-   * est bien là maintenant, la formule recopiée prouve qu'on a lu ce qui va se
-   * passer.
-   */
+  /** Efface le compte (RGPD art. 17). */
   supprimerMonCompte: (password, confirmation) =>
     request("/compte/suppression", {
       method: "POST",
@@ -230,13 +203,7 @@ export const Compte = {
 export const Orders = {
   quote: (items, promoCode) =>
     request("/orders/quote", { method: "POST", body: { items, promo_code: promoCode || null } }),
-  /**
-   * Passe la commande. La cle d'idempotence est TIREE PAR L'APPELANT, et c'est
-   * la seule facon dont le mecanisme fonctionne : une cle generee ici serait
-   * neuve a chaque appel, donc chaque reessai creerait une commande. Elle doit
-   * etre tiree une fois a l'ouverture du tunnel et repetee a l'identique tant
-   * que le meme achat est en cours.
-   *
+  /** Passe la commande.
    * @param {object} payload corps de la commande
    * @param {string} cle identifiant stable de cette tentative d'achat
    */
@@ -260,4 +227,9 @@ export const Newsletter = {
    *  bienvenue si elle est active en base. */
   subscribe: (email, lang, antibot) =>
     request("/newsletter/subscribe", { method: "POST", body: { email, lang, antibot } }),
+
+  /** Désinscription depuis le lien signé du courriel ; rend `{ ok, deja, email }`,
+   *  l'adresse masquée. */
+  unsubscribe: (id, signature) =>
+    request("/newsletter/unsubscribe", { method: "POST", body: { id, signature } }),
 };

@@ -1,14 +1,4 @@
-/** Back-office : assemblage, navigation, et l'écran d'exploitation.
- *
- * TESTE PAR LE HAUT, en rendant `<Admin />` entier plutôt que ses morceaux. Ce
- * fichier n'exporte qu'un composant racine : les sous-composants sont internes,
- * et les extraire pour les tester changerait le code pour satisfaire le test.
- * Ce qu'on vérifie ici est justement le CÂBLAGE : que l'onglet mène à la bonne
- * vue, que la vue appelle la bonne route, que la réponse arrive à l'écran.
- *
- * `fetch` est remplacé par une table d'itinéraires. Le reste (état, rendu,
- * navigation) est le vrai code.
- */
+/** Back-office : assemblage, navigation, et l'écran d'exploitation. */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -23,11 +13,7 @@ vi.mock("../lib/api.js", () => ({
 /** Réponses par défaut : de quoi monter le back-office sans erreur. */
 const DEFAUTS = {
   "/admin/whoami": { email: "patron@test.fr", readonly: false },
-  /* Forme RELEVEE sur l'API, pas devinee : `curl /admin/stats` puis valeurs
-   * remplacees par des zeros. Une forme inventee a la main diverge des la
-   * premiere evolution du point d'entree, et l'echec qu'elle produit -
-   * « Cannot read properties of undefined » au milieu du rendu - ne dit jamais
-   * qu'il vient du jeu de donnees du test. */
+  /* Forme relevee sur l'API, pas devinee : `curl /admin/stats` puis valeurs remplacees par des zeros. */
   "/admin/stats": {
     revenue_cents: 0,
     order_count: 0,
@@ -92,9 +78,7 @@ describe("Navigation", () => {
   it("affiche les deux groupes du menu", async () => {
     render(<Admin />);
 
-    // « Piloter » et « Gérer » ne sont pas décoratifs : consulter et modifier ne
-    // sont pas la même activité, et six entrées indifférenciées coûtent plus à
-    // l'œil qu'un intitulé de section.
+    // « Piloter » et « Gérer » ne sont pas décoratifs
     expect(await screen.findByText(/^piloter$/i)).toBeInTheDocument();
     expect(screen.getByText(/^gérer$/i)).toBeInTheDocument();
   });
@@ -143,17 +127,12 @@ describe("Exploitation", () => {
 
     expect(await screen.findByText(/^en attente$/i)).toBeInTheDocument();
     expect(screen.getByText(/^abandonnés$/i)).toBeInTheDocument();
-    // La sortie configurée : un relais mal réglé se diagnostique d'abord en
-    // regardant lequel est actif. On vise la CARTE, pas le mot : « fichier »
-    // apparaît aussi dans la note explicative juste en dessous, et un sélecteur
-    // qui attrape les deux échoue sur une ambiguïté qui n'en est pas une.
+    // La sortie configurée : un relais mal réglé se diagnostique d'abord en regardant lequel est actif
     expect(document.querySelector(".expl-valeur.texte")).toHaveTextContent("fichier");
   });
 
   it("alerte quand la file n'avance plus", async () => {
-    /* L'ÂGE PRIME SUR LE NOMBRE. Vingt messages en attente depuis dix secondes
-     * est un fonctionnement normal ; un seul depuis deux heures est une panne,
-     * et le compte seul ne distingue pas les deux. */
+    /* l'âge prime sur LE nombre. */
     const util = userEvent.setup();
     repondre("/admin/exploitation", {
       ...DEFAUTS["/admin/exploitation"],
@@ -217,7 +196,7 @@ describe("Exploitation", () => {
     await ouvrirOnglet(util, "Exploitation");
 
     expect(await screen.findByText(/SMTPAuthenticationError/)).toBeInTheDocument();
-    // L'adresse arrive DÉJÀ masquée du serveur : cet écran diagnostique un
+    // L'adresse arrive déjà masquée du serveur : cet écran diagnostique un
     // relais, il ne lit pas la clientèle.
     expect(screen.getByText("m***d@exemple.fr")).toBeInTheDocument();
   });

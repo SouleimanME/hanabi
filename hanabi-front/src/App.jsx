@@ -1,20 +1,5 @@
-/** Coquille de la boutique.
- *
- * Ce composant ne dessine presque rien : il tient l'etat partage, cable les
- * hooks metier entre eux et choisit l'ecran a afficher. Tout le rendu est
- * delegue a `components/` et `pages/`.
- *
- * Navigation : un simple etat `view` plutot qu'un routeur. La boutique compte
- * six ecrans sans navigation profonde ; ajouter react-router couterait une
- * dependance pour un besoin que couvrent une table de correspondance
- * (`lib/routes.js`) et un hook de synchronisation (`useUrlSync`).
- *
- * L'etat reste la source de verite du rendu ; l'URL le suit dans les deux sens.
- * Les fiches produit sont donc partageables et memorisables, et les boutons
- * Retour et Suivant du navigateur parcourent les ecrans.
- */
-import { useState, useCallback, useRef, useEffect } from "react";
-import { User } from "lucide-react";
+/** Coquille de la boutique : etat partage, cablage des hooks, choix de l'ecran. */
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 
 import { translator } from "./i18n/index.js";
 import { I18nProvider } from "./i18n/context.jsx";
@@ -25,7 +10,6 @@ import { useLocalStorageState } from "./hooks/useLocalStorageState.js";
 import { useTheme } from "./hooks/useTheme.js";
 import { useDebouncedValue } from "./hooks/useDebouncedValue.js";
 import { useToast } from "./hooks/useToast.js";
-import { useHideOnScroll } from "./hooks/useHideOnScroll.js";
 import { useEscapeKey } from "./hooks/useEscapeKey.js";
 import { useCatalog } from "./hooks/useCatalog.js";
 import { useCart, ADD_RESULT } from "./hooks/useCart.js";
@@ -33,17 +17,15 @@ import { useSaved } from "./hooks/useSaved.js";
 import { usePricing } from "./hooks/usePricing.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { useUrlSync } from "./hooks/useUrlSync.js";
-import { useWelcomeOffer } from "./hooks/useWelcomeOffer.js";
+import { useVerrouDefilement } from "./hooks/useVerrouDefilement.js";
+import { useChangementDEcran } from "./hooks/useChangementDEcran.js";
 
 import { Header } from "./components/layout/Header.jsx";
 import { Footer } from "./components/layout/Footer.jsx";
-import { MobileNav } from "./components/layout/MobileNav.jsx";
 import { MenuSheet } from "./components/layout/MenuSheet.jsx";
-import { DropCountdown } from "./components/layout/DropCountdown.jsx";
 import { CartDrawer } from "./components/cart/CartDrawer.jsx";
 import { AuthModal } from "./components/modals/AuthModal.jsx";
 import { LegalModal } from "./components/modals/LegalModal.jsx";
-import { WelcomeOffer } from "./components/modals/WelcomeOffer.jsx";
 import { Toast } from "./components/ui/Toast.jsx";
 
 import Home from "./pages/Home.jsx";
@@ -55,28 +37,52 @@ import Checkout from "./pages/Checkout.jsx";
 import Confirmation from "./pages/Confirmation.jsx";
 import ConfirmerAdresse from "./pages/ConfirmerAdresse.jsx";
 import NouveauMotDePasse from "./pages/NouveauMotDePasse.jsx";
+import Desinscription from "./pages/Desinscription.jsx";
 
 import "./styles/index.css";
 
 const RECENTLY_VIEWED_MAX = 8;
 
+/** Titre d'onglet de chaque écran, sans la marque. `null` : l'accueil tel quel. */
+function titreDeLEcran(view, t, fiche, categorie) {
+  switch (view) {
+    case "product":
+      return fiche?.name ?? null;
+    case "home":
+      return categorie !== "Tout" ? t("cat_" + categorie) : null;
+    case "wishlist":
+      return t("favs");
+    case "saved":
+      return t("saved");
+    case "account":
+      return t("myAccount");
+    case "checkout":
+      return t("payment");
+    case "done":
+      return t("confirmed");
+    case "verifyEmail":
+      return t("pageVerify");
+    case "resetPassword":
+      return t("resetTitle");
+    case "unsubscribe":
+      return t("pageUnsub");
+    default:
+      return null;
+  }
+}
+
 export default function App() {
-  // --- Preferences persistantes ---
-  // Le theme suit le reglage du systeme tant que personne n'a touche au bouton.
   const [theme, toggleTheme] = useTheme();
   const [lang, setLang] = useLocalStorageState("lang", "fr");
   const [wishlist, setWishlist] = useLocalStorageState("wishlist", []);
   const [recentIds, setRecentIds] = useLocalStorageState("recent", []);
 
-  // --- Filtres du catalogue ---
   const [category, setCategory] = useState("Tout");
   const [sort, setSort] = useState("pop");
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query);
 
-  // --- Navigation et fenetres ---
   const [view, setView] = useState("home");
-  // Section du compte a mettre en avant : le menu y mene directement.
   const [accountSection, setAccountSection] = useState(null);
   const [activeProduct, setActiveProduct] = useState(null);
   const [activeReviews, setActiveReviews] = useState([]);
@@ -87,14 +93,15 @@ export default function App() {
   const [lastOrder, setLastOrder] = useState(null);
   const gridRef = useRef(null);
 
-  const t = translator(lang);
-  const eur = createPriceFormatter(lang);
-  const { message: toast, show: flash } = useToast();
-  // L'en-tete est pilote par sa ref, sans etat React : `useHideOnScroll` pose
-  // lui-meme les classes de defilement sur le noeud. Le retour a `useState`
-  // re-rendrait toute l'application a chaque cran de molette.
-  const headerRef = useRef(null);
-  useHideOnScroll(headerRef);
+  const t = useMemo(() => translator(lang), [lang]);
+  const eur = useMemo(() => createPriceFormatter(lang), [lang]);
+  const { toast, show: flash, runAction } = useToast();
+
+  // La langue de la page suit celle de l'interface : lecteurs d'ecran,
+  // cesure et noms de mois en dependent.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const {
     catalog,
@@ -105,12 +112,7 @@ export default function App() {
     refreshing,
     reload,
     remember,
-  } = useCatalog({
-    category,
-    query: debouncedQuery,
-    sort,
-    lang,
-  });
+  } = useCatalog({ category, query: debouncedQuery, sort, lang });
 
   const cart = useCart(catalog);
   const saved = useSaved();
@@ -137,10 +139,6 @@ export default function App() {
     poserProfil,
   } = useAuth();
 
-  // Offre de bienvenue : ni pendant la commande, ou toute interruption coute
-  // une vente, ni pour un client connecte, qui a deja franchi le pas.
-  const welcome = useWelcomeOffer(!user && view !== "checkout" && view !== "done");
-
   useEscapeKey(
     useCallback(() => {
       setCartOpen(false);
@@ -156,8 +154,13 @@ export default function App() {
 
   // --- Catalogue et fiche produit ---
 
+  // Fiche demandee en dernier : une reponse lente pour une fiche quittee entre-temps
+  // ne doit pas remplacer celle qu'on regarde.
+  const ficheDemandee = useRef(null);
+
   const openProduct = useCallback(
     async (product) => {
+      ficheDemandee.current = product.id;
       setActiveProduct(product);
       setActiveReviews([]);
       setView("product");
@@ -171,6 +174,7 @@ export default function App() {
           Products.get(product.id, lang),
           Products.reviews(product.id),
         ]);
+        if (ficheDemandee.current !== product.id) return;
         setActiveProduct(detail);
         setActiveReviews(reviews);
         remember([detail]);
@@ -181,12 +185,8 @@ export default function App() {
     [lang, remember, setRecentIds],
   );
 
-  /** Ouvre une fiche a partir de son seul identifiant.
-   *
-   * Necessaire pour les arrivees par URL (lien partage, favori du navigateur,
-   * bouton Retour) : on ne dispose alors que de l'identifiant, pas de l'objet
-   * produit que la grille passe habituellement.
-   */
+  /** Ouvre une fiche depuis son seul identifiant : lien partage, favori du
+   *  navigateur, bouton Retour. */
   const openProductById = useCallback(
     async (id) => {
       const known = catalog[id];
@@ -195,31 +195,36 @@ export default function App() {
         return;
       }
       try {
-        const detail = await Products.get(id, lang);
-        openProduct(detail);
+        openProduct(await Products.get(id, lang));
       } catch {
-        // Identifiant inconnu ou API muette : on ne laisse pas un ecran vide.
         setView("home");
       }
     },
     [catalog, lang, openProduct],
   );
 
-  // Jeton lu dans l'URL, pour les deux ecrans atteints depuis un courriel.
-  // Il ne descend pas plus bas que ces ecrans, et `useUrlSync` l'efface de la
-  // barre d'adresse des qu'on les quitte.
+  // Jeton ou lien signe lus dans l'URL pour les ecrans atteints depuis un
+  // courriel ; `useUrlSync` les efface de la barre d'adresse des qu'on les quitte.
   const [jetonUrl, setJetonUrl] = useState(null);
+  const [lienDesinscription, setLienDesinscription] = useState(null);
 
-  useUrlSync({ view, setView, activeProduct, openProductById, onJeton: setJetonUrl });
+  useUrlSync({
+    view,
+    setView,
+    activeProduct,
+    openProductById,
+    onJeton: setJetonUrl,
+    onLien: setLienDesinscription,
+  });
 
-  // Revenir sur l'ecran de confirmation apres coup n'a pas de sens : la
-  // commande n'est plus en memoire, et la page serait vide.
+  // Revenir sur la confirmation apres coup n'a pas de sens : la commande n'est
+  // plus en memoire.
   useEffect(() => {
     if (view === "done" && !lastOrder) setView("home");
   }, [view, lastOrder]);
 
-  // La fiche ouverte doit suivre le changement de langue : nom et description
-  // sont traduits cote serveur, il faut donc la recharger.
+  // Nom et description sont traduits cote serveur : un changement de langue
+  // recharge la fiche ouverte.
   useEffect(() => {
     if (view !== "product" || !activeProduct) return;
     let cancelled = false;
@@ -229,7 +234,7 @@ export default function App() {
           Products.get(activeProduct.id, lang),
           Products.reviews(activeProduct.id),
         ]);
-        if (cancelled) return;
+        if (cancelled || ficheDemandee.current !== detail.id) return;
         setActiveProduct(detail);
         setActiveReviews(reviews);
       } catch {
@@ -239,8 +244,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-    // Volontairement limite a `lang` : se declencher sur `activeProduct`
-    // relancerait l'appel en boucle.
+    // Limite a `lang` : dependre de `activeProduct` relancerait l'appel en boucle
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
@@ -253,8 +257,6 @@ export default function App() {
     [cart, flash, t],
   );
 
-  // `antibot` est fourni par le formulaire appelant : chaque formulaire tient
-  // son propre defi, calcule pendant la saisie.
   const submitReview = useCallback(
     async (productId, rating, text, antibot) => {
       try {
@@ -269,7 +271,7 @@ export default function App() {
         remember([detail]);
         return null;
       } catch (e) {
-        // Sentinelle lue par ProductPage pour ouvrir la fenetre de connexion.
+        // Sentinelle lue par ProductPage pour ouvrir la connexion
         return e.status === 401 ? "login" : e.message;
       }
     },
@@ -279,19 +281,33 @@ export default function App() {
   const requestRestockAlert = useCallback(
     async (productId, email, antibot) => {
       try {
-        await Products.notify(productId, email, antibot);
+        await Products.notify(productId, email, antibot, lang);
         flash(t("notifyOk"));
         return null;
       } catch (e) {
         return e.message;
       }
     },
-    [flash, t],
+    [flash, lang, t],
   );
 
   // --- Panier et commande ---
 
-  /** Sort un article du panier sans le perdre de vue (voir hooks/useSaved.js). */
+  /** Retirer se defait depuis la notification : pas de confirmation. */
+  const removeFromCart = useCallback(
+    (id) => {
+      const ligne = cart.lines.find((l) => l.id === id);
+      cart.remove(id);
+      if (ligne) {
+        flash(t("tRemoved", { name: ligne.product.name }), {
+          label: t("undo"),
+          run: () => cart.add(id, ligne.qty),
+        });
+      }
+    },
+    [cart, flash, t],
+  );
+
   const saveForLater = useCallback(
     (id) => {
       cart.remove(id);
@@ -303,8 +319,8 @@ export default function App() {
 
   const moveToCart = useCallback(
     (id) => {
-      // On ne retire des enregistres que si le panier a bien accepte l'article :
-      // un produit epuise entre-temps resterait sinon nulle part.
+      // On ne retire des enregistres que si le panier a accepte l'article : un
+      // produit epuise entre-temps ne doit se retrouver nulle part.
       const result = cart.add(id);
       if (result !== ADD_RESULT.ADDED) {
         flash(result === ADD_RESULT.MAX_STOCK ? t("tMaxStock") : t("soldNow"));
@@ -337,11 +353,7 @@ export default function App() {
     [flash, pricing.subtotal_cents, t],
   );
 
-  // Cle d'idempotence de l'achat en cours. Tiree au premier envoi et CONSERVEE
-  // tant que la commande n'a pas abouti : c'est ce qui fait qu'un second clic,
-  // ou un reessai apres une coupure, est reconnu par le serveur comme le meme
-  // achat au lieu d'en creer un second. La tirer a chaque appel reviendrait a
-  // ne rien proteger du tout.
+  // Cle d'idempotence de l'achat en cours
   const cleAchat = useRef(null);
 
   const placeOrder = useCallback(
@@ -360,22 +372,18 @@ export default function App() {
             ville: form.ville,
           },
           promo_code: promo,
-          // Carte enregistree choisie au paiement. Le JETON n'est jamais
-          // manipule ici : le serveur le retrouve a partir de l'identifiant,
-          // apres avoir verifie que la carte appartient bien au demandeur.
+          // Carte enregistree : le serveur retrouve son jeton depuis
+          // l'identifiant, apres avoir verifie son titulaire. Nouvelle carte :
+          // un jeton tire du numero, qui ne quitte pas le navigateur.
           payment_method_id: form.payment_method_id ?? null,
-          // Acceptation des conditions de vente. Le corps est construit champ
-          // par champ et non par diffusion de `form` : c'est volontaire - on
-          // sait exactement ce qui part - mais cela veut dire qu'un champ
-          // ajoute a l'ecran doit etre ajoute ICI aussi. Il a manque une fois,
-          // et le serveur a refuse la commande sans que l'ecran sache pourquoi.
+          payment_token: form.payment_token ?? null,
+          // Corps construit champ par champ : un champ ajoute a l'ecran doit
+          // aussi l'etre ici.
           cgv_acceptees: form.cgv_acceptees === true,
         },
         cleAchat.current,
       );
 
-      // Achat conclu : la prochaine commande en est une autre. En cas d'echec,
-      // on ne passe pas ici et la cle survit - c'est exactement ce qu'on veut.
       cleAchat.current = null;
       setLastOrder(order);
       cart.clear();
@@ -391,35 +399,28 @@ export default function App() {
 
   // --- Navigation ---
 
-  // Retour a l'accueil qui conserve les filtres : utilise par les boutons
-  // « Retour » des ecrans internes, ou perdre sa recherche serait une punition.
+  // Retour qui garde les filtres, pour les boutons « Retour » des ecrans internes
   const goHome = useCallback(() => setView("home"), []);
 
-  /** Retour a l'accueil « propre », comme un clic sur le logo d'un site.
-   *
-   * Le logo et l'onglet Boutique promettent la page d'accueil telle qu'on la
-   * decouvre : on remet donc la categorie et la recherche a zero, et on
-   * repart du haut. Sans cela, cliquer sur le logo depuis une recherche
-   * infructueuse ramenait sur une grille vide, au milieu de la page. */
+  /** Accueil tel qu'on le decouvre : categorie et recherche remises a zero. */
   const resetToHome = useCallback(() => {
     setView("home");
     setCategory("Tout");
     setQuery("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
   const goCategory = useCallback((next) => {
     setCategory(next);
     setView("home");
-    // Attend le rendu de la grille avant de faire defiler jusqu'a elle.
+    // Attend le rendu de la grille avant d'y descendre
     setTimeout(() => gridRef.current?.scrollIntoView({ behavior: "smooth" }), 0);
   }, []);
+
   const goAccount = useCallback(() => (user ? setView("account") : setAuthOpen(true)), [user]);
 
-  /** Ouvre le compte sur une section donnee (« infos » ou « orders »).
-   *
-   * La cle change a chaque appel meme si la section est la meme : sans elle,
-   * demander deux fois « Mes commandes » depuis le menu ne rejouerait pas le
-   * recentrage, et le second clic paraitrait sans effet. */
+  /** Ouvre le compte sur une section. L'horodatage rejoue le recentrage si l'on
+   *  demande deux fois la meme. */
   const goAccountSection = useCallback(
     (name) => {
       if (!user) {
@@ -437,6 +438,7 @@ export default function App() {
     setView("saved");
     window.scrollTo(0, 0);
   }, []);
+
   const goCheckout = useCallback(() => {
     setCartOpen(false);
     setView("checkout");
@@ -470,55 +472,75 @@ export default function App() {
   const isWished = useCallback((id) => wishlist.includes(id), [wishlist]);
   const byId = useCallback((ids) => ids.map((id) => catalog[id]).filter(Boolean), [catalog]);
 
+  // Piece du mois : le premier produit mis en avant depuis le back-office, a
+  // defaut la premiere nouveaute.
+  const piece = featured[0] ?? products.find((p) => p.is_new) ?? null;
+  const fenetreOuverte = cartOpen || menuOpen || authOpen || Boolean(legalPage);
+
+  useVerrouDefilement(fenetreOuverte);
+  useChangementDEcran(
+    view === "product" ? `product-${activeProduct?.id}` : view,
+    titreDeLEcran(view, t, activeProduct, category),
+    t("siteTagline"),
+  );
+
+  // Même famille, pris dans tout le catalogue : la grille filtrée par une
+  // recherche n'en montrait parfois aucun.
+  const memeFamille = activeProduct
+    ? Object.values(catalog)
+        .filter((x) => x.category === activeProduct.category && x.id !== activeProduct.id)
+        .slice(0, 4)
+    : [];
+
   return (
     <I18nProvider t={t}>
-      <div className={"root" + (theme === "dark" ? " dark" : "")}>
-        <Header
-          ref={headerRef}
-          lang={lang}
-          onLangChange={setLang}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          user={user}
-          cartCount={cart.count}
-          wishlistCount={wishlist.length}
-          showFilters={view === "home"}
-          query={query}
-          onQueryChange={setQuery}
-          category={category}
-          onCategoryChange={goCategory}
-          onGoHome={resetToHome}
-          onGoWishlist={() => setView("wishlist")}
-          onGoAccount={() => setView("account")}
-          onOpenAuth={() => setAuthOpen(true)}
-          onOpenCart={() => setCartOpen(true)}
-          onOpenMenu={() => setMenuOpen(true)}
-        />
+      <div className="shop">
+        <a className="skip-link" href="#contenu">
+          {t("skipToContent")}
+        </a>
 
-        {view === "home" && <DropCountdown />}
+        <div className="page-shell" inert={fenetreOuverte ? "" : undefined}>
+          <Header
+            lang={lang}
+            onLangChange={setLang}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            user={user}
+            cartCount={cart.count}
+            wishlistCount={wishlist.length}
+            showSearch={view === "home"}
+            query={query}
+            onQueryChange={setQuery}
+            onGoHome={resetToHome}
+            onGoWishlist={() => setView("wishlist")}
+            onGoAccount={() => setView("account")}
+            onOpenAuth={() => setAuthOpen(true)}
+            onOpenCart={() => setCartOpen(true)}
+            onOpenMenu={() => setMenuOpen(true)}
+          />
 
-        {/* `key={view}` remonte le conteneur a chaque changement d'ecran, ce qui
-            rejoue l'animation d'entree definie par `.view`. */}
-        <div className="view" key={view}>
           {view === "home" && (
             <Home
               ref={gridRef}
               products={products}
-              featuredList={featured}
+              featured={piece}
               loadErr={loadError}
               onOpen={openProduct}
               onAdd={addToCart}
               cat={category}
+              onCategoryChange={setCategory}
               query={debouncedQuery}
+              onClearQuery={() => {
+                setQuery("");
+                setCategory("Tout");
+              }}
               sort={sort}
               setSort={setSort}
               wished={isWished}
               onWish={toggleWish}
               recent={byId(recentIds).slice(0, 5)}
-              featured={catalog[2]}
               loading={loading}
               refreshing={refreshing}
-              theme={theme}
               eur={eur}
             />
           )}
@@ -537,9 +559,7 @@ export default function App() {
               wished={isWished(activeProduct.id)}
               onWish={() => toggleWish(activeProduct.id)}
               onOpen={openProduct}
-              related={products
-                .filter((x) => x.category === activeProduct.category && x.id !== activeProduct.id)
-                .slice(0, 3)}
+              related={memeFamille}
               lang={lang}
               eur={eur}
             />
@@ -578,20 +598,17 @@ export default function App() {
                 eur={eur}
                 onProfil={poserProfil}
                 onEfface={(resultat) => {
-                  // Le compte n'existe plus : la session qui pointe dessus non
-                  // plus. On deconnecte et on renvoie a l'accueil plutot que de
-                  // laisser un ecran de compte se recharger sur un jeton mort.
+                  // Le compte n'existe plus, la session non plus
                   handleLogout();
                   flash(resultat?.message || t("rgpdDeleteDone"));
                 }}
                 flash={flash}
               />
             ) : (
-              <main className="pp">
-                <div className="state">
-                  <User size={32} strokeWidth={1.3} />
+              <main id="contenu" className="wrap page">
+                <div className="empty">
                   <p>{t("loginToSee")}</p>
-                  <button className="btn-primary" onClick={() => setAuthOpen(true)}>
+                  <button className="btn btn-primary" onClick={() => setAuthOpen(true)}>
                     {t("signin")}
                   </button>
                 </div>
@@ -653,19 +670,13 @@ export default function App() {
               onContinue={resetToHome}
             />
           )}
+
+          {view === "unsubscribe" && (
+            <Desinscription lien={lienDesinscription} onContinue={resetToHome} />
+          )}
+
+          <Footer lang={lang} onGoCategory={goCategory} onOpenLegal={setLegalPage} />
         </div>
-
-        <Footer onGoCategory={goCategory} onOpenLegal={setLegalPage} />
-
-        <MobileNav
-          view={view}
-          cartCount={cart.count}
-          wishlistCount={wishlist.length}
-          onGoHome={resetToHome}
-          onGoWishlist={() => setView("wishlist")}
-          onOpenCart={() => setCartOpen(true)}
-          onGoAccount={goAccount}
-        />
 
         <MenuSheet
           open={menuOpen}
@@ -695,7 +706,7 @@ export default function App() {
           lines={cart.lines}
           disp={pricing}
           onQty={cart.setQty}
-          onRemove={cart.remove}
+          onRemove={removeFromCart}
           onCheckout={goCheckout}
           promo={promo}
           promoLabel={pricing.promo?.label ?? null}
@@ -720,11 +731,7 @@ export default function App() {
           <LegalModal page={legalPage} lang={lang} onClose={() => setLegalPage(null)} />
         )}
 
-        {welcome.open && (
-          <WelcomeOffer lang={lang} onAnswer={welcome.answer} onRemember={welcome.remember} />
-        )}
-
-        <Toast message={toast} />
+        <Toast toast={toast} onAction={runAction} />
       </div>
     </I18nProvider>
   );

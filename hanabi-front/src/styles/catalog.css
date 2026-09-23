@@ -1,466 +1,518 @@
-/* Grille du drop, carte produit et bloc 'vus recemment'. */
-.grid-sec {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 30px 24px 70px;
-  width: 100%;
-  /* Reference pour le kamon en filigrane, et cadre qui le recadre. */
-  position: relative;
-  isolation: isolate;
-}
-/* Blason decoratif : deborde volontairement a droite, rogne par .kamon-clip. */
-.grid-sec .kamon {
-  top: -60px;
-  right: -110px;
-}
-.grid-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 2px solid var(--ink);
-  padding-bottom: 14px;
-  margin-bottom: 28px;
-}
-.grid-head h2 {
-  font-family: var(--font-display);
-  font-size: 26px;
-}
-.grid-tools {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-.grid-tools {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-.grid {
+/* Accueil : accroche, piece du mois, plateau de la selection. */
+
+/* --- Accroche --- */
+
+.hero {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-/* Enveloppe : porte l'apparition au defilement (classe .reveal), pour laisser
-   a la carte elle-meme son propre transform d'inclinaison. */
-.card-wrap {
-  display: flex;
-}
-.card {
-  position: relative;
-  flex: 1;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  /* Inclinaison pilotee par useTilt (--rx/--ry) + leger zoom au survol. */
-  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
-    scale(var(--card-scale, 1));
-  /* Seule la transformation est animee, et c'est la lecon d'Apple : `transform`
-   * est composee par le GPU sans repeindre. `box-shadow` et `border-color` ne le
-   * sont pas - les animer redessinait, a chaque image de la transition, la zone
-   * floue de l'ombre autour d'une carte de 361 x 680 pixels. En balayant vite le
-   * catalogue, chaque carte survolee lançait une transition d'ombre de 0,3 s :
-   * six cartes a la seconde, six tempetes de repeinture superposees. C'etait la
-   * cause du blocage ressenti precisement « quand on glisse vite sur les items ».
-   *
-   * L'ombre et la bordure changent donc instantanement au survol. Sur un
-   * balayage rapide, une ombre nette colle mieux au curseur qu'un fondu qui
-   * traine ; sur un survol pose, la bascule est imperceptible. Le fondu n'est pas
-   * deplace sur un pseudo-element parce que `overflow: hidden`, indispensable au
-   * rognage du zoom de l'image, ecreterait l'ombre d'un enfant. */
-  transition: transform 0.25s var(--ease-out);
-}
-.card:hover {
-  /* Pas de `will-change` permanent, et pas de `transform-style`.
-   *
-   * `will-change: transform` promeut l'element sur sa propre couche GPU et l'y
-   * maintient tant que la regle s'applique - pas seulement pendant l'animation.
-   * Pose sur chaque carte, cela faisait treize couches permanentes de 361 x 680
-   * pixels, soit pres de trois millions de pixels de texture a recomposer a
-   * chaque image de defilement. C'est l'usage que la documentation deconseille
-   * explicitement, et c'etait la cause principale des images perdues sur le
-   * catalogue.
-   *
-   * `transform-style: preserve-3d` forcait la meme promotion, sans rien
-   * apporter : aucun enfant de la carte ne se positionne dans l'espace 3D du
-   * parent - il n'y a ni `translateZ` ni `rotate3d` nulle part.
-   *
-   * L'indice est desormais donne au survol seulement, quand l'inclinaison va
-   * reellement avoir lieu : une carte promue a la fois au lieu de treize. */
-  will-change: transform;
-  --card-scale: 1.02;
-  box-shadow: var(--shadow-lg);
-  border-color: var(--line2);
-}
-.card-art {
-  position: relative;
-  aspect-ratio: 3/4;
-  background: var(--paper);
-  display: block;
-  width: 100%;
-  border-bottom: 1px solid var(--line);
-  overflow: hidden;
-}
-.card-art .art {
-  transition: transform 0.55s var(--ease-out);
-}
-.card:hover .card-art .art {
-  transform: scale(1.06);
-}
-/* Reflet doux qui suit le curseur.
- *
- * DEPLACE par `transform`, et non par la position de son degrade.
- *
- * La version precedente ecrivait `radial-gradient(... at var(--mx) var(--my))`
- * sur un calque couvrant toute la carte. Deplacer le centre d'un degrade n'est
- * pas une operation composee : le navigateur doit REPEINDRE la surface a chaque
- * mouvement de souris, soit deux cent quarante mille pixels par image sur une
- * carte de 361 x 680. C'etait le dernier cout de peinture continu du catalogue,
- * et il ne se declenchait qu'en promenant le curseur - exactement le geste qui
- * accrochait.
- *
- * Le reflet est maintenant un disque de taille fixe, au degrade immobile, que
- * l'on translate. Une translation est prise en charge par le compositeur :
- * aucune repeinture, quel que soit le nombre de mouvements. Le rendu est
- * identique, `overflow: hidden` de la carte se chargeant du rognage. */
-.card-sheen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 440px;
-  height: 440px;
-  /* Recentre le disque sur le point vise : sans cela il suivrait le curseur
-     par son coin superieur gauche. */
-  margin: -220px 0 0 -220px;
-  pointer-events: none;
-  background: radial-gradient(closest-side circle, rgba(255, 255, 255, 0.14), transparent);
-  transform: translate3d(var(--sx, 50%), var(--sy, 50%), 0);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.card:hover .card-sheen {
-  opacity: 1;
-}
-/* "Decouvrir" monte du bas du visuel au survol.
- *
- * Ancre a DROITE et non centre : centre, il venait se poser exactement sur le
- * bandeau « Nouveau » ancre en bas a gauche, et masquait au survol la seule
- * information que la carte cherchait a mettre en avant. Deux ancrages opposes
- * ne peuvent plus se rencontrer, quelle que soit la longueur des deux
- * libelles. */
-.card-peek {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 7px 14px;
-  border-radius: var(--r-btn);
-  white-space: nowrap;
-  box-shadow: var(--shadow);
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 0.3s var(--ease-out),
-    transform 0.3s var(--ease-out);
+  gap: var(--space-l);
+  padding-block: var(--space-l) var(--space-xl);
 }
-.card:hover .card-peek {
-  opacity: 1;
-  transform: translateY(0);
+@media (min-width: 56rem) {
+  .hero {
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: var(--space-xl);
+  }
 }
-.card-cat {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: var(--card);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--r-sm);
-  color: var(--accent);
-  border: 1px solid var(--line);
+
+.hero-title {
+  margin-block: var(--space-s) var(--space-m);
+  font-family: var(--font-voice);
+  font-weight: 800;
+  font-size: var(--step-5);
+  line-height: 1.42;
+  letter-spacing: -0.02em;
 }
-.card-new {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
+/* La fin de l'accroche est recouverte de vermillon, comme une laque passee au pinceau.
+   L'interligne est ouvert pour que la plaque ne morde pas les jambages du dessus. */
+.hero-title .plaque {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding-inline: 0.16em;
   background: var(--accent);
   color: var(--on-accent);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  padding: 4px 9px;
-  border-radius: var(--r-sm);
-  font-family: var(--font-serif);
 }
-.art {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.wish {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 99px;
-  background: var(--card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hero-lede {
+  max-inline-size: 44ch;
+  font-size: var(--step-1);
+  line-height: 1.45;
   color: var(--muted);
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s,
-    opacity 0.15s,
-    transform 0.15s;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--line);
 }
-.wish:hover {
-  color: var(--accent);
-  transform: scale(1.08);
-}
-.wish.on {
-  color: var(--accent);
-}
-.card-body {
-  padding: 16px 16px 18px;
+.hero-actions {
   display: flex;
-  flex-direction: column;
-  flex: 1;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block: var(--space-l) var(--space-m);
 }
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-.card-name {
-  font-family: var(--font-serif);
-  font-size: 19px;
-  text-align: left;
-}
-.card-name:hover {
-  color: var(--accent);
-}
-.card-rate {
-  margin: 4px 0 6px;
-}
-.card-blurb {
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 14px;
-  flex: 1;
-}
-.card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-/* Sur une carte, l'ajout n'est PAS une boite.
- *
- * Douze articles a l'ecran, c'est douze boutons : encadres, ils font douze
- * rectangles qui se disputent l'attention avec les douze visuels au-dessus, et
- * la grille devient un mur. Un libelle souligne d'un trait de vermillon occupe
- * la meme surface utile et laisse la page respirer.
- *
- * Le trait est un coup de pinceau : sourd au repos, il prend la couleur pleine
- * au survol. C'est le seul changement, et il porte a la fois l'etat et
- * l'invitation. */
-.btn-add {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+
+/* La piece du mois : deuxieme surface de vermillon, portee par l'objet */
+.piece {
+  position: relative;
+  display: grid;
+  padding: 0;
   border: 0;
-  border-bottom: 2px solid var(--line2);
-  border-radius: var(--r-btn);
-  padding: 7px 0;
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  background: transparent;
-  color: var(--ink);
-  transition:
-    color 0.18s var(--ease-out),
-    border-color 0.18s var(--ease-out),
-    opacity 0.15s;
-  white-space: nowrap;
+  border-radius: var(--r-panel);
+  overflow: hidden;
+  background: var(--lacquer);
+  color: var(--ivory);
+  text-align: start;
 }
-.btn-add:hover:not(:disabled) {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+[data-theme="dark"] .piece {
+  outline: 1px solid var(--line);
 }
-.btn-add:active:not(:disabled) {
-  color: var(--gold);
-  border-bottom-color: var(--gold);
-}
-.btn-add:focus-visible {
-  outline: 2px solid var(--accent);
+.piece:focus-visible {
   outline-offset: 4px;
 }
-/* --- Squelettes de chargement (voir catalog/CardSkeleton.jsx) --- */
-.skel-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  animation: fade 0.4s var(--ease-out) both;
+.piece-art {
+  display: block;
+  aspect-ratio: 4 / 3;
 }
-.skel-art {
-  aspect-ratio: 3/4;
-  border-bottom: 1px solid var(--line);
-}
-.skel-body {
-  padding: 16px;
+.piece-caption {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.skel-line {
-  height: 11px;
-  border-radius: 0;
-}
-.skel-line.lg {
-  height: 17px;
-}
-.skel-foot {
-  display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: 4px;
+  gap: var(--space-s);
+  padding: var(--space-s) var(--space-m) var(--space-m);
 }
-.skel-pill {
-  width: 88px;
-  height: 34px;
-  border-radius: 0;
-  flex-shrink: 0;
+.piece-caption .code {
+  display: block;
+  color: #b3948b;
 }
-/* Reflet qui balaye : signale "ca charge" sans spinner. */
-.skel-shine {
-  position: relative;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
+.piece-name {
+  display: block;
+  margin-block-start: 4px;
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-2);
+  line-height: 1.15;
 }
-.skel-shine::after {
-  content: "";
+.piece-caption .price {
+  font-size: var(--step-1);
+  color: var(--vermilion-bright);
+  white-space: nowrap;
+}
+.piece-tag {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 20%,
-    color-mix(in srgb, var(--ink) 6%, transparent) 50%,
-    transparent 80%
-  );
-  animation: skel-sweep 1.5s var(--ease-out) infinite;
+  z-index: 1;
+  inset-block-start: var(--space-s);
+  inset-inline-start: var(--space-s);
+  padding: 6px 10px;
+  border-radius: var(--r-surface);
+  background: var(--vermilion-bright);
+  color: var(--lacquer);
+  font-size: var(--step--1);
+  font-weight: 700;
 }
-@keyframes skel-sweep {
-  from {
-    transform: translateX(-100%);
+@media (hover: hover) {
+  .piece .art {
+    transition: scale var(--dur-space) var(--ease-out);
   }
-  to {
-    transform: translateX(100%);
+  .piece:hover .art {
+    scale: 1.02;
   }
-}
-/* Estompage discret pendant un changement de filtre. */
-.grid.is-refreshing {
-  opacity: 0.55;
-  transition: opacity 0.2s;
 }
 
-.empty-grid {
-  padding: 60px 0;
-  text-align: center;
-  color: var(--muted);
+/* --- Visuels --- */
+
+.art {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
 }
-.api-down {
+.art-photo {
+  object-fit: cover;
+}
+
+/* --- Selection --- */
+
+.selection {
+  padding-block: var(--space-l) 0;
+}
+
+.toolbar {
   display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: var(--r-sm);
-  padding: 20px 22px;
-  color: var(--accent);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-s) var(--space-m);
+  margin-block-end: var(--space-m);
+}
+.toolbar h2 {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-3);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.toolbar-count {
+  margin-block-start: 4px;
+  font-size: var(--step--1);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.toolbar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-inline-size: 100%;
 }
 
-.recent {
-  margin-top: 56px;
-  border-top: 1px solid var(--line);
-  padding-top: 30px;
+/* Filtre segmente : groupe radio, un seul arret de tabulation */
+.segments {
+  display: inline-flex;
+  max-inline-size: 100%;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--field);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.recent-h {
+.segments button {
+  min-block-size: 38px;
+  padding-inline: 14px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.segments button[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.segments button:focus-visible {
+  outline-offset: -2px;
+}
+@media (hover: hover) {
+  .segments button[aria-checked="false"]:hover {
+    color: var(--ink);
+  }
+}
+.segment-count {
+  margin-inline-start: 6px;
+  opacity: 0.72;
+  font-variant-numeric: tabular-nums;
+}
+
+.sort {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-display);
-  font-size: 17px;
-  margin-bottom: 18px;
 }
-.recent-row {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  scrollbar-width: none;
+.sort label {
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
 }
-.recent-row::-webkit-scrollbar {
-  display: none;
-}
-.recent-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 10px 16px 10px 10px;
-  flex-shrink: 0;
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s,
-    opacity 0.15s,
-    transform 0.15s;
-}
-.recent-card:hover {
-  border-color: var(--line2);
-  transform: translateY(-2px);
-}
-.recent-art {
-  width: 50px;
-  height: 50px;
-  border-radius: var(--r-sm);
-  overflow: hidden;
-  background: var(--paper);
-}
-.recent-info {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-.recent-name {
-  font-family: var(--font-serif);
-  font-size: 15px;
+.sort .select select {
+  min-inline-size: 11rem;
 }
 
-.pp,
-.co,
-.done {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 28px 24px 80px;
-  width: 100%;
+/* --- Plateau : des compartiments separes par des filets, pas des cartes --- */
+
+/* Chaque case trace son propre filet : une ligne incomplete ne laisse pas de
+   compartiment vide colore. */
+.tray {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  transition: opacity var(--dur-feedback) var(--ease-out);
+}
+.tray[data-refreshing] {
+  opacity: 0.6;
+}
+@media (min-width: 40rem) {
+  .tray {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 72rem) {
+  .tray {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .tray-compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.case {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  outline: 1px solid var(--line);
+}
+
+/* L'usure : le vermillon apparait la ou la main se pose, au coin haut gauche,
+   et part le long des deux aretes. Partielle, comme une vraie usure. */
+.case::before,
+.case::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  background: var(--vermilion-bright);
+  pointer-events: none;
+  transition: transform 240ms var(--ease-out);
+}
+.case::before {
+  inline-size: 46%;
+  block-size: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.case::after {
+  inline-size: 2px;
+  block-size: 34%;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition-delay: 40ms;
+}
+.case:focus-within::before {
+  transform: scaleX(1);
+}
+.case:focus-within::after {
+  transform: scaleY(1);
+}
+@media (hover: hover) {
+  .case:hover::before {
+    transform: scaleX(1);
+  }
+  .case:hover::after {
+    transform: scaleY(1);
+  }
+}
+
+.case-art {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+.case.is-out .case-art {
+  opacity: 0.55;
+}
+
+.case-body {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  padding: var(--space-xs) var(--space-s) var(--space-s);
+}
+.case-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+.case-name {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-1);
+  line-height: 1.2;
+}
+.case-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Le nom ouvre la fiche, et sa zone s'etend a toute la case */
+.case-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.case-open:focus-visible {
+  outline: none;
+}
+.case:has(.case-open:focus-visible) {
+  z-index: 1;
+  outline: 2px solid var(--accent);
+}
+
+.case-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-start: auto;
+  padding-block-start: 6px;
+}
+.case-add {
+  z-index: 3;
+}
+
+.fav {
+  position: absolute;
+  z-index: 3;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-control);
+  /* Laque pleine sur tous les visuels : un noir translucide virait au gris sale
+     sur le papier (Gamelle Sakura, Lampe Lune) */
+  background: var(--lacquer);
+  color: var(--ivory);
+  transition:
+    color var(--dur-feedback) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.fav:active {
+  transform: scale(0.96);
+}
+.fav .picto {
+  --accent: var(--vermilion-bright);
+}
+@media (hover: hover) {
+  .fav:hover {
+    color: var(--vermilion-bright);
+  }
+}
+
+.case-new {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 14px;
+  inset-inline-start: 12px;
+  padding: 4px 8px;
+  border-radius: var(--r-surface);
+  background: var(--ivory);
+  box-shadow: 0 0 0 1px rgb(10 6 5 / 0.14);
+  color: var(--lacquer);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Squelette : la silhouette de la case, sans animation */
+.case-skel .case-art {
+  background: var(--line);
+}
+.skel-line {
+  display: block;
+  block-size: 12px;
+  background: var(--line);
+}
+.skel-lg {
+  block-size: 20px;
+}
+
+/* --- Triptyque : la maison parle une fois, en trois mots --- */
+
+.triptyque {
+  padding-block: var(--space-xl);
+}
+.triptyque h2 {
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+}
+.triptyque-list {
+  display: grid;
+  gap: var(--space-l);
+  margin-block-start: var(--space-m);
+}
+@media (min-width: 56rem) {
+  .triptyque-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-l) var(--space-xl);
+  }
+}
+/* Le meme filet de vermillon que l'usure des cases, pose en tete de colonne */
+.triptyque-list li::before {
+  content: "";
+  display: block;
+  inline-size: 28px;
+  block-size: 2px;
+  margin-block-end: var(--space-xs);
+  background: var(--vermilion-bright);
+}
+.triptyque-list h3 {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-2);
+  line-height: 1.15;
+}
+.triptyque-list p {
+  max-inline-size: 38ch;
+  margin-block-start: 8px;
+  color: var(--muted);
+}
+
+/* --- Vus recemment --- */
+
+.recent {
+  margin-block-start: var(--space-xl);
+}
+.recent h3 {
+  margin-block-end: var(--space-xs);
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-1);
+}
+.recent-list {
+  display: flex;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  padding-block-end: 6px;
+  /* Laisser deviner l'element suivant */
+  margin-inline-end: calc(-1 * var(--space-s-l));
+  padding-inline-end: var(--space-s-l);
+  scroll-snap-type: x proximity;
+}
+.recent-list li {
+  flex: none;
+  scroll-snap-align: start;
+}
+.recent-item {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  inline-size: 15rem;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  text-align: start;
+}
+@media (hover: hover) {
+  .recent-item:hover {
+    border-color: var(--line-strong);
+  }
+}
+.recent-art {
+  grid-row: span 2;
+  display: block;
+  inline-size: 56px;
+  block-size: 56px;
+  overflow: hidden;
+}
+.recent-name {
+  font-weight: 600;
+  font-size: var(--step--1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-item .price {
+  font-size: var(--step--1);
 }

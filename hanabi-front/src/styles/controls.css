@@ -1,0 +1,576 @@
+/* Commandes : boutons, champs, listes, pas a pas. Cible de 44 px partout. */
+
+/* --- Boutons --- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  font-weight: 600;
+  font-size: var(--step--1);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    border-color var(--dur-feedback) var(--ease-out),
+    color var(--dur-feedback) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.btn:disabled {
+  opacity: 0.5;
+}
+.btn svg {
+  flex: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:focus-visible {
+  outline-color: var(--ink);
+}
+
+.btn-quiet {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.btn-on-lacquer {
+  background: var(--vermilion-bright);
+  color: var(--lacquer);
+}
+
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 88%, var(--ink));
+  }
+  .btn-quiet:hover:not(:disabled) {
+    border-color: var(--ink);
+  }
+  .btn-on-lacquer:hover:not(:disabled) {
+    background: var(--vermilion);
+  }
+}
+
+.btn-sm {
+  position: relative;
+  min-block-size: 36px;
+  padding: 0 12px;
+}
+/* La zone tactile reste de 44 px meme quand le dessin est plus petit */
+.btn-sm::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+.btn-block {
+  inline-size: 100%;
+}
+.btn-grow {
+  flex: 1;
+}
+.btn-danger {
+  color: var(--accent);
+}
+
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-control);
+  background: transparent;
+  color: var(--ink);
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.icon-btn:active {
+  transform: scale(0.96);
+}
+@media (hover: hover) {
+  .icon-btn:hover {
+    background: var(--accent-soft);
+  }
+}
+.icon-btn-framed {
+  border: 1px solid var(--line-strong);
+}
+.icon-btn[aria-pressed="true"] {
+  color: var(--accent);
+}
+
+/* Pictogrammes maison (components/brand/Pictos.jsx) */
+.picto {
+  display: block;
+  flex: none;
+}
+.picto-theme {
+  transition: rotate var(--dur-space) var(--ease-spring);
+}
+.picto-theme.is-dark {
+  rotate: 180deg;
+}
+/* Sur un aplat vermillon, le détail prend la couleur du texte */
+.btn-primary .picto {
+  --accent: currentColor;
+}
+
+/* Compteur posé à côté du pictogramme, sans pastille */
+.icon-btn:has(.count-badge) {
+  display: inline-flex;
+  gap: 5px;
+  inline-size: auto;
+  min-inline-size: 44px;
+  padding-inline: 10px 12px;
+}
+.count-badge {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Libelle qui change sur place : fondu court avec un leger flou */
+.swap {
+  display: inline-grid;
+}
+.swap > span {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition:
+    opacity 150ms var(--ease-out),
+    filter 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
+}
+.swap[data-state="idle"] .swap-done,
+.swap[data-state="done"] .swap-idle {
+  opacity: 0;
+  filter: blur(2px);
+  transform: scale(0.95);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  min-block-size: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: transparent;
+  font-weight: 600;
+  font-size: var(--step--1);
+  transition:
+    background-color var(--dur-feedback) var(--ease-out),
+    color var(--dur-feedback) var(--ease-out);
+}
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* --- Champs --- */
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+}
+.field > label,
+.field > span:first-child,
+.field > legend {
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+.field > legend {
+  margin-block-end: 6px;
+}
+
+:where(.shop) :where(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--field);
+  /* 16 px au moins : en dessous, iOS zoome a la mise au point */
+  font-size: max(16px, var(--step--1));
+  transition: border-color var(--dur-feedback) var(--ease-out);
+}
+:where(.shop) :where(textarea) {
+  resize: vertical;
+  line-height: 1.5;
+}
+:where(.shop) :where(input, textarea)::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+@media (hover: hover) {
+  .shop input:not([type="checkbox"], [type="radio"]):hover,
+  .shop select:hover,
+  .shop textarea:hover {
+    border-color: var(--muted);
+  }
+}
+.shop input:focus-visible,
+.shop select:focus-visible,
+.shop textarea:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+.shop [aria-invalid="true"] {
+  border-color: var(--accent);
+}
+
+.field-row {
+  display: grid;
+  gap: var(--space-xs);
+}
+@media (min-width: 30rem) {
+  .field-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.field-error,
+.field-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--step--1);
+}
+.field-error {
+  color: var(--accent);
+  font-weight: 600;
+}
+.field-hint {
+  color: var(--muted);
+}
+
+.form-stack {
+  display: grid;
+  gap: var(--space-s);
+}
+
+.form-block {
+  display: grid;
+  gap: var(--space-xs);
+}
+.form-block > legend {
+  margin-block-end: var(--space-xs);
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: var(--step-1);
+}
+
+/* Liste native habillee : le chevron est un decor, la liste reste native */
+.select {
+  position: relative;
+  display: block;
+}
+.shop .select select {
+  appearance: none;
+  padding-inline-end: 36px;
+  cursor: pointer;
+}
+.select > svg {
+  position: absolute;
+  inset-inline-end: 12px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: var(--step--1);
+}
+:where(.shop) :where(input[type="checkbox"], input[type="radio"]) {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+
+.choices {
+  display: grid;
+  gap: 8px;
+}
+.choice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.choice-main {
+  font-weight: 600;
+}
+.choice-sub {
+  grid-column: 2;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.card-input {
+  position: relative;
+  display: block;
+}
+.card-brand {
+  position: absolute;
+  inset-inline-end: 12px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.phone-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 8px;
+}
+
+.date-row {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1.2fr;
+  gap: 8px;
+}
+
+/* --- Mot de passe --- */
+
+.pw-row {
+  position: relative;
+}
+.shop .pw-row input {
+  padding-inline-end: 52px;
+}
+.pw-toggle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  border-radius: var(--r-control);
+}
+.pw-toggle[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+.pw-strength {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--step--1);
+}
+.pw-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  flex: 1;
+}
+.pw-bars span {
+  block-size: 4px;
+  background: var(--line);
+}
+.pw-bars span.on {
+  background: var(--muted);
+}
+.pw-strength[data-level="3"] .pw-bars span.on {
+  background: var(--ink);
+}
+.pw-strength[data-level="0"] .pw-bars span.on {
+  background: var(--accent);
+}
+.pw-level {
+  min-inline-size: 5ch;
+  font-weight: 600;
+}
+
+.pw-rules {
+  display: grid;
+  gap: 4px;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.pw-rules li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pw-rules li[data-ok="true"] {
+  color: var(--ink);
+}
+.pw-rule-mark {
+  display: grid;
+  place-items: center;
+  inline-size: 16px;
+  block-size: 16px;
+  border: 1px solid var(--line-strong);
+}
+.pw-rules li[data-ok="true"] .pw-rule-mark {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- Pas a pas --- */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+}
+.stepper button {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  background: none;
+  border-radius: var(--r-control);
+}
+.stepper button:disabled {
+  color: var(--muted);
+  opacity: 0.5;
+}
+@media (hover: hover) {
+  .stepper button:hover:not(:disabled) {
+    background: var(--accent-soft);
+  }
+}
+.stepper output {
+  min-inline-size: 2.2ch;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.stepper-lg button {
+  inline-size: 44px;
+  block-size: 48px;
+}
+
+/* --- Etoiles --- */
+
+.stars {
+  display: inline-flex;
+  gap: 1px;
+  color: var(--accent);
+}
+.star-empty {
+  color: var(--line-strong);
+}
+
+.star-input {
+  display: inline-flex;
+  gap: 2px;
+}
+.star-input button {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  border-radius: var(--r-control);
+}
+
+/* --- Stock --- */
+
+.stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.stock-low,
+.stock-out {
+  color: var(--accent);
+}
+.stock-low::before {
+  content: "";
+  inline-size: 6px;
+  block-size: 6px;
+  background: currentColor;
+}
+.stock-out::before {
+  content: "";
+  inline-size: 8px;
+  block-size: 1.5px;
+  background: currentColor;
+}
+
+/* --- Code promo --- */
+
+.promo {
+  display: grid;
+  gap: 6px;
+}
+.promo > label {
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+.promo-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.promo-on {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  font-size: var(--step--1);
+}
+.promo-on > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

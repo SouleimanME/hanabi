@@ -1,26 +1,30 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 const VISIBLE_MS = 2400;
+const VISIBLE_ACTION_MS = 6000;
 
-/**
- * File d'attente a un seul message pour les notifications breves.
- *
- * Un nouveau message remplace le precedent et relance le minuteur : deux
- * ajouts au panier rapproches n'empilent pas deux toasts.
- */
+/** Notification a un seul message : un nouveau remplace le precedent et relance le minuteur. */
 export function useToast() {
-  const [message, setMessage] = useState(null);
+  const [toast, setToast] = useState(null);
   const timer = useRef(null);
 
-  const show = useCallback((text) => {
-    setMessage(text);
+  const hide = useCallback(() => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMessage(null), VISIBLE_MS);
+    setToast(null);
   }, []);
 
-  // Sans ce nettoyage, un demontage pendant l'affichage laisserait un
-  // setState sur un composant demonte.
+  const show = useCallback((message, action = null) => {
+    setToast({ message, action });
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setToast(null), action ? VISIBLE_ACTION_MS : VISIBLE_MS);
+  }, []);
+
+  const runAction = useCallback(() => {
+    toast?.action?.run();
+    hide();
+  }, [toast, hide]);
+
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  return { message, show };
+  return { toast, show, hide, runAction };
 }

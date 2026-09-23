@@ -1,28 +1,4 @@
-/** Recherche du nonce anti-robots, hors du fil principal.
- *
- * Ce fichier s'execute dans un Web Worker : il a son propre fil, sa propre
- * boucle d'evenements, et ne partage rien avec la page. Le calcul peut donc
- * tourner a pleine vitesse sans jamais retarder une image, une frappe au
- * clavier ou un defilement.
- *
- * C'est ce qui manquait a la version precedente. Elle tournait dans la page et
- * tentait de menager le navigateur en rendant la main toutes les deux mille
- * tentatives. Mais chaque tentative faisait `await crypto.subtle.digest(...)`,
- * et une promesse deja resolue ne rend la main qu'a la file de MICROTACHES -
- * laquelle est videe entierement avant que le navigateur ne puisse peindre. Le
- * fil principal restait donc bloque par blocs de deux mille hachages, soit des
- * dizaines de millisecondes d'affilee, plusieurs fois de suite. A soixante
- * images par seconde, on dispose de seize millisecondes : chaque bloc en
- * sacrifiait plusieurs.
- *
- * Le probleme se voyait partout parce que la preuve est demandee partout : a
- * l'ouverture de la page d'accueil, a l'ouverture du formulaire de connexion,
- * deux fois sur une fiche produit - et une nouvelle preuve est relancee en
- * arriere-plan apres chaque usage.
- *
- * Ici, plus besoin de menagement : la boucle est serree, sans respiration, ce
- * qui la rend au passage nettement plus rapide.
- */
+/** Recherche du nonce anti-robots, hors du fil principal. */
 
 /** Compte les bits a zero en tete d'une empreinte. */
 function leadingZeroBits(bytes) {

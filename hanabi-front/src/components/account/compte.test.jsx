@@ -1,18 +1,4 @@
-/** Ecrans de gestion du compte.
- *
- * Ce qui est verifie ici n'est pas la mise en forme mais deux GARANTIES, dont
- * la seconde est de securite :
- *
- *   1. le formulaire de profil n'envoie que ce qui a change - reposter l'objet
- *      entier ecraserait avec des valeurs perimees ce qu'un autre onglet vient
- *      de modifier ;
- *   2. le numero de carte ne quitte JAMAIS la page. C'est ce qui maintient
- *      l'application hors du perimetre PCI-DSS, et c'est exactement le genre de
- *      propriete qu'une refonte casse sans s'en apercevoir.
- *
- * Le client API est remplace : ces tests portent sur ce que les ecrans
- * DECIDENT d'envoyer, pas sur le transport.
- */
+/** Ecrans de gestion du compte. */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -79,9 +65,7 @@ describe("InfosForm", () => {
   it("n'annonce aucune modification a l'ouverture", () => {
     afficher(<InfosForm user={UTILISATEUR} onEnregistre={vi.fn()} onAnnuler={vi.fn()} />);
 
-    // Regression corrigee : `PhoneField` emettait « +33 » des le montage, si
-    // bien que le formulaire se croyait modifie sans que personne n'y touche -
-    // et enregistrer ecrasait le vrai numero.
+    // Regression corrigee : `PhoneField` emettait « +33 » des le montage
     expect(screen.getByText(/aucune modification/i)).toBeInTheDocument();
   });
 
@@ -212,7 +196,7 @@ describe("Securite", () => {
 
     await util.click(screen.getAllByRole("button", { name: /modifier/i })[1]);
 
-    // Dit AVANT la saisie : le decouvrir apres coup ressemblerait a une
+    // Dit avant la saisie : le decouvrir apres coup ressemblerait a une
     // regression.
     expect(screen.getByText(/devra être confirmée/i)).toBeInTheDocument();
   });

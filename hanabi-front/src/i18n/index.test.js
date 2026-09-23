@@ -1,15 +1,4 @@
-/** Internationalisation.
- *
- * Le vrai risque n'est pas qu'une traduction soit mauvaise - une relecture
- * humaine s'en charge - mais qu'elle MANQUE. Un dictionnaire secondaire
- * derive silencieusement : on ajoute une cle en francais, l'interface reste
- * correcte pour le developpeur qui travaille en francais, et la version
- * espagnole affiche un identifiant technique a la place d'une phrase.
- *
- * Le module avertit en console au chargement, en developpement. C'est utile,
- * mais un avertissement ne casse aucune construction : il se lit s'il est lu.
- * Ici, il bloque.
- */
+/** Internationalisation. */
 import { describe, it, expect } from "vitest";
 
 import { translator, LANGS } from "./index.js";
@@ -45,8 +34,12 @@ describe("parite des dictionnaires", () => {
   it("emploie les memes marqueurs de substitution dans toutes les langues", () => {
     // Une phrase francaise « Plus que {montant} » traduite sans son {montant}
     // afficherait une phrase amputee, sans que rien ne signale l'erreur.
-    const marqueurs = (texte) =>
-      typeof texte === "string" ? [...texte.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort() : [];
+    const marqueurs = (texte) => {
+      if (texte && typeof texte === "object") return marqueurs(texte.other);
+      return typeof texte === "string"
+        ? [...new Set([...texte.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort()
+        : [];
+    };
 
     for (const [code, dict] of Object.entries(DICTIONNAIRES)) {
       if (code === "fr") continue;
@@ -59,12 +52,24 @@ describe("parite des dictionnaires", () => {
   });
 
   it("ne laisse aucune valeur vide", () => {
+    const vide = (v) =>
+      typeof v === "string" ? v.trim() === "" : !v?.one?.trim() || !v?.other?.trim();
     for (const [code, dict] of Object.entries(DICTIONNAIRES)) {
       const vides = Object.entries(dict)
-        .filter(([, v]) => typeof v === "string" && v.trim() === "")
+        .filter(([, v]) => vide(v))
         .map(([k]) => k);
       expect(vides, `valeur(s) vide(s) en ${code}`).toEqual([]);
     }
+  });
+});
+
+describe("pluriels", () => {
+  it("accorde selon la langue : 0 et 1 au singulier en francais, 1 seul en anglais", () => {
+    expect(translator("fr")("objectsN", { n: 1 })).toBe("1 objet");
+    expect(translator("fr")("objectsN", { n: 0 })).toBe("0 objet");
+    expect(translator("fr")("objectsN", { n: 12 })).toBe("12 objets");
+    expect(translator("en")("objectsN", { n: 1 })).toBe("1 object");
+    expect(translator("en")("objectsN", { n: 0 })).toBe("0 objects");
   });
 });
 
@@ -101,21 +106,9 @@ describe("translator", () => {
 });
 
 describe("cles orphelines", () => {
-  /* CE QUE CE TEST EMPECHE.
-   *
-   * Une cle supprimee du code mais laissee dans les trois dictionnaires ne
-   * casse rien : elle se traduit, elle se relit, elle survit aux relectures. Et
-   * elle MENT - `infoNote` annoncait « la modification en ligne n'est pas encore
-   * disponible » plusieurs semaines apres que l'ecran d'edition existait. Le
-   * jour ou quelqu'un la reutilise, il affiche une phrase fausse.
-   *
-   * Trois cles mortes ont ete trouvees a l'ecriture de ce test : `infoNote`,
-   * `ship48` et `sort`.
-   */
+  /* Une cle traduite mais jamais affichee est du code mort qu'on continue de traduire. */
 
-  // Cles CONSTRUITES a l'execution : `t("cat_" + categorie)`. Aucune analyse
-  // statique ne peut les voir, et les compter comme mortes rendrait ce test
-  // faux plutot qu'utile. La liste est courte et se relit.
+  // Cles construites a l'execution : `t("cat_" + categorie)`
   const PREFIXES_DYNAMIQUES = ["cat_", "matiere_", "legal_", "civ", "delivery", "pw"];
 
   const sources = import.meta.glob("../**/*.{js,jsx}", {

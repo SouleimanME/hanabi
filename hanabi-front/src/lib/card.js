@@ -1,16 +1,4 @@
-/** Detection et validation d'une carte bancaire, cote saisie.
- *
- * Objectif : dire tout de suite ce qui ne va pas, plutot que de laisser partir
- * un paiement voue a l'echec. Rien ici n'est une mesure de securite - le
- * controle qui compte est celui du prestataire de paiement, qui seul connait
- * l'etat reel de la carte.
- *
- * Rappel important : dans une vraie boutique, ces champs n'appartiennent pas au
- * site. On integre l'iframe du prestataire (Stripe Elements et equivalents), qui
- * renvoie un jeton : le numero de carte ne traverse jamais le serveur, ce qui
- * evite d'entrer dans le perimetre PCI-DSS. Le schema `CheckoutIn` du backend
- * prevoit deja ce `payment_token`.
- */
+/** Detection et validation d'une carte bancaire, cote saisie. */
 
 /** Reseaux reconnus, avec leur mise en forme et leurs longueurs valides. */
 const BRANDS = [
@@ -33,16 +21,7 @@ const BRANDS = [
   {
     id: "mastercard",
     label: "Mastercard",
-    // 51-55, ou la plage 2221-2720 ouverte en 2017.
-    //
-    // La plage est decrite sur QUATRE chiffres, ses deux bornes etant elles-memes
-    // a quatre chiffres. Une version anterieure la resumait sur trois - `2[2-9]`
-    // acceptait tout 222x - et classait donc 2220 en Mastercard, un prefixe qui
-    // n'appartient a personne. Aucune carte reelle ne commence ainsi, mais une
-    // regle approchee finit toujours par etre lue comme exacte : autant ecrire
-    // la vraie. La contrepartie est que le reseau se revele au quatrieme chiffre
-    // au lieu du troisieme, ce qui ne change ni le groupage ni la longueur
-    // attendue.
+    // 51-55, ou la plage 2221-2720 ouverte en 2017
     pattern: /^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/,
     lengths: [16],
     gaps: [4, 8, 12],
@@ -61,10 +40,7 @@ export function detectBrand(value) {
   return BRANDS.find((brand) => brand.pattern.test(digits)) || GENERIC;
 }
 
-/**
- * Met le numero en forme au fil de la saisie, selon le reseau detecte.
- * American Express se groupe en 4-6-5, les autres en blocs de quatre.
- */
+/** Met le numero en forme au fil de la saisie, selon le reseau detecte. */
 export function formatCardNumber(value) {
   const brand = detectBrand(value);
   const digits = digitsOnly(value).slice(0, Math.max(...brand.lengths));
@@ -76,12 +52,7 @@ export function formatCardNumber(value) {
   return out;
 }
 
-/**
- * Algorithme de Luhn : la cle de controle presente sur toute carte.
- *
- * Detecte les fautes de frappe et les chiffres transposes, pas une carte
- * invalide ou sans provision.
- */
+/** Algorithme de Luhn : la cle de controle presente sur toute carte. */
 export function luhnValid(value) {
   const digits = digitsOnly(value);
   if (digits.length < 12) return false;
@@ -132,3 +103,18 @@ export function expiryValid(value) {
 export const cvcLength = (cardValue) => detectBrand(cardValue).cvcLength;
 
 export const cvcValid = (cvc, cardValue) => digitsOnly(cvc).length === cvcLength(cardValue);
+
+/* Numeros de test des prestataires reels, et le jeton qu'ils declenchent dans
+   le paiement simule (hanabi-back/app/payments.py) : de quoi voir un refus
+   sans appeler l'API a la main. */
+const CARTES_DE_TEST = {
+  4000000000000002: "tok_refus",
+  4000000000009995: "tok_fonds_insuffisants",
+  4000000000000119: "tok_indecis",
+};
+
+/** Jeton transmis au paiement a la place du numero, qui ne quitte jamais le navigateur. */
+export function jetonDePaiement(numero) {
+  const chiffres = digitsOnly(numero);
+  return CARTES_DE_TEST[chiffres] ?? `tok_${detectBrand(chiffres).id}`;
+}

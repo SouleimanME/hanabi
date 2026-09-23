@@ -1,348 +1,220 @@
-/* Fiche produit : galerie, achat, avis, produits associes. */
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 22px;
-}
-.back:hover {
-  color: var(--ink);
-}
-.pp-in {
+/* Fiche produit. */
+
+.product-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 54px;
-  align-items: start;
+  gap: var(--space-l);
 }
-.gallery {
-  position: sticky;
-  top: 90px;
+@media (min-width: 56rem) {
+  .product-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    gap: var(--space-xl);
+    align-items: start;
+  }
+  .gallery {
+    position: sticky;
+    inset-block-start: 5.5rem;
+  }
 }
-.pp-art {
-  position: relative;
-  aspect-ratio: 1/1;
-  border-radius: var(--r-lg);
+
+.gallery-main {
+  aspect-ratio: 1;
+  border-radius: var(--r-panel);
   overflow: hidden;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--lacquer);
 }
-/* Zoom-loupe : le visuel grossit en gardant sous le curseur le point vise.
-   `transform-origin` suit --mx/--my, ecrites par useTilt au survol. */
-.pp-art.zoomable > .art,
-.pp-art.zoomable > img {
-  transition: transform 0.4s var(--ease-out);
-  transform-origin: var(--mx, 50%) var(--my, 50%);
-}
-/* Le zoom est desormais pilote par un CLIC, pas par le survol.
- *
- * En survol, on ne pouvait pas revenir a la vue d'ensemble sans sortir du
- * visuel : le geste naturel - regarder un detail, puis reculer - etait
- * impossible. Un clic entre dans le zoom, un second en sort, et la touche
- * Echap aussi. Le curseur annonce l'action disponible dans chaque etat. */
-.pp-art.zoomable[data-zoom] > .art,
-.pp-art.zoomable[data-zoom] > img {
-  transform: scale(1.7);
-}
-.pp-art.zoomable {
-  cursor: zoom-in;
-}
-.pp-art.zoomable[data-zoom] {
-  cursor: zoom-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  .pp-art.zoomable[data-zoom] > .art,
-  .pp-art.zoomable[data-zoom] > img {
-    transform: none;
-  }
-  .pp-art.zoomable {
-    cursor: default;
-  }
-}
-.pp-wish {
-  top: 14px;
-  right: 14px;
-  width: 42px;
-  height: 42px;
-}
+
 .thumbs {
   display: flex;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-block-start: 8px;
 }
-.thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--r-sm);
+.thumbs button {
+  inline-size: 72px;
+  block-size: 72px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
   overflow: hidden;
-  background: var(--card);
-  border: 1px solid var(--line);
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s,
-    opacity 0.15s,
-    transform 0.15s;
-  flex-shrink: 0;
+  background: none;
+  opacity: 0.7;
+  transition: opacity var(--dur-feedback) var(--ease-out);
 }
-.thumb:hover {
-  border-color: var(--line2);
+.thumbs button[aria-checked="true"] {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-.thumb.on {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+@media (hover: hover) {
+  .thumbs button:hover {
+    opacity: 1;
+  }
 }
-.pp-name {
-  font-family: var(--font-serif);
-  font-size: clamp(28px, 4vw, 40px);
-  line-height: 1.12;
-  margin: 10px 0 10px;
+
+.product-info {
+  display: grid;
+  gap: var(--space-s);
 }
-.pp-rate {
+.product-meta {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.pp-price {
-  font-size: 24px;
-  color: var(--accent);
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-.pp-stock {
-  margin-bottom: 18px;
-}
-.pp-desc {
-  color: var(--muted);
-  font-size: 16px;
-  margin-bottom: 24px;
-}
-.pp-specs {
-  list-style: none;
-  border-top: 1px solid var(--line);
-  margin-bottom: 26px;
-}
-.pp-specs li {
-  display: flex;
-  justify-content: space-between;
-  padding: 13px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 14px;
-}
-.pp-specs span {
-  color: var(--muted);
-}
-.pp-buy {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.pp-rea {
-  display: flex;
-  gap: 22px;
-  font-size: 13px;
-  color: var(--muted);
   flex-wrap: wrap;
-}
-.pp-rea span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.notify {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 18px;
-  margin-bottom: 18px;
-}
-.notify-h {
-  display: flex;
   align-items: center;
   gap: 8px;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.product-name {
+  font-family: var(--font-voice);
   font-weight: 700;
-  margin-bottom: 12px;
+  font-size: var(--step-4);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
-.notify-row {
+.product-rating {
   display: flex;
+  align-items: center;
   gap: 8px;
+  font-size: var(--step--1);
+  color: var(--muted);
 }
-.notify-row input {
-  flex: 1;
-  border: 1px solid var(--line2);
-  border-radius: var(--r-sm);
-  padding: 11px 13px;
-  background: var(--paper);
-  outline: none;
+.product-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px var(--space-s);
+}
+.product-price .price {
+  font-size: var(--step-3);
+}
+.product-desc {
+  max-inline-size: 60ch;
+  color: var(--muted);
+}
+
+.buy {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: stretch;
+}
+.buy-add {
+  min-block-size: 50px;
+}
+.buy-add .price {
+  margin-inline-start: auto;
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid color-mix(in srgb, var(--on-accent) 35%, transparent);
+}
+.buy .icon-btn-framed {
+  block-size: 50px;
+  inline-size: 50px;
+}
+
+/* Ce qu'on promet, la ou l'on hesite : sous le bouton, une ligne par engagement */
+.reassurance {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+.reassurance li {
+  padding: 10px var(--space-s);
+  color: var(--muted);
+}
+/* La date de livraison est la seule reponse attendue ici : elle garde l'encre */
+.reassurance li:first-child {
   color: var(--ink);
 }
-.notify-row input:focus {
-  border-color: var(--accent);
+.reassurance li + li {
+  border-block-start: 1px solid var(--line);
+}
+
+.notify {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-s);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-panel);
+}
+.notify h2 {
+  font-size: var(--step-0);
+  font-weight: 700;
+}
+.notify-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
 }
 .notify-ok {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--ok);
-  font-weight: 700;
-  font-size: 14px;
-}
-.stepper {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--line2);
-  border-radius: var(--r-btn);
-  overflow: hidden;
-}
-.stepper button {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink);
-}
-/* La touche prend la couleur, elle ne s'enfonce pas : un ombrage interne au
-   clic remettait du biseau la ou toute la direction l'a banni. */
-.stepper button:hover:not(:disabled) {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.stepper button:active:not(:disabled) {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.stepper span {
-  min-width: 30px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 14px;
-}
-.stepper.big button {
-  width: 46px;
-  height: 46px;
-}
-.stepper.big span {
-  font-size: 16px;
+  font-weight: 600;
 }
 
-.reviews {
-  margin-top: 60px;
-  border-top: 1px solid var(--line);
-  padding-top: 34px;
+.reviews,
+.suggestions {
+  margin-block-start: var(--space-2xl);
 }
-.rev-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 14px;
-  flex-wrap: wrap;
+.suggestions > .muted {
+  max-inline-size: 60ch;
+  margin-block: calc(-1 * var(--space-2xs)) var(--space-s);
 }
-.rev-head h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-}
-.rev-head h2 .mono {
-  font-size: 14px;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-.rev-form {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 18px;
-  margin-bottom: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: flex-start;
-}
-.rev-form textarea {
-  width: 100%;
-  border: 1px solid var(--line2);
-  border-radius: var(--r-sm);
-  padding: 11px 13px;
-  background: var(--paper);
-  outline: none;
-  resize: vertical;
-  line-height: 1.5;
-  color: var(--ink);
-}
-.rev-form textarea:focus {
-  border-color: var(--accent);
-}
-.rev-list {
+
+.review-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--space-xs);
+  max-inline-size: 40rem;
+  margin-block-end: var(--space-m);
+  padding: var(--space-s);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-panel);
+  background: var(--surface);
 }
-.rev {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 16px 18px;
+
+.review-list {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
 }
-.rev-top {
+@media (min-width: 56rem) {
+  .review-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.review {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: var(--space-s);
+  background: var(--surface);
+  outline: 1px solid var(--line);
+}
+.reviews-more {
+  margin-block-start: var(--space-s);
+}
+.review-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-}
-.rev-name {
-  font-weight: 700;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
   gap: 8px;
 }
-.rev-mine {
+.review-author {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  background: var(--ok);
-  color: var(--on-accent);
-  font-size: 10px;
+  gap: 8px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: var(--r-sm);
-  text-transform: uppercase;
 }
-.rev p {
-  font-size: 14px;
+.review-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
 }
-.rev-empty {
-  padding: 14px 0 4px;
-}
-.related {
-  margin-top: 60px;
-  border-top: 1px solid var(--line);
-  padding-top: 34px;
-}
-.related h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
-  margin-bottom: 24px;
-}
-
-/* Suggestions issues des paniers reels (voir /products/{id}/affinites).
- *
- * Meme presentation que les produits associes, une note explicative en plus :
- * une recommandation dont on comprend l'origine se lit autrement qu'une
- * rubrique anonyme, et celle-ci a une origine qui merite d'etre dite. */
-.ensemble-note {
-  font-size: 13px;
+.review-date {
+  font-size: var(--step--1);
   color: var(--muted);
-  max-width: 62ch;
-  margin: -14px 0 22px;
-  line-height: 1.6;
 }

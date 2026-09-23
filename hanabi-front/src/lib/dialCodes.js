@@ -1,9 +1,5 @@
-/** Indicatifs telephoniques proposes a l'inscription.
- *
- * Liste volontairement courte : la boutique ne livre pour l'instant qu'en
- * Europe de l'Ouest francophone et limitrophe. Le champ `code` est un code
- * ISO 3166-1 alpha-2, utilise pour construire l'URL du drapeau.
- */
+/** Indicatifs proposes a l'inscription : zone de livraison de la boutique.
+ *  `code` est le code ISO 3166-1 alpha-2 du pays. */
 export const DIAL_CODES = [
   { code: "FR", dial: "+33", label: "France" },
   { code: "MC", dial: "+377", label: "Monaco" },

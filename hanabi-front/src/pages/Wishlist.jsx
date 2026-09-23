@@ -1,31 +1,28 @@
-/** Favoris de l'utilisateur, conserves en localStorage. */
-import { ArrowLeft, Heart } from "lucide-react";
+/** Favoris, conserves dans le navigateur. */
+import { ArrowLeft } from "lucide-react";
 import { useT } from "../i18n/context.jsx";
 import { ProductCard } from "../components/catalog/ProductCard.jsx";
 
 export function Wishlist({ items, onOpen, onAdd, onWish, onBack, eur }) {
   const t = useT();
   return (
-    <main className="pp">
+    <main id="contenu" className="wrap page">
       <button className="back" onClick={onBack}>
-        <ArrowLeft size={16} /> {t("back")}
+        <ArrowLeft size={18} aria-hidden="true" /> {t("back")}
       </button>
       <div className="page-head">
-        <h1 className="page-h">
-          <Heart size={24} /> {t("favs")}
-        </h1>
-        <span className="mono muted">{t("items", { n: items.length })}</span>
+        <h1 className="page-title">{t("favs")}</h1>
+        <span className="muted">{t("itemsN", { n: items.length })}</span>
       </div>
       {items.length === 0 ? (
-        <div className="state">
-          <Heart size={32} strokeWidth={1.3} />
+        <div className="empty">
           <p>{t("favEmpty")}</p>
-          <button className="btn-primary" onClick={onBack}>
+          <button className="btn btn-primary" onClick={onBack}>
             {t("browse")}
           </button>
         </div>
       ) : (
-        <div className="grid">
+        <ul className="tray">
           {items.map((p) => (
             <ProductCard
               key={p.id}
@@ -37,7 +34,7 @@ export function Wishlist({ items, onOpen, onAdd, onWish, onBack, eur }) {
               eur={eur}
             />
           ))}
-        </div>
+        </ul>
       )}
     </main>
   );
