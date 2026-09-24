@@ -29,8 +29,13 @@ licence. Chaque objet est photographié (photos Unsplash, crédits dans les
 mentions légales) ; un objet sans photo reçoit un blason dessiné en SVG, sur la
 grammaire des kamon. Titres en Shippori Mincho, texte en Manrope.
 
-Panier en tiroir, avec code promo, jauge de livraison offerte, date de livraison
-estimée et total recalculé par le serveur.
+La fiche pose l'objet sur une plaque de vermillon pleine largeur. La photo
+s'agrandit au clic, à la molette, au pincement ou au clavier.
+
+![Fiche produit de la Lampe Torii LED, sur sa plaque de vermillon](docs/fiche.jpg)
+
+Panier en tiroir, avec codes promo applicables d'un clic, jauge de livraison
+offerte, date de livraison estimée et total recalculé par le serveur.
 
 ![Panier ouvert sur la page d'accueil](docs/panier.jpg)
 
@@ -43,8 +48,10 @@ Sur téléphone, la navigation passe dans un menu en tiroir.
 <img src="docs/mobile.jpg" alt="Plateau d'objets et menu en tiroir sur téléphone" width="440">
 
 Le back-office reprend la même charte, en plus dense. L'onglet Entrepôt montre
-les trois couches, la fraîcheur de la dernière construction, chaque table
-d'agrégats avec la question qu'elle traite, et une console SQL en lecture seule.
+les trois couches, la fraîcheur de la dernière construction, les contrôles de
+volume et de fraîcheur, chaque table d'agrégats avec la question qu'elle traite,
+et une console SQL en lecture seule. Capture faite sur un entrepôt réellement
+construit, à partir d'une base remplie comme celle de production.
 
 ![Onglet Entrepôt du back-office](docs/entrepot.jpg)
 
