@@ -47,7 +47,8 @@ def _commande(db_session, produit, qty, numero, jours=1):
     db_session.flush()
     db_session.add(OrderItem(
         order_id=order.id, product_id=produit.id, name=produit.name, art=produit.art,
-        unit_price_cents=produit.price_cents, unit_cost_cents=produit.cost_cents, qty=qty,
+        category=produit.category, unit_price_cents=produit.price_cents,
+        unit_cost_cents=produit.cost_cents, qty=qty,
     ))
     db_session.commit()
 
@@ -103,6 +104,20 @@ class TestMarge:
         assert fiche["revenue_cents"] == 10000
         assert fiche["margin_rate"] == 0.0
         assert fiche["unit_margin_cents"] == 0
+
+
+class TestCategorieFigee:
+    """Un objet reclassé emporte son audience, pas son chiffre d'affaires passé."""
+
+    def test_le_chiffre_passe_reste_dans_l_ancienne_categorie(self, db_session, catalogue):
+        _commande(db_session, catalogue["forte"], qty=1, numero="C1")
+        catalogue["forte"].category = "Luminaires"
+        db_session.commit()
+
+        produits = analytics.catalogue(db_session)
+        par_categorie = {c["category"]: c for c in analytics.categories(db_session, produits)}
+        assert par_categorie["Décoration"]["revenue_cents"] == 10000
+        assert par_categorie["Luminaires"]["revenue_cents"] == 0
 
 
 class TestClassementABC:

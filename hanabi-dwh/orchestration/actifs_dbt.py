@@ -52,7 +52,7 @@ class TraducteurHanabi(DagsterDbtTranslator):
         return couche or super().get_group_name(props)
 
 
-# 101 des 117 assertions deviennent des contrôles d'actifs ; les 16 autres (sources
+# 103 des 120 assertions deviennent des contrôles d'actifs ; les 17 autres (sources
 # et réconciliations entre modèles) restent jouées par `dbt build` sans actif de rattachement.
 TRADUCTEUR = TraducteurHanabi(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)

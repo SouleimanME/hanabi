@@ -153,10 +153,12 @@ class OrderItem(Base):
     # Indexées : auto-jointure de l'analyse de panier, regroupement du palmarès
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), index=True)
-    # Nom, visuel, prix et coût figés à la commande : l'historique et la marge des
-    # mois clos ne bougent pas quand la fiche ou le tarif fournisseur change.
+    # Nom, visuel, catégorie, prix et coût figés à la commande : l'historique et la
+    # marge des mois clos ne bougent pas quand la fiche, son classement ou le tarif
+    # fournisseur change.
     name: Mapped[str] = mapped_column(String(160))
     art: Mapped[str] = mapped_column(Text)
+    category: Mapped[str] = mapped_column(String(40))
     unit_price_cents: Mapped[int] = mapped_column(Integer)
     unit_cost_cents: Mapped[int] = mapped_column(Integer, default=0)
     qty: Mapped[int] = mapped_column(Integer)

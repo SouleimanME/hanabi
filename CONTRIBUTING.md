@@ -125,6 +125,9 @@ puis `DATABASE_URL=postgresql://postgres:hanabi@localhost:5433/hanabi`.
   (`dbt_project.yml`), les tranches d'âge, la fenêtre de 90 jours, la notation RFM
   (`_score_par_rang` et `gold_clients_rfm.sql`). Contrôle : les effectifs des segments
   de `/admin/analytics/segments` et `/admin/warehouse/marts/segments_rfm` sont égaux.
+- Les ventes par catégorie lisent la catégorie figée sur la ligne de commande
+  (`order_items.category`), des deux côtés ; références, audience et stock lisent la
+  catégorie actuelle du produit.
 - Un modèle ajouté dans `hanabi-dwh/models/` s'ajoute aussi à `COUCHES` dans
   `warehouse.py` (un test compare les deux).
 - Les droits de lecture se reposent à chaque construction (`on-run-end`).

@@ -626,9 +626,10 @@ def ensure_demo_dataset(db: Session) -> None:
         lignes_commande.append({
             "order_id": ids_commandes[indice],
             "product_id": product_id,
-            # Nom et prix figés à la commande
+            # Nom, catégorie et prix figés à la commande
             "name": produit.name,
             "art": produit.art,
+            "category": produit.category,
             "unit_price_cents": produit.price_cents,
             "unit_cost_cents": produit.cost_cents,
             "qty": qty,

@@ -53,7 +53,7 @@ def _commande_de(db_session, compte, produit, numero="ATL900001", statut="paid")
     db_session.flush()
     db_session.add(models.OrderItem(
         order_id=commande.id, product_id=produit.id, name=produit.name,
-        art=produit.art, unit_price_cents=produit.price_cents, qty=2,
+        art=produit.art, category=produit.category, unit_price_cents=produit.price_cents, qty=2,
     ))
     db_session.commit()
     return commande

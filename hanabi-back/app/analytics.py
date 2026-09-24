@@ -356,6 +356,7 @@ def _with_abc(lignes: list[dict]) -> list[dict]:
 
 
 def categories(db: Session, produits: list[dict]) -> list[dict]:
+    """Ventes par catégorie figée à l'achat ; audience par catégorie actuelle du produit."""
     vide = {"revenue_cents": 0, "margin_cents": 0, "units": 0, "views": 0}
     ventes = {
         cat: {
@@ -366,15 +367,14 @@ def categories(db: Session, produits: list[dict]) -> list[dict]:
         }
         for cat, units, ca, cout in db.execute(
             select(
-                models.Product.category,
+                models.OrderItem.category,
                 func.sum(models.OrderItem.qty),
                 func.sum(models.OrderItem.qty * models.OrderItem.unit_price_cents),
                 func.sum(models.OrderItem.qty * models.OrderItem.unit_cost_cents),
             )
-            .join(models.OrderItem, models.OrderItem.product_id == models.Product.id)
             .join(models.Order, models.OrderItem.order_id == models.Order.id)
             .where(models.Order.status.in_(REVENUE_STATUSES))
-            .group_by(models.Product.category)
+            .group_by(models.OrderItem.category)
         ).all()
     }
     for produit in produits:

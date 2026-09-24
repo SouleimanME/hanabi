@@ -123,7 +123,9 @@ Données nettoyées, typées, conformées, et règles métier écrites **une foi
 
 - `slv_commandes.est_ca` : la règle du chiffre d'affaires, répétée en
   `status in (…)` dans une quinzaine de requêtes de l'API ;
-- `slv_lignes_commande` : la marge, sur le prix et le coût **figés à l'achat** ;
+- `slv_lignes_commande` : la marge, sur le prix et le coût **figés à l'achat**, et
+  la catégorie figée elle aussi : un objet reclassé ne déplace pas ses ventes
+  passées ;
 - `slv_clients` : âge et tranche d'âge, déduits de l'année de naissance comme dans
   `analytics.py`, pour que les deux histogrammes concordent ;
 - `slv_calendrier_mensuel` : un mois sans commande sort à zéro ;
@@ -131,7 +133,7 @@ Données nettoyées, typées, conformées, et règles métier écrites **une foi
   reporté sur les jours non cotés et les fériés nationaux français et japonais en
   deux colonnes.
 
-Tout est en vues sauf `slv_lignes_commande`, matérialisée en table : sept modèles
+Tout est en vues sauf `slv_lignes_commande`, matérialisée en table : cinq modèles
 gold la lisent.
 
 ### gold : 11 tables
@@ -230,8 +232,8 @@ Ce que le graphe apporte aussi :
 - **Rattrapage par partitions mensuelles.** Relancer un mois se fait depuis
   l'interface ; l'`INSERT … ON CONFLICT` de `ingestion/sources.py` rend l'opération
   sûre. Un mois coûte un appel à la source, contre trente au jour.
-- **Tests attachés aux modèles.** 101 des 117 assertions deviennent des contrôles
-  d'actifs avec historique ; les 16 autres (14 sur des sources, 2 réconciliations
+- **Tests attachés aux modèles.** 103 des 120 assertions deviennent des contrôles
+  d'actifs avec historique ; les 17 autres (14 sur des sources, 3 réconciliations
   entre plusieurs modèles) tournent dans `dbt build`.
 - **Lignage de bout en bout**, depuis les tables de `public`.
 
@@ -248,12 +250,12 @@ Ce qu'il n'apporte pas :
 
 ```
 29 actifs matérialisés
-105 contrôles joués, 0 en échec
-dbt : PASS=145 WARN=0 ERROR=0 SKIP=0
+107 contrôles joués, 0 en échec
+dbt : PASS=148 WARN=0 ERROR=0 SKIP=0
 ```
 
-105 contrôles : 101 assertions dbt et les 4 contrôles de volume et de fraîcheur.
-145 nœuds dbt : 27 modèles, 117 assertions et le crochet qui repose les droits. La
+107 contrôles : 103 assertions dbt et les 4 contrôles de volume et de fraîcheur.
+148 nœuds dbt : 27 modèles, 120 assertions et le crochet qui repose les droits. La
 somme des commandes facturées de `public.orders` et le total de `gold_kpi_mensuel`
 tombent au centime près. Une construction dure une trentaine de secondes sur un
 PostgreSQL local rempli de 20 000 comptes.
@@ -302,7 +304,7 @@ sortis de la fenêtre de rattrapage ont été mal écrits.
 
 L'intégration continue construit l'entrepôt sur un PostgreSQL jetable, rempli par
 l'API avec 20 000 comptes de démonstration, puis le reconstruit : ce second passage
-incrémental doit tenir les mêmes 117 assertions.
+incrémental doit tenir les mêmes 120 assertions.
 
 Le workflow ne fait rien tant que le secret `DWH_DATABASE_URL` n'est pas posé : la
 tâche s'arrête avec une note, sans échec. Ce secret confie une chaîne de connexion
@@ -324,8 +326,8 @@ Dagster ne réimplémente pas dbt : il lance `dbt build` et lit son flux d'évé
 
 ## Tests
 
-`dbt build` joue 117 assertions : unicité, non-nullité, intégrité référentielle,
-valeurs acceptées, intervalles, unicité de combinaisons, deux réconciliations et
+`dbt build` joue 120 assertions : unicité, non-nullité, intégrité référentielle,
+valeurs acceptées, intervalles, unicité de combinaisons, trois réconciliations et
 une équivalence entre construction incrémentale et construction complète.
 
 `macros/tests.sql` définit `intervalle` et `combinaison_unique` au lieu d'ajouter
@@ -340,6 +342,9 @@ lignes sans fausser visiblement les totaux.
 `tests/assert_segments_reconcilient.sql` vérifie que les segments totalisent la
 table des clients, à un écart près : les commandes invitées, que la segmentation
 exclut, et dont le montant doit correspondre exactement.
+`tests/assert_categories_reconcilient.sql` vérifie que les familles totalisent les
+produits. Les deux tables lisent les mêmes lignes, l'une par catégorie figée à
+l'achat, l'autre par produit : une famille perdue ou comptée deux fois s'y voit.
 
 Vérification à la main :
 

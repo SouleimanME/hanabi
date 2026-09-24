@@ -213,7 +213,7 @@ def _commande(db_session, produit, numero: str, adresse: str):
     db_session.flush()
     db_session.add(models.OrderItem(
         order_id=commande.id, product_id=produit.id, name=produit.name,
-        art=produit.art, unit_price_cents=1000, qty=1,
+        art=produit.art, category=produit.category, unit_price_cents=1000, qty=1,
     ))
     db_session.commit()
     return commande

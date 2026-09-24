@@ -134,6 +134,7 @@ def checkout(
             p = db.get(models.Product, line.product_id)
             article = models.OrderItem(
                 order_id=order.id, product_id=p.id, name=p.name, art=p.art,
+                category=p.category,
                 unit_price_cents=line.unit_price_cents,
                 unit_cost_cents=p.cost_cents,
                 qty=line.qty,

@@ -1,7 +1,7 @@
 {{ config(materialized='table') }}
 
 -- Table de faits : une ligne par article, avec commande et produit.
--- Matérialisée en table (sept modèles gold la lisent). Marge sur prix et coût figés à l'achat.
+-- Matérialisée en table (cinq modèles gold la lisent). Marge sur prix et coût figés à l'achat.
 select
     ligne.id                                            as ligne_id,
     ligne.order_id                                      as commande_id,
@@ -17,8 +17,8 @@ select
     commande.code_promo,
 
     produit.name                                        as produit,
-    produit.category                                    as categorie,
-    -- Nom figé à l'achat
+    -- Nom et catégorie figés à l'achat : un objet reclassé ne déplace pas ses ventes passées
+    ligne.category                                      as categorie,
     ligne.name                                          as produit_a_l_achat,
 
     ligne.qty                                           as quantite,

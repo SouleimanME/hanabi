@@ -33,7 +33,8 @@ models:
   - name: slv_lignes_commande
     description: >
       Table de faits centrale. Une ligne par article commande, avec sa marge
-      calculée sur le prix et le coût figés à l'achat.
+      calculée sur le prix et le coût figés à l'achat, et sa catégorie figée elle
+      aussi.
     columns:
       - name: ligne_id
         tests: [unique, not_null]
@@ -44,6 +45,8 @@ models:
               arguments:
                 to: ref('slv_commandes')
                 field: commande_id
+      - name: categorie
+        tests: [not_null]
       - name: quantite
         tests: [not_null]
       - name: ca_cents

@@ -39,10 +39,12 @@ models:
                 field: id
 
   - name: brz_lignes_commande
-    description: Lignes de commande, prix et coût figés à l'achat.
+    description: Lignes de commande, prix, coût et catégorie figés à l'achat.
     columns:
       - name: id
         tests: [unique, not_null]
+      - name: category
+        tests: [not_null]
       - name: order_id
         tests:
           - not_null

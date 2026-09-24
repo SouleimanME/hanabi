@@ -10,7 +10,7 @@ from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import create_engine, select
+from sqlalchemy import column, create_engine, insert, select, table
 from sqlalchemy.orm import Session
 
 from app import models
@@ -179,6 +179,21 @@ ANCIEN_CATALOGUE = [
 PHOTO_DU_MARCHAND = "https://exemple.fr/ma-lampe-lune.jpg"
 CONDENSAT_GENERE = "$2b$12$condensatpartageparlapopulationgenereeZZZZZZZZZZZZZZZZ"
 
+# Lignes de commande telles qu'avant la catégorie figée. Le modèle actuel écrirait
+# toutes ses colonnes, y compris celles qu'une migration ultérieure ajoute.
+LIGNES_AVANT_CATEGORIE = table(
+    "order_items",
+    column("order_id"), column("product_id"), column("name"), column("art"),
+    column("qty"), column("unit_price_cents"), column("unit_cost_cents"),
+)
+
+
+def _ligne_ancienne(db, commande, produit, prix_cents):
+    db.execute(insert(LIGNES_AVANT_CATEGORIE).values(
+        order_id=commande.id, product_id=produit.id, name=produit.name, art=produit.art,
+        qty=1, unit_price_cents=prix_cents, unit_cost_cents=0,
+    ))
+
 
 class TestBasculeVersFigurinesEtDecoration:
     """Le catalogue de démonstration ne garde que figurines et décoration."""
@@ -205,10 +220,7 @@ class TestBasculeVersFigurinesEtDecoration:
             )
             db.add(commande)
             db.flush()
-            db.add(models.OrderItem(
-                order_id=commande.id, product_id=collier.id, name=collier.name,
-                art=collier.art, qty=1, unit_price_cents=1000,
-            ))
+            _ligne_ancienne(db, commande, collier, 1000)
             # Population générée : une commande, un avis et une vue sur le collier
             generes = [
                 models.User(name=f"Généré {i}", email=f"g{i}@exemple.fr", password_hash=CONDENSAT_GENERE)
@@ -222,10 +234,7 @@ class TestBasculeVersFigurinesEtDecoration:
             )
             db.add(achat)
             db.flush()
-            db.add(models.OrderItem(
-                order_id=achat.id, product_id=collier.id, name=collier.name,
-                art=collier.art, qty=1, unit_price_cents=2400,
-            ))
+            _ligne_ancienne(db, achat, collier, 2400)
             db.add(models.Review(
                 product_id=collier.id, user_id=generes[0].id, author_name="Généré G.",
                 rating=5, text="Parfait.", verified=True, approved=True,
@@ -285,6 +294,14 @@ class TestBasculeVersFigurinesEtDecoration:
         collier = bascule.scalar(select(models.Product).where(models.Product.code == "HNB-014"))
         assert (ligne.product_id, ligne.name) == (collier.id, "Collier Maneki-neko")
 
+    def test_les_lignes_passees_prennent_la_categorie_de_leur_produit(self, bascule):
+        """Le collier retiré garde son ancienne famille ; l'historique reporté prend celle du masque."""
+        categories = dict(bascule.execute(
+            select(models.Order.number, models.OrderItem.category)
+            .join(models.Order, models.Order.id == models.OrderItem.order_id)
+        ).all())
+        assert categories == {"HNB-TEST-1": "Compagnons", "HNB-GEN-1": "Décoration"}
+
     def test_une_base_neuve_reste_vide_pour_seed(self, moteur):
         with moteur.begin() as cx:
             command.upgrade(_config(cx), "head")
@@ -318,8 +335,11 @@ class TestBasculeVersFigurinesEtDecoration:
             assert vitrine["HNB-021"].category == "Collection"
             assert vitrine["HNB-021"].art == "torii,#E0452A,#0A0605"
             assert vitrine["HNB-026"].art == PHOTO_DU_MARCHAND
-            ligne = db.scalar(
-                select(models.OrderItem).join(models.Order).where(models.Order.number == "HNB-GEN-1")
-            )
+            # Colonnes nommées : à cette révision, la ligne n'a pas encore de catégorie
+            ligne = db.execute(
+                select(models.OrderItem.product_id, models.OrderItem.name)
+                .join(models.Order, models.Order.id == models.OrderItem.order_id)
+                .where(models.Order.number == "HNB-GEN-1")
+            ).one()
             assert (ligne.product_id, ligne.name) == (vitrine["HNB-014"].id, "Collier Maneki-neko")
             assert db.scalar(select(models.Product).where(models.Product.code == "HNB-061")) is None

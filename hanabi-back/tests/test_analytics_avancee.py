@@ -51,7 +51,7 @@ def acheteurs(db_session, product):
             db_session.flush()
             db_session.add(OrderItem(
                 order_id=order.id, product_id=product.id, name=product.name,
-                art=product.art, unit_price_cents=2000, qty=1,
+                art=product.art, category=product.category, unit_price_cents=2000, qty=1,
             ))
     db_session.commit()
     return crees
@@ -94,7 +94,7 @@ def population(db_session, product):
             db_session.flush()
             db_session.add(OrderItem(
                 order_id=order.id, product_id=product.id, name=product.name,
-                art=product.art, unit_price_cents=montant_cents, qty=1,
+                art=product.art, category=product.category, unit_price_cents=montant_cents, qty=1,
             ))
 
     # Les quatre profils dont les tests connaissent la reponse.
@@ -334,7 +334,7 @@ class TestAffinites:
             for p in (product, expensive_product):
                 db_session.add(OrderItem(
                     order_id=order.id, product_id=p.id, name=p.name,
-                    art=p.art, unit_price_cents=p.price_cents, qty=1,
+                    art=p.art, category=p.category, unit_price_cents=p.price_cents, qty=1,
                 ))
         db_session.commit()
 
@@ -358,7 +358,7 @@ class TestAffinites:
         for p in (product, expensive_product):
             db_session.add(OrderItem(
                 order_id=order.id, product_id=p.id, name=p.name,
-                art=p.art, unit_price_cents=p.price_cents, qty=1,
+                art=p.art, category=p.category, unit_price_cents=p.price_cents, qty=1,
             ))
         db_session.commit()
 
@@ -377,7 +377,7 @@ class TestAffinites:
             for p in (product, expensive_product):
                 db_session.add(OrderItem(
                     order_id=order.id, product_id=p.id, name=p.name,
-                    art=p.art, unit_price_cents=p.price_cents, qty=1,
+                    art=p.art, category=p.category, unit_price_cents=p.price_cents, qty=1,
                 ))
         db_session.commit()
 

@@ -35,10 +35,11 @@ sources:
             tests: [unique, not_null]
       - name: order_items
         description: >
-          Une ligne par article commande. `unit_price_cents` et
-          `unit_cost_cents` y sont figés au moment de la commande : c'est ce qui
+          Une ligne par article commande. `unit_price_cents`, `unit_cost_cents`
+          et `category` y sont figés au moment de la commande : c'est ce qui
           permet de calculer la marge réellement dégagée, et non celle que le
-          tarif du jour laisserait croire.
+          tarif du jour laisserait croire, et de garder les ventes passées dans
+          leur famille quand un objet est reclassé.
         freshness: null
         loaded_at_field: null
         columns:

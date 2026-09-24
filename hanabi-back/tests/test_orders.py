@@ -30,6 +30,12 @@ class TestCheckout:
         assert body["number"].startswith("ATL")
         assert body["status"] == "paid"
 
+    def test_la_ligne_garde_la_categorie_du_produit(self, client, db_session, product):
+        client.post("/orders/checkout", json=checkout_payload(product.id))
+
+        ligne = db_session.query(models.OrderItem).one()
+        assert ligne.category == product.category
+
     def test_le_stock_est_decremente(self, client, db_session, product):
         stock_initial = product.stock
 
