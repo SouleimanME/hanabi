@@ -1546,8 +1546,11 @@ th[aria-sort] .th-sort {
 
 /* --- Entrepôt --- */
 
+/* `minmax(0, 1fr)` : sans borne, la colonne prenait la largeur de la table de
+   résultats (vingt colonnes pour le chiffre quotidien) et la page débordait */
 .wh {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 
