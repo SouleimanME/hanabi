@@ -62,16 +62,40 @@ construit, à partir d'une base remplie comme celle de production.
 ```
 public                 ┐
 tables applicatives    │   bronze            silver             gold
-écrites par l'API      ├→  9 vues        →   7 modèles      →   11 tables
+écrites par l'API      ├→  10 vues       →   8 modèles      →   12 tables
                        │   aucune            règles métier      une par
 externe                │   transformation    écrites une fois   question
-2 sources publiques    ┘                                            ↓
-BCE et jours fériés                                     back-office + boutique
+2 sources publiques    │                                            ↓
+avis lus par un modèle ┘                                back-office + boutique
 ```
 
-27 modèles dbt, 120 tests, déclarés comme un graphe d'actifs Dagster et
+30 modèles dbt, 133 tests, déclarés comme un graphe d'actifs Dagster et
 reconstruits chaque jour. Le détail est dans
 [hanabi-dwh/README.md](hanabi-dwh/README.md).
+
+### Ce que disent les avis
+
+**La note dit qu'un client est déçu, le texte dit de quoi.** Avant dbt, un actif
+Dagster fait lire chaque texte d'avis par un modèle de langue, qui rend les
+aspects nommés et leur ton : « Belle finition, livraison un peu longue » donne
+qualité positive et livraison négative. Neuf thèmes, dans une liste fermée
+(qualité, esthétique, conformité aux photos, taille, livraison, emballage, prix,
+cadeau, service) : l'entrepôt compte des catégories stables, pas du texte libre.
+`gold_themes_avis` donne, par objet et par thème, les mentions, les reproches et
+la note moyenne des avis qui en parlent.
+
+**Un texte n'est lu qu'une fois.** La clé est l'empreinte du texte, que
+PostgreSQL calcule des deux côtés : dix avis identiques font un appel, et une
+exécution quotidienne ne paie que les nouveaux avis. Changer la consigne, c'est
+changer sa version, et tout est relu au passage suivant. Seul le texte part chez
+le fournisseur, ni l'auteur ni l'objet. Sans fournisseur, la table reste vide et
+l'entrepôt se construit ; une panne n'arrête que l'analyse, reprise le lendemain.
+
+**Mesuré avant d'être compté.** 62 avis étiquetés à la main avant la consigne :
+tous les textes de la base, plus des pièges (négation, ironie, anglais, espagnol,
+tentative d'injection). Un bon thème au mauvais ton compte faux. Les étiquettes
+défendables mais non retenues sont tolérées, ni justes ni fausses. Le seuil, F1 à
+0,80, est fixé avant la première mesure.
 
 **Bronze en vues, colonnes énumérées.** Rien n'est dupliqué, et une colonne
 ajoutée à `users` n'entre dans l'entrepôt que si on l'y fait entrer. Le condensat
@@ -93,7 +117,7 @@ luminaires, dans la décoration.
 lieu de disparaître de la courbe.
 
 `dbt build` construit et teste dans l'ordre du graphe : un test en échec bloque
-l'aval. Les 120 assertions couvrent unicité, non-nullité, intégrité
+l'aval. Les 133 assertions couvrent unicité, non-nullité, intégrité
 référentielle, valeurs acceptées et intervalles. Trois sont des réconciliations :
 trois calculs du chiffre d'affaires doivent donner le même nombre, la table des
 segments doit totaliser celle des clients, et les familles celle des produits.
@@ -453,7 +477,8 @@ aux paires au-dessus de 1.
 
 ### Orchestration
 
-Deux extractions Python et 27 modèles dbt forment un seul graphe Dagster. Avant,
+Deux extractions Python, l'analyse des avis et 30 modèles dbt forment un seul
+graphe Dagster. Avant,
 les étapes étaient listées à la main dans le workflow et l'extraction des taux
 n'y figurait pas : bronze lisait une table que rien n'alimentait. Désormais
 `brz_taux_change` dépend de l'extraction et l'ordre se déduit du graphe. Un échec
@@ -473,7 +498,7 @@ source.
 
 | Domaine | Réalisations |
 | --- | --- |
-| Données | Médaillon dbt sur PostgreSQL, 27 modèles, 120 tests, orchestration Dagster par partitions, console SQL bridée, questions en français traduites en SQL sur gold |
+| Données | Médaillon dbt sur PostgreSQL, 30 modèles, 133 tests, orchestration Dagster par partitions, avis lus par thème et par ton, console SQL bridée, questions en français traduites en SQL sur gold |
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
 | Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle, conseiller cadeau qui ne propose que des objets en stock et dans le budget |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
@@ -482,7 +507,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 612 tests API sur SQLite et PostgreSQL, 272 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 617 tests API sur SQLite et PostgreSQL, 272 tests d'interface, 18 parcours e2e, 133 assertions dbt, 35 tests de l'orchestration, budget de poids |
 
 ---
 
@@ -546,7 +571,7 @@ cd hanabi-dwh && .venv/Scripts/dagster dev
 
 Un client d'essai est créé au démarrage (`demo@hanabi.fr` / `demo1234`).
 L'administrateur vient de `ADMIN_EMAIL` et `ADMIN_PASSWORD` ; sans ces variables,
-aucun n'est créé.
+aucun n'est créé. Le mot de passe est repris de la variable à chaque démarrage.
 
 ---
 
@@ -577,6 +602,12 @@ Celle des questions à l'entrepôt demande en plus un entrepôt construit
 
 ```bash
 cd hanabi-back && .venv/Scripts/python tests/entrepot/evaluer.py
+```
+
+Celle des avis n'a besoin d'aucune base :
+
+```bash
+cd hanabi-dwh && .venv/Scripts/python tests/avis/evaluer.py
 ```
 
 ```bash

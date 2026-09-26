@@ -110,6 +110,16 @@ MARTS: tuple[Mart, ...] = (
         tri="ca_cents desc",
     ),
     Mart(
+        cle="themes_avis",
+        table="gold_themes_avis",
+        titre="Ce que disent les avis",
+        question=(
+            "De quoi parlent les avis, objet par objet : livraison, finition, taille, "
+            "et en bien ou en mal ?"
+        ),
+        tri="negatives desc, mentions desc",
+    ),
+    Mart(
         cle="affinites",
         table="gold_affinites_produits",
         titre="Affinités entre produits",
@@ -132,7 +142,7 @@ COUCHES = (
         "modeles": [
             "brz_clients", "brz_produits", "brz_commandes", "brz_lignes_commande",
             "brz_vues_produit", "brz_avis", "brz_promos",
-            "brz_taux_change", "brz_jours_feries",
+            "brz_taux_change", "brz_jours_feries", "brz_analyses_avis",
         ],
     },
     {
@@ -142,7 +152,7 @@ COUCHES = (
         "materialisation": "vues, sauf la table de faits",
         "modeles": [
             "slv_clients", "slv_commandes", "slv_lignes_commande",
-            "slv_vues_produit", "slv_avis", "slv_calendrier_mensuel",
+            "slv_vues_produit", "slv_avis", "slv_themes_avis", "slv_calendrier_mensuel",
             "slv_calendrier_quotidien",
         ],
     },
@@ -202,6 +212,7 @@ _MOTS_AFFICHES = {
     "cout": "coût", "cumulee": "cumulée", "decalage": "décalage", "derniere": "dernière",
     "eur": "EUR", "expire": "expiré", "ferie": "férié", "feries": "fériés",
     "frequence": "fréquence", "id": "ID", "jpy": "JPY", "kpi": "KPI",
+    "negatif": "négatif", "negatives": "négatives", "theme": "thème",
     "premiere": "première", "recence": "récence", "reference": "référence",
     "references": "références", "retention": "rétention",
     "rfm": "RFM", "unites": "unités",

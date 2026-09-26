@@ -89,3 +89,12 @@ sources:
         freshness:
           warn_after: { count: 45, period: day }
           error_after: { count: 120, period: day }
+      - name: analyses_avis
+        description: >
+          Écrite par `ingestion/avis.py` : pour chaque texte d'avis distinct, repéré
+          par `md5(btrim(text))`, les couples (thème, ton) lus par un modèle de
+          langue, en JSON. Vide tant qu'aucun fournisseur n'est configuré. Pas de
+          fraîcheur : une boutique sans nouvel avis n'est pas en panne.
+        columns:
+          - name: empreinte
+            tests: [unique, not_null]

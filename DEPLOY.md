@@ -163,7 +163,11 @@ retard et se désactivent après soixante jours sans activité sur le dépôt.
    | `DATABASE_URL` | la chaîne de connexion **directe** copiée à l'étape 2 |
    | `CORS_ORIGINS` | laisser vide pour l'instant (étape 5) |
    | `ADMIN_EMAIL` | l'adresse qui aura accès au back-office |
-   | `ADMIN_PASSWORD` | au moins 10 caractères, ni courant ni répétitif, sans suite de touches |
+   | `ADMIN_PASSWORD` | au moins 10 caractères, ni courant ni répétitif, sans suite de touches, sans le début de l'adresse |
+
+   `ADMIN_PASSWORD` fait foi à chaque démarrage : le changer ici puis redéployer
+   réinitialise le mot de passe de l'administrateur et ferme ses sessions. Un
+   refus s'affiche dans les journaux (« ADMIN_PASSWORD refusé »), avec sa raison.
 
    `SECRET_KEY` est générée par Render : rien à saisir, et elle ne transite
    jamais par le dépôt.
@@ -218,6 +222,14 @@ fournisseur, avec leurs propres plafonds du jour : 150 pour le back-office
 des tables gold et les valeurs de leurs colonnes de texte courtes (segments,
 catégories, noms de produits, codes promo) ; jamais le résultat d'une requête,
 qui reste chez Hanabi.
+
+L'entrepôt fait lire les textes d'avis par le même fournisseur, depuis GitHub
+Actions et non depuis Render. Les trois variables s'y ajoutent donc aussi, en
+secrets du dépôt (Settings, Secrets and variables, Actions), sous les mêmes noms
+et avec les mêmes valeurs : `REDACTION_URL`, `REDACTION_CLE`, `REDACTION_MODELE`.
+Le fournisseur reçoit le texte de chaque avis approuvé, une seule fois, sans
+l'auteur ni l'objet. 400 textes au plus par construction ; ensuite, seuls les
+nouveaux avis. Sans ces secrets, l'entrepôt se construit sans les thèmes.
 
 ### Ce qu'implique l'offre gratuite de Render
 

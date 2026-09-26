@@ -88,13 +88,18 @@ jobs:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
         run: python dwh.py source freshness
 
-      # Deux extractions puis les 27 modèles construits et testés dans l'ordre du
-      # graphe. La partition du mois en cours rattrape les cotations manquantes.
-      # Reconstruction complète seulement à la demande (lancement manuel, case cochée)
+      # Deux extractions, l'analyse des nouveaux avis, puis les 30 modèles construits
+      # et testés dans l'ordre du graphe. La partition du mois en cours rattrape les
+      # cotations manquantes. Reconstruction complète seulement à la demande
+      # (lancement manuel, case cochée). Sans les secrets REDACTION_*, les avis ne
+      # sont pas analysés et le reste se construit.
       - name: Materialiser le graphe
         if: steps.garde.outputs.configure == 'true'
         env:
           DWH_DATABASE_URL: ${{ secrets.DWH_DATABASE_URL }}
+          REDACTION_URL: ${{ secrets.REDACTION_URL }}
+          REDACTION_CLE: ${{ secrets.REDACTION_CLE }}
+          REDACTION_MODELE: ${{ secrets.REDACTION_MODELE }}
           RECONSTRUCTION_COMPLETE: ${{ inputs.reconstruction_complete == true }}
         run: |
           config='{}'

@@ -5,6 +5,7 @@
 -- depends_on: {{ ref('gold_performance_produit') }}
 -- depends_on: {{ ref('gold_clients_rfm') }}
 -- depends_on: {{ ref('gold_cohortes_retention') }}
+-- depends_on: {{ ref('gold_themes_avis') }}
 select
     current_timestamp                       as construit_le,
     '{{ invocation_id }}'                   as invocation_id,

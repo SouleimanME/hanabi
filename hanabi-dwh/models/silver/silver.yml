@@ -68,6 +68,31 @@ models:
       - name: note
         tests: [not_null]
 
+  - name: slv_themes_avis
+    description: >
+      Une ligne par avis et par thème relevé dans son texte, avec le ton. Les
+      thèmes viennent d'une liste fermée, écrite dans `ingestion/avis.py`.
+    columns:
+      - name: avis_id
+        tests: [not_null]
+      - name: theme
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["qualite", "esthetique", "conformite", "taille", "livraison",
+                         "emballage", "prix", "cadeau", "service"]
+      - name: ton
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["positif", "negatif"]
+    tests:
+      - combinaison_unique:
+          arguments:
+            colonnes: [avis_id, theme]
+
   - name: slv_calendrier_mensuel
     description: >
       Suite continue des mois couverts par l'activité. Garantit qu'un mois sans

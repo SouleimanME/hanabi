@@ -139,6 +139,35 @@ models:
           arguments:
             colonnes: [ville, tranche_age, civilite]
 
+  - name: gold_themes_avis
+    description: >
+      Une ligne par référence et par thème d'avis : mentions, positives,
+      négatives, part des avis analysés qui en parlent, note moyenne de ces avis.
+      Dit de quoi se plaignent les clients, là où la note dit seulement qu'ils se
+      plaignent.
+    columns:
+      - name: theme
+        tests: [not_null]
+      - name: mentions
+        tests: [not_null]
+      - name: taux_negatif
+        tests:
+          - intervalle:
+              arguments:
+                mini: 0
+                maxi: 1
+      # Un thème ne se compte qu'une fois par avis : jamais plus de mentions que d'avis
+      - name: part_des_avis
+        tests:
+          - intervalle:
+              arguments:
+                mini: 0
+                maxi: 1
+    tests:
+      - combinaison_unique:
+          arguments:
+            colonnes: [produit_id, theme]
+
   - name: gold_execution
     description: >
       Horodatage de la dernière construction. Le back-office s'en sert pour

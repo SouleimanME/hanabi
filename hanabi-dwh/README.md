@@ -101,10 +101,10 @@ cd hanabi-dwh && .venv/Scripts/python dwh.py run-operation accorde_lecture
 
 ## Les trois couches
 
-### bronze : 9 vues
+### bronze : 10 vues
 
-Tables de l'application sous une forme stable, plus les deux sources externes du
-schéma `externe`. Aucune donnée recopiée : `public` sert de zone d'atterrissage.
+Tables de l'application sous une forme stable, plus les trois sources du schéma
+`externe` : taux de change, jours fériés et avis analysés. Aucune donnée recopiée : `public` sert de zone d'atterrissage.
 
 Restent dehors :
 
@@ -117,7 +117,7 @@ Restent dehors :
 Les colonnes sont énumérées : une colonne ajoutée à `users` n'entre dans
 l'entrepôt que si on l'ajoute ici.
 
-### silver : 7 modèles
+### silver : 8 modèles
 
 Données nettoyées, typées, conformées, et règles métier écrites **une fois** :
 
@@ -128,6 +128,8 @@ Données nettoyées, typées, conformées, et règles métier écrites **une foi
   passées ;
 - `slv_clients` : âge et tranche d'âge, déduits de l'année de naissance comme dans
   `analytics.py`, pour que les deux histogrammes concordent ;
+- `slv_themes_avis` : une ligne par avis et par thème relevé, rejointe au texte
+  par la même empreinte que l'ingestion ;
 - `slv_calendrier_mensuel` : un mois sans commande sort à zéro ;
 - `slv_calendrier_quotidien` : même principe au jour, avec le taux de change
   reporté sur les jours non cotés et les fériés nationaux français et japonais en
@@ -136,7 +138,7 @@ Données nettoyées, typées, conformées, et règles métier écrites **une foi
 Tout est en vues sauf `slv_lignes_commande`, matérialisée en table : cinq modèles
 gold la lisent.
 
-### gold : 11 tables
+### gold : 12 tables
 
 | Table | Question |
 | --- | --- |
@@ -150,6 +152,7 @@ gold la lisent.
 | `gold_demographie_clients` | Ville, âge, civilité : quels profils achètent, et pour combien ? |
 | `gold_promotions` | Quels codes font entrer du chiffre, et lesquels n'ont jamais servi ? |
 | `gold_affinites_produits` | Quels articles s'achètent ensemble plus souvent que le hasard ? |
+| `gold_themes_avis` | De quoi parlent les avis, objet par objet, et en bien ou en mal ? |
 | `gold_execution` | De quand datent ces chiffres ? |
 
 ### La notation RFM
@@ -209,7 +212,8 @@ année de naissance), trop proche d'une personne pour un accès ouvert à tous.
 ## Orchestration
 
 La chaîne est un **graphe d'actifs Dagster** (`orchestration/`) : deux extractions
-Python et 27 modèles dbt, de la table écrite par l'API jusqu'à l'agrégat.
+Python, l'analyse des avis et 30 modèles dbt, de la table écrite par l'API jusqu'à
+l'agrégat.
 
 ```bash
 cd hanabi-dwh && .venv/Scripts/dagster dev
@@ -232,8 +236,8 @@ Ce que le graphe apporte aussi :
 - **Rattrapage par partitions mensuelles.** Relancer un mois se fait depuis
   l'interface ; l'`INSERT … ON CONFLICT` de `ingestion/sources.py` rend l'opération
   sûre. Un mois coûte un appel à la source, contre trente au jour.
-- **Tests attachés aux modèles.** 103 des 120 assertions deviennent des contrôles
-  d'actifs avec historique ; les 17 autres (14 sur des sources, 3 réconciliations
+- **Tests attachés aux modèles.** 114 des 133 assertions deviennent des contrôles
+  d'actifs avec historique ; les 19 autres (16 sur des sources, 3 réconciliations
   entre plusieurs modèles) tournent dans `dbt build`.
 - **Lignage de bout en bout**, depuis les tables de `public`.
 
@@ -242,7 +246,7 @@ Ce qu'il n'apporte pas :
 - **La planification.** Sans daemon hébergé, le calendrier de
   `orchestration/planification.py` ne tourne que sous `dagster dev`. En ligne,
   `.github/workflows/entrepot.yml` déclenche à 5 h UTC et appelle le graphe.
-- **De la vitesse.** 27 modèles, une minute de construction.
+- **De la vitesse.** 30 modèles, une minute de construction.
 - **La légèreté.** Une soixantaine de paquets, et `dbt-core` ramené à 1.11, borne
   haute de `dagster-dbt`.
 
@@ -258,7 +262,36 @@ dbt : PASS=148 WARN=0 ERROR=0 SKIP=0
 148 nœuds dbt : 27 modèles, 120 assertions et le crochet qui repose les droits. La
 somme des commandes facturées de `public.orders` et le total de `gold_kpi_mensuel`
 tombent au centime près. Une construction dure une trentaine de secondes sur un
-PostgreSQL local rempli de 20 000 comptes.
+PostgreSQL local rempli de 20 000 comptes. Mesure prise avant l'analyse des avis :
+le graphe compte désormais 33 actifs, 118 contrôles et 164 nœuds dbt.
+
+### Les avis analysés
+
+`orchestration/actifs_avis.py` matérialise `externe/analyses_avis` entre
+`public/reviews` et `brz_analyses_avis`. Pour chaque texte d'avis approuvé jamais
+lu avec la consigne actuelle, un modèle de langue rend les aspects nommés et leur
+ton, dans une liste fermée de neuf thèmes écrite dans `ingestion/avis.py`.
+
+- **Un appel pour vingt textes**, une pause d'une seconde entre deux appels, 400
+  textes au plus par exécution : la facture reste bornée même si la table est
+  vidée.
+- **Clé : `md5(btrim(text))`**, calculée par PostgreSQL à l'ingestion comme dans
+  silver. Un texte porté par dix avis est lu une fois et compté dix fois.
+- **`VERSION`** accompagne chaque ligne. Changer la consigne ou les thèmes sans la
+  changer laisserait cohabiter deux lectures ; la changer fait tout relire.
+- **Seul le texte part**, ni l'auteur ni l'objet.
+- **Sans fournisseur** (`REDACTION_URL`, `REDACTION_CLE`, `REDACTION_MODELE`
+  absentes), la table est créée vide et le graphe continue. Une panne arrête
+  l'analyse sans arrêter l'entrepôt : ce qui est lu est gardé, le reste attend le
+  passage suivant. En ligne, ces variables sont des secrets GitHub du dépôt.
+
+L'évaluation compare les réponses à 62 avis étiquetés à la main
+(`tests/avis/references.json`) : les textes de la base et des pièges. Elle
+n'a besoin que des trois variables :
+
+```bash
+cd hanabi-dwh && .venv/Scripts/python tests/avis/evaluer.py
+```
 
 ### Contrôles de volume et de fraîcheur
 
@@ -294,7 +327,7 @@ cd hanabi-dwh && .venv/Scripts/python -m unittest discover -s tests/orchestratio
 ### Le déclenchement
 
 `.github/workflows/entrepot.yml` tourne chaque jour à 5 h UTC et à la demande. Il
-compile le projet, joue `dbt source freshness` (non bloquant) et matérialise les 29
+compile le projet, joue `dbt source freshness` (non bloquant) et matérialise les 33
 actifs sur la partition du mois en cours. `manifest.json` et `run_results.json` sont
 conservés 30 jours.
 
@@ -304,7 +337,7 @@ sortis de la fenêtre de rattrapage ont été mal écrits.
 
 L'intégration continue construit l'entrepôt sur un PostgreSQL jetable, rempli par
 l'API avec 20 000 comptes de démonstration, puis le reconstruit : ce second passage
-incrémental doit tenir les mêmes 120 assertions.
+incrémental doit tenir les mêmes 133 assertions.
 
 Le workflow ne fait rien tant que le secret `DWH_DATABASE_URL` n'est pas posé : la
 tâche s'arrête avec une note, sans échec. Ce secret confie une chaîne de connexion
@@ -326,7 +359,7 @@ Dagster ne réimplémente pas dbt : il lance `dbt build` et lit son flux d'évé
 
 ## Tests
 
-`dbt build` joue 120 assertions : unicité, non-nullité, intégrité référentielle,
+`dbt build` joue 133 assertions : unicité, non-nullité, intégrité référentielle,
 valeurs acceptées, intervalles, unicité de combinaisons, trois réconciliations et
 une équivalence entre construction incrémentale et construction complète.
 

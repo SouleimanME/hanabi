@@ -89,10 +89,17 @@ AGENT = "hanabi-dwh/1.0 (+https://github.com/SouleimanME/hanabi)"
 
 
 def ouvre_base():
-    """Connexion en autocommit ; le DDL `if not exists` rend un premier chargement autonome."""
+    """Connexion en autocommit ; le DDL `if not exists` rend un premier chargement autonome.
+
+    La table des avis analysés est créée ici aussi : dbt la lit même quand
+    aucun fournisseur ne l'a remplie.
+    """
+    from ingestion.avis import DDL as DDL_AVIS
+
     cx = psycopg.connect(url_base(), autocommit=True)
     with cx.cursor() as c:
         c.execute(DDL)
+        c.execute(DDL_AVIS)
     return cx
 
 

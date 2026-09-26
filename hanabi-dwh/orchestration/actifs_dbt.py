@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Les 27 modèles dbt exposés comme actifs Dagster.
+"""Les 30 modèles dbt exposés comme actifs Dagster.
 
 Dagster lance `dbt build` et lit son flux d'événements : le graphe montre les
 modèles réels, leurs durées et leurs tests.
@@ -52,7 +52,7 @@ class TraducteurHanabi(DagsterDbtTranslator):
         return couche or super().get_group_name(props)
 
 
-# 103 des 120 assertions deviennent des contrôles d'actifs ; les 17 autres (sources
+# 114 des 133 assertions deviennent des contrôles d'actifs ; les 19 autres (sources
 # et réconciliations entre modèles) restent jouées par `dbt build` sans actif de rattachement.
 TRADUCTEUR = TraducteurHanabi(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)

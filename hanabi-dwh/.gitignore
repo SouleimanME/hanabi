@@ -9,3 +9,5 @@ logs/
 # lui donne. Dans les deux cas c'est un etat local, pas du code.
 .dagster/
 .tmp_dagster_home_*/
+# Résultats des évaluations contre un fournisseur
+var/
