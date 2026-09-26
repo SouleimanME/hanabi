@@ -1,8 +1,11 @@
 """Provisionnement du compte administrateur, et cloisonnement du compte demo."""
+from datetime import datetime, timezone
+
 import pytest
 
 from app.config import settings
 from app.models import User
+from app.security import verify_password
 from app.seed import ensure_admin, seed
 
 BON_MOT_DE_PASSE = "Tr3s-Solide!2026"
@@ -138,3 +141,47 @@ class TestProvisionnement:
         ensure_admin(db_session)
 
         assert db_session.query(User).filter_by(is_admin=True).count() == 0
+
+
+class TestMotDePasseQuiFaitFoi:
+    """ADMIN_PASSWORD, changé sur l'hébergeur, réinitialise le compte au démarrage."""
+
+    def test_un_nouveau_mot_de_passe_remplace_l_ancien(self, db_session, admin_configure):
+        admin_configure()
+        ensure_admin(db_session)
+        admin_configure(password="Autre-Secret!2027")
+
+        ensure_admin(db_session)
+
+        admin = db_session.query(User).filter_by(email="patron@hanabi.fr").one()
+        assert verify_password("Autre-Secret!2027", admin.password_hash)
+        assert not verify_password(BON_MOT_DE_PASSE, admin.password_hash)
+        # Les sessions ouvertes avec l'ancien mot de passe tombent
+        assert admin.token_version == 1
+
+    def test_le_meme_mot_de_passe_ne_ferme_aucune_session(self, db_session, admin_configure):
+        admin_configure()
+        ensure_admin(db_session)
+        ensure_admin(db_session)
+
+        assert db_session.query(User).filter_by(email="patron@hanabi.fr").one().token_version == 0
+
+    def test_le_back_office_de_demonstration_n_est_pas_un_administrateur(
+        self, db_session, admin_configure
+    ):
+        admin_configure(email="hanabi@atelier.fr")
+
+        ensure_admin(db_session)
+
+        assert db_session.query(User).filter_by(email="hanabi@atelier.fr").count() == 0
+
+    def test_un_compte_efface_n_est_pas_ranime(self, db_session, admin_configure, user_factory):
+        compte, _ = user_factory(email="patron@hanabi.fr", is_admin=False)
+        compte.anonymise_le = datetime.now(timezone.utc)
+        db_session.commit()
+        admin_configure()
+
+        ensure_admin(db_session)
+
+        db_session.refresh(compte)
+        assert compte.is_admin is False

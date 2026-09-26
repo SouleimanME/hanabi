@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from . import models
 from .config import settings
 from .passwords import validate_password
-from .security import hash_password
+from .security import hash_password, verify_password
 from .translations import PRODUCT_I18N
 from .usages import USAGES
 
@@ -202,9 +202,11 @@ def ensure_public_admin(db: Session) -> None:
 
 
 def ensure_admin(db: Session) -> None:
-    """Crée ou promeut l'administrateur décrit par l'environnement. Idempotente.
+    """Crée, promeut ou remet à niveau l'administrateur décrit par l'environnement.
 
-    Sans ADMIN_EMAIL ni ADMIN_PASSWORD, aucun administrateur n'est créé.
+    ADMIN_PASSWORD fait foi à chaque démarrage : le changer sur l'hébergeur
+    réinitialise le mot de passe et ferme les sessions ouvertes. Sans ADMIN_EMAIL
+    ni ADMIN_PASSWORD, aucun administrateur n'est créé.
     """
     _demote_public_demo(db)
 
@@ -217,17 +219,29 @@ def ensure_admin(db: Session) -> None:
 
     email = settings.ADMIN_EMAIL.strip().lower()
 
+    if email == DEMO_ADMIN_EMAIL:
+        log.error("ADMIN_EMAIL désigne le back-office de démonstration, en lecture seule. "
+                  "Aucun administrateur créé.")
+        return
+
     problem = validate_password(settings.ADMIN_PASSWORD, email=email)
     if problem:
         log.error("ADMIN_PASSWORD refusé : %s Aucun administrateur créé.", problem)
         return
 
     existing = db.query(models.User).filter(models.User.email == email).first()
+    if existing and existing.anonymise_le is not None:
+        log.error("ADMIN_EMAIL désigne un compte effacé : choisir une autre adresse.")
+        return
     if existing:
         if not existing.is_admin:
             existing.is_admin = True
-            db.commit()
             log.warning("Compte existant promu administrateur : %s", email)
+        if not verify_password(settings.ADMIN_PASSWORD, existing.password_hash):
+            existing.password_hash = hash_password(settings.ADMIN_PASSWORD)
+            existing.token_version = int(existing.token_version or 0) + 1
+            log.warning("Mot de passe administrateur repris de ADMIN_PASSWORD : %s", email)
+        db.commit()
         return
 
     db.add(models.User(
