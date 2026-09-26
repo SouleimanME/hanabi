@@ -41,8 +41,9 @@ class Fournisseur:
         return {"choices": [{"message": {"content": contenu}}]}
 
 
-def _http(code):
-    return urllib.error.HTTPError("https://x", code, "refus", {}, io.BytesIO(b""))
+def _http(code, retry_after=None):
+    entetes = {"Retry-After": retry_after} if retry_after else {}
+    return urllib.error.HTTPError("https://x", code, "refus", entetes, io.BytesIO(b""))
 
 
 @pytest.fixture(autouse=True)
@@ -50,6 +51,14 @@ def configure(monkeypatch):
     monkeypatch.setattr(settings, "REDACTION_URL", "https://fournisseur.example/v1")
     monkeypatch.setattr(settings, "REDACTION_CLE", "cle-de-test")
     monkeypatch.setattr(settings, "REDACTION_MODELE", "modele-de-test")
+
+
+@pytest.fixture(autouse=True)
+def attentes(monkeypatch):
+    """Les pauses demandées par le fournisseur, notées au lieu d'être faites."""
+    faites = []
+    monkeypatch.setattr("app.fournisseur.dormir", faites.append)
+    return faites
 
 
 @pytest.fixture
@@ -185,7 +194,8 @@ def test_sans_photo_la_demande_le_dit(client, admin, fournisseur):
 
 @pytest.mark.parametrize("erreur, statut, mot", [
     (_http(401), 503, "clé"),
-    (_http(429), 503, "saturé"),
+    # Un délai trop long pour faire patienter : on le dit tout de suite
+    (_http(429, "30"), 503, "saturé"),
     (_http(500), 502, "500"),
     (urllib.error.URLError("hors ligne"), 504, "ne répond pas"),
 ])
@@ -194,6 +204,20 @@ def test_une_panne_du_fournisseur_s_explique(client, admin, fournisseur, erreur,
     reponse = _demander(client, admin)
     assert reponse.status_code == statut
     assert mot in reponse.json()["detail"]
+
+
+def test_un_refus_pour_debit_est_retente_apres_le_delai(client, admin, fournisseur, attentes):
+    faux = fournisseur(_http(429, "1"), VALIDE)
+    assert _demander(client, admin).status_code == 200
+    assert attentes == [1.0]
+    assert len(faux.recus) == 2
+
+
+def test_deux_refus_pour_debit_font_une_erreur_franche(client, admin, fournisseur):
+    fournisseur(_http(429), _http(429))
+    reponse = _demander(client, admin)
+    assert reponse.status_code == 503
+    assert "saturé" in reponse.json()["detail"]
 
 
 def test_non_configure_l_assistant_est_absent(client, admin, monkeypatch):

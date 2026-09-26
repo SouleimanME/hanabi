@@ -6,6 +6,7 @@ completions » convient (REDACTION_URL, REDACTION_CLE, REDACTION_MODELE). Aucun
 n'est nommé dans le code.
 """
 import json
+import time
 import urllib.error
 import urllib.request
 
@@ -48,6 +49,31 @@ def _envoyer(corps: dict) -> dict:
 
 transport = _envoyer
 
+# Au-delà, mieux vaut dire au visiteur de réessayer que le faire attendre
+ATTENTE_MAX_SECONDES = 10.0
+dormir = time.sleep
+
+
+def _envoyer_avec_patience(corps: dict) -> dict:
+    """Un refus pour débit (429) est retenté une fois, après le délai demandé.
+
+    Les offres d'entrée de gamme plafonnent à quelques requêtes par minute :
+    deux visiteurs en même temps ne doivent pas faire une erreur.
+    """
+    try:
+        return transport(corps)
+    except urllib.error.HTTPError as e:
+        if e.code != 429:
+            raise
+        try:
+            attente = float(e.headers.get("Retry-After", 2)) if e.headers else 2.0
+        except (TypeError, ValueError):
+            attente = 2.0
+        if attente > ATTENTE_MAX_SECONDES:
+            raise
+        dormir(max(attente, 0.5))
+        return transport(corps)
+
 
 def appeler(historique: list[dict], avec_image: bool = False, max_tokens: int = 2000) -> str:
     """Le texte de la réponse, ou une ErreurFournisseur qui dit quoi faire."""
@@ -59,7 +85,7 @@ def appeler(historique: list[dict], avec_image: bool = False, max_tokens: int = 
         "max_tokens": max_tokens,
     }
     try:
-        reponse = transport(corps)
+        reponse = _envoyer_avec_patience(corps)
     except urllib.error.HTTPError as e:
         if e.code in (400, 413, 415, 422) and avec_image:
             raise ImageRefusee from e

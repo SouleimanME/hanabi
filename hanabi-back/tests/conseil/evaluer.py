@@ -12,6 +12,7 @@ pas ici : le serveur les garantit avant d'appeler le modèle (voir
 test_conseil_banc.py).
 """
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -29,6 +30,8 @@ from app.seed import seed  # noqa: E402
 
 DEMANDES = json.loads((Path(__file__).parent / "demandes.json").read_text(encoding="utf-8"))["demandes"]
 SORTIE = RACINE / "var" / "evaluation-conseil.json"
+# Entre deux demandes : les offres d'entrée de gamme plafonnent à 20 000 jetons par minute
+PAUSE = float(os.environ.get("EVAL_PAUSE", "10"))
 
 
 def main() -> None:
@@ -42,7 +45,9 @@ def main() -> None:
 
     lignes, premier, un_des, vides_justes, echecs, durees = [], 0, 0, 0, 0, []
     avec_objets = [d for d in DEMANDES if d["acceptables"]]
-    for d in DEMANDES:
+    for i, d in enumerate(DEMANDES):
+        if i:
+            time.sleep(PAUSE)
         debut = time.monotonic()
         try:
             resultat = conseil.conseiller(db, d["demande"], d["lang"], encodeur)

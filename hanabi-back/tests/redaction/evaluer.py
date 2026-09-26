@@ -16,8 +16,10 @@ Deux mesures :
    fiches des objets à venir.
 """
 import json
+import os
 import re
 import sys
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -32,6 +34,8 @@ from app.usages import USAGES  # noqa: E402
 from recherche.banc import SERIES, charger, juger  # noqa: E402
 
 SORTIE = RACINE / "var" / "evaluation-redaction.json"
+# Entre deux fiches : une photo pèse lourd dans un plafond de 20 000 jetons par minute
+PAUSE = float(os.environ.get("EVAL_PAUSE", "10"))
 
 
 def _nombres(texte: str) -> set[str]:
@@ -84,6 +88,8 @@ def main() -> None:
 
     a_la_main, par_l_assistant, rapport = [], [], []
     for i, (code, nom, categorie, accroche, prix, *_ ) in enumerate(PRODUCTS):
+        if i:
+            time.sleep(PAUSE)
         a_la_main.append(_produit(i, code, nom, categorie, accroche, prix, USAGES[code], PRODUCT_I18N[code]))
         demande = redaction.Demande(name=nom, category=categorie, notes=accroche, image=PHOTOS[code])
         try:
