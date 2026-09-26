@@ -1,4 +1,4 @@
-﻿# Mise en ligne
+# Mise en ligne
 
 Objectif : une URL publique, gratuite, consultable depuis n'importe quel
 appareil. Compter une trentaine de minutes la première fois.
@@ -207,10 +207,9 @@ l'évaluation une fois avec ces variables (voir le README).
 Le conseiller cadeau, public, envoie au même fournisseur le texte de la demande
 du visiteur, avec les fiches des objets candidats. Son plafond du jour est à part
 (`CONSEIL_PLAFOND_JOUR`, 300 par défaut), en plus de vingt demandes par jour et
-par adresse IP. Avant de l'ouvrir, compléter dans la politique de
-confidentialité (`hanabi-front/src/content/legal.js`) les mentions entre
-crochets sur le prestataire : son nom, son pays d'établissement, la durée de
-conservation prévue par son contrat.
+par adresse IP. La politique de confidentialité
+(`hanabi-front/src/content/legal.js`) nomme le prestataire et son pays :
+changer de fournisseur, c'est aussi la mettre à jour, dans les trois langues.
 
 ### Ce qu'implique l'offre gratuite de Render
 
