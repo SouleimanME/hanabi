@@ -43,6 +43,14 @@ services:
       - key: DATABASE_URL
         sync: false
 
+      # Assistant de fiche produit : sans ces trois variables, il n'apparaît pas
+      - key: REDACTION_URL
+        sync: false
+      - key: REDACTION_CLE
+        sync: false
+      - key: REDACTION_MODELE
+        sync: false
+
       # Sans ces deux variables, aucun administrateur n'est créé
       - key: ADMIN_EMAIL
         sync: false

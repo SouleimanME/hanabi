@@ -1,5 +1,5 @@
 /** Produits : liste, creation, modification, galerie. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Upload, X } from "lucide-react";
 
 import { api } from "../api.js";
@@ -64,6 +64,7 @@ export function Products({ items, flash, reload, readonly }) {
         onSave={save}
         onCancel={() => setEditing(null)}
         saving={saving}
+        readonly={readonly}
       />
     );
   }
@@ -71,12 +72,7 @@ export function Products({ items, flash, reload, readonly }) {
   return (
     <div>
       <div className="adm-toolbar">
-        <button
-          className="adm-btn primary"
-          disabled={readonly}
-          title={readonly ? LECTURE_SEULE : undefined}
-          onClick={() => setEditing("new")}
-        >
+        <button className="adm-btn primary" onClick={() => setEditing("new")}>
           <Plus size={16} aria-hidden="true" /> Nouveau produit
         </button>
         <span className="adm-count">
@@ -137,13 +133,8 @@ export function Products({ items, flash, reload, readonly }) {
                   )}
                 </td>
                 <td className="adm-actions">
-                  <button
-                    className="adm-btn sm"
-                    disabled={readonly}
-                    title={readonly ? LECTURE_SEULE : undefined}
-                    onClick={() => setEditing(p)}
-                  >
-                    Modifier
+                  <button className="adm-btn sm" onClick={() => setEditing(p)}>
+                    {readonly ? "Voir" : "Modifier"}
                   </button>
                   <button
                     className="adm-btn sm danger"
@@ -204,7 +195,109 @@ function ChampsTraduction({ langue, nom, valeurs, onChange }) {
   );
 }
 
-function ProductForm({ item, onSave, onCancel, saving }) {
+/* L'assistant lit le nom, la photo principale et les notes, puis propose la
+   fiche en trois langues. La proposition remplit le formulaire ; la version
+   d'avant reste à un clic, et rien n'est enregistré sans le marchand. */
+function Assistant({ f, image, appliquer, annuler, peutAnnuler }) {
+  const [etat, setEtat] = useState(null);
+  const [notes, setNotes] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState(null);
+  const [photoLue, setPhotoLue] = useState(null);
+
+  useEffect(() => {
+    let actif = true;
+    api("/admin/redaction/etat")
+      .then((e) => actif && setEtat(e))
+      .catch(() => actif && setEtat(null));
+    return () => {
+      actif = false;
+    };
+  }, []);
+
+  if (!etat?.actif) return null;
+
+  const proposer = async () => {
+    setErreur(null);
+    setEnCours(true);
+    try {
+      const proposition = await api("/admin/redaction/fiche", {
+        method: "POST",
+        body: {
+          name: f.name,
+          category: f.category,
+          blurb: f.blurb,
+          usages: f.usages,
+          notes,
+          image,
+        },
+      });
+      setEtat((e) => ({ ...e, restant: proposition.restant }));
+      setPhotoLue(proposition.photo_lue);
+      appliquer(proposition);
+    } catch (e) {
+      setErreur(e.message);
+    } finally {
+      setEnCours(false);
+    }
+  };
+
+  const epuise = etat.restant <= 0;
+  return (
+    <section className="adm-assistant" aria-labelledby="assistant-titre" aria-busy={enCours}>
+      <div className="adm-assistant-tete">
+        <h3 id="assistant-titre">Assistant de fiche</h3>
+        <span className="muted num">Propositions restantes aujourd&apos;hui : {etat.restant}</span>
+      </div>
+      <p className="muted">
+        Il lit le nom, la photo principale et vos notes, puis propose la fiche en français, en
+        anglais et en espagnol. Rien n&apos;est enregistré sans vous.
+      </p>
+      <label className="adm-field">
+        <span>Notes pour l&apos;assistant</span>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          maxLength={600}
+          aria-describedby="notes-aide"
+          placeholder="Renard blanc en résine, 18 cm, peint à la main"
+        />
+        <small id="notes-aide">
+          Matière, taille, provenance : ce que la photo ne dit pas. Aucune donnée personnelle.
+        </small>
+      </label>
+      <div className="adm-assistant-actions">
+        <button
+          type="button"
+          className="adm-btn primary"
+          onClick={proposer}
+          disabled={enCours || epuise}
+        >
+          {enCours ? "Rédaction en cours…" : "Proposer la fiche"}
+        </button>
+        {peutAnnuler && !enCours && (
+          <button type="button" className="adm-btn" onClick={annuler}>
+            Revenir à ma version
+          </button>
+        )}
+      </div>
+      {erreur && (
+        <div className="adm-err" role="alert">
+          {erreur}
+        </div>
+      )}
+      <p className="adm-assistant-statut" role="status">
+        {peutAnnuler && !enCours
+          ? "Proposition appliquée : relisez chaque champ avant d'enregistrer." +
+            (photoLue === false ? " La photo n'a pas été lue, le texte alternatif reste vide." : "")
+          : ""}
+      </p>
+    </section>
+  );
+}
+
+function ProductForm({ item, onSave, onCancel, saving, readonly }) {
   const [f, setF] = useState({
     id: item?.id,
     code: item?.code || "",
@@ -232,6 +325,25 @@ function ProductForm({ item, onSave, onCancel, saving }) {
   const set = (k) => (e) =>
     setF((s) => ({ ...s, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const setNum = (k) => (e) => setF((s) => ({ ...s, [k]: parseInt(e.target.value, 10) || 0 }));
+  // Version du formulaire avant la dernière proposition de l'assistant
+  const [avantProposition, setAvantProposition] = useState(null);
+  const appliquerProposition = (p) => {
+    setAvantProposition((avant) => avant ?? f);
+    setF((s) => ({
+      ...s,
+      category: p.categorie,
+      name: p.fr.name,
+      blurb: p.fr.blurb,
+      usages: p.fr.usages,
+      alt: p.fr.alt,
+      traductions: Object.fromEntries(LANGUES.map(({ code }) => [code, { ...p[code] }])),
+    }));
+  };
+  const annulerProposition = () => {
+    setF(avantProposition);
+    setAvantProposition(null);
+  };
+
   const setTraduction = (langue, k, valeur) =>
     setF((s) => ({
       ...s,
@@ -310,6 +422,14 @@ function ProductForm({ item, onSave, onCancel, saving }) {
           Annuler
         </button>
       </div>
+      <Assistant
+        f={f}
+        image={estPhoto(f.images[0]) ? f.images[0] : null}
+        appliquer={appliquerProposition}
+        annuler={annulerProposition}
+        peutAnnuler={avantProposition !== null}
+      />
+
       <div className="adm-form-grid">
         <div className="adm-col">
           <label className="adm-field">
@@ -596,7 +716,8 @@ function ProductForm({ item, onSave, onCancel, saving }) {
         <button
           className="adm-btn primary large"
           onClick={enregistrer}
-          disabled={saving || uploading}
+          disabled={saving || uploading || readonly}
+          title={readonly ? LECTURE_SEULE : undefined}
         >
           {saving ? "Enregistrement…" : item ? "Enregistrer les modifications" : "Créer le produit"}
         </button>

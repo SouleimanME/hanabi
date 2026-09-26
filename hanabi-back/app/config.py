@@ -64,6 +64,18 @@ class Settings(BaseSettings):
     # Sans lui, ou à False, la recherche par le texte et le prix répond seule.
     RECHERCHE_SEMANTIQUE: bool = True
 
+    # --- Assistant de fiche produit (voir redaction.py) ---
+    # Point d'accès au format « chat completions », choisi au déploiement.
+    # Sans URL ni clé, l'assistant est simplement absent du back-office.
+    REDACTION_URL: str = ""
+    REDACTION_CLE: str = ""
+    REDACTION_MODELE: str = ""
+    REDACTION_DELAI_SECONDES: int = 45
+    # Demandes par jour (UTC), pour tout le back-office, puis pour la démonstration
+    # publique, à part : un visiteur ne peut pas épuiser le quota du marchand
+    REDACTION_PLAFOND_JOUR: int = 200
+    REDACTION_PLAFOND_DEMO: int = 40
+
     # --- Journalisation (voir observability.py) ---
     # JSON activé d'office en production, sauf réglage explicite
     LOG_JSON: bool = False

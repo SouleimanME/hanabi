@@ -204,6 +204,42 @@ Elles passent en base avec les usages et un texte alternatif pour la photo
 principale, et se modifient dans le back-office. Un champ vide reprend
 l'anglais, puis le français : une fiche traduite à moitié reste lisible.
 
+### L'assistant de fiche produit
+
+**Une fiche en trois langues à partir d'une photo.** Écrire le nom, l'accroche,
+les usages et le texte alternatif en français, en anglais et en espagnol est ce
+qui freinera l'arrivée de nouveaux objets. Dans le back-office, l'assistant lit
+le nom, la photo principale et quelques notes, puis propose la fiche entière. La
+proposition remplit le formulaire ; la version d'avant reste à un clic, et rien
+n'est enregistré sans relecture.
+
+**Un fournisseur choisi au déploiement.** Le code parle le format « chat
+completions » : l'adresse, la clé et le modèle sont des variables
+d'environnement. Seuls le texte et la photo de l'objet partent chez le
+fournisseur, jamais une donnée de client. Sans configuration, le panneau
+n'apparaît pas.
+
+**Une réponse vérifiée, pas crue.** Elle doit être un JSON à la forme exacte :
+catégorie parmi les trois, longueurs bornées, autant de lignes d'usages dans
+chaque langue. Invalide, elle est redemandée une fois avec l'erreur ; invalide
+encore, l'assistant le dit au lieu de remplir le formulaire. Une photo que le
+fournisseur refuse est abandonnée plutôt que de faire échouer la demande, et le
+texte alternatif reste alors vide : sans photo vue, il serait inventé. La
+consigne interdit d'inventer une dimension ou une matière, et quelques fiches du
+catalogue lui donnent le ton.
+
+**Un coût borné.** Chaque demande laisse une ligne en base (l'heure, la
+démonstration ou non, l'issue, aucune personne) : le plafond du jour tient après
+un redémarrage. Le compte de démonstration a son propre plafond ; il essaie
+l'assistant sans pouvoir enregistrer, ni épuiser le quota du marchand.
+
+**Évalué sur la recherche.** `tests/redaction/evaluer.py`, hors de la suite car
+il appelle le vrai fournisseur, fait rédiger les fiches du catalogue de départ,
+contrôle les règles (aucun nombre absent des notes, longueurs, lignes
+parallèles), puis rejoue le banc de recherche avec les usages de l'assistant à
+la place de ceux écrits à la main. Les tests de la suite passent par un faux
+fournisseur : réponses invalides, photo refusée, clé refusée, panne, plafonds.
+
 ### Le formulaire de paiement
 
 **La carte se reconnaît sans rien envoyer.** Le réseau se lit aux premiers
@@ -385,12 +421,12 @@ source.
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
 | Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
-| Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation |
+| Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation, assistant de fiche en trois langues |
 | Sécurité | Anti-robots (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, en-têtes durcis |
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 543 tests API sur SQLite et PostgreSQL, 257 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 568 tests API sur SQLite et PostgreSQL, 261 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -470,6 +506,12 @@ Le banc d'essai de la recherche affiche chaque requête et son résultat :
 cd hanabi-back && .venv/Scripts/python tests/recherche/banc.py
 ```
 
+L'évaluation de l'assistant appelle le fournisseur configuré, un appel par objet :
+
+```bash
+cd hanabi-back && .venv/Scripts/python tests/redaction/evaluer.py
+```
+
 ```bash
 cd hanabi-front && npm run lint && npm run format:check && npm test && npm run build
 ```
@@ -513,6 +555,7 @@ hanabi-back/          API FastAPI
     warehouse.py      lecture des agrégats dbt, console SQL
     recherche.py      recherche du catalogue : prix, texte, sens
     plongement.py     modèle de plongement, téléchargement vérifié
+    redaction.py      assistant de fiche produit, plafond du jour
     rgpd.py           portabilité et effacement
     idempotency.py    rejeu des requêtes non répétables
     outbox.py         file des courriels
@@ -558,6 +601,9 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Messages de l'API en français**, quelle que soit la langue de l'interface. Les
   courriels déclenchés depuis une page (lettre, retour en stock) suivent sa langue.
 - **Panier et favoris en `localStorage`**, donc propres à un appareil.
+- **Assistant évalué hors de la CI.** Son évaluation coûte des appels et
+  demande une clé ; elle se lance à la main, et à chaque changement de consigne
+  ou de modèle.
 - **Vecteurs du catalogue en mémoire.** Ils se recalculent à chaque démarrage :
   quelques secondes aujourd'hui, une vingtaine pour mille objets. Au-delà, ils
   iraient en base.

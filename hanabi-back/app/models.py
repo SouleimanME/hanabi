@@ -351,3 +351,19 @@ class PaymentMethod(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
     user: Mapped["User"] = relationship()
+
+
+class Redaction(Base):
+    """Une demande à l'assistant de fiche produit. Compter celles du jour borne le
+    coût ; rien ne dit qui l'a faite, seulement si c'était la démonstration."""
+
+    __tablename__ = "redactions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
+    demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    # en_cours | ok | echec
+    statut: Mapped[str] = mapped_column(String(20), default="en_cours")
+    photo_lue: Mapped[bool] = mapped_column(Boolean, default=False)
+    duree_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+

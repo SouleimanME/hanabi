@@ -24,7 +24,7 @@ from .seed import seed, ensure_admin, ensure_public_admin
 from .ratelimit import limiter, SecurityHeadersMiddleware, BodySizeLimitMiddleware
 from .routers import (
     auth, products, orders, reviews, promos, admin, security, newsletter, warehouse,
-    exploitation, compte,
+    exploitation, compte, redaction,
 )
 
 log = logging.getLogger("hanabi.demarrage")
@@ -123,10 +123,11 @@ app.include_router(reviews.router)
 app.include_router(promos.router)
 app.include_router(newsletter.router)
 app.include_router(orders.router)
-# admin, warehouse et exploitation partagent le préfixe /admin, sur des chemins disjoints
+# admin, warehouse, exploitation et redaction partagent le préfixe /admin, sur des chemins disjoints
 app.include_router(admin.router)
 app.include_router(warehouse.router)
 app.include_router(exploitation.router)
+app.include_router(redaction.router)
 
 
 @app.get("/", tags=["meta"])

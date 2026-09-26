@@ -180,6 +180,19 @@ tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
   migration `fiches multilingues` en garde sa propre copie figée.
 - Les usages traduits suivent les lignes françaises une à une.
 
+## Assistant de fiche
+
+- Aucun fournisseur n'est nommé dans le code : `REDACTION_URL`, `REDACTION_CLE`
+  et `REDACTION_MODELE` le désignent au déploiement.
+- Les tests remplacent `redaction.transport` par un faux fournisseur ; aucun ne
+  sort sur le réseau.
+- Changer la consigne ou le modèle, c'est relancer `tests/redaction/evaluer.py`
+  et comparer le banc obtenu à celui des usages écrits à la main.
+- Une réponse n'est jamais crue : forme validée, texte alternatif vidé si la
+  photo n'a pas été lue, tirets cadratins remplacés.
+- Rien de personnel ne part chez le fournisseur : ni compte, ni adresse, ni
+  commande. Le champ de notes le rappelle.
+
 ## Pièges
 
 - Render endort l'API après quinze minutes, Neon la base après cinq : la première

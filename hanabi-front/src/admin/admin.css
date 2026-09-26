@@ -1287,6 +1287,38 @@ th[aria-sort] .th-sort {
   padding-block-start: 16px;
   border-block-start: 1px solid var(--line);
 }
+.adm-assistant {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  margin-block-end: 24px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--r-panel);
+}
+.adm-assistant-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.adm-assistant-tete h3 {
+  font-family: var(--font-voice);
+  font-size: 17px;
+  font-weight: 700;
+}
+.adm-assistant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.adm-assistant-statut:empty {
+  display: none;
+}
+.adm-assistant-statut {
+  font-size: 13px;
+}
 .adm-langues {
   display: grid;
   gap: 8px;

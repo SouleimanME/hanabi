@@ -187,6 +187,23 @@ Seule l'API de production (`ENV=prod`) migre la base Neon. Une API lancée sur u
 poste avec la même `DATABASE_URL` refuse de démarrer si le schéma est en retard,
 au lieu de le migrer en avance sur le code déployé.
 
+### L'assistant de fiche produit (facultatif)
+
+Sans ces trois variables, le panneau de l'assistant n'apparaît pas dans le
+back-office. Elles se saisissent dans le tableau de bord de Render :
+
+| Variable | Valeur |
+| --- | --- |
+| `REDACTION_URL` | adresse du point d'accès « chat completions » du fournisseur, sans `/chat/completions` |
+| `REDACTION_CLE` | la clé d'API du fournisseur |
+| `REDACTION_MODELE` | un modèle qui lit les images |
+
+Le fournisseur reçoit le nom, les notes, la description et la photo de l'objet,
+rien d'autre. Deux plafonds bornent le coût, par jour : 200 demandes pour le
+back-office (`REDACTION_PLAFOND_JOUR`), 40 pour le compte de démonstration
+(`REDACTION_PLAFOND_DEMO`). Avant d'ouvrir la démonstration, lancer
+l'évaluation une fois avec ces variables (voir le README).
+
 ### Ce qu'implique l'offre gratuite de Render
 
 - **Mise en veille après inactivité.** La première visite après une pause
@@ -194,7 +211,8 @@ au lieu de le migrer en avance sur le code déployé.
   Ouvre le lien une fois avant de le montrer à quelqu'un.
 - **Disque non persistant.** Les données vivent dans PostgreSQL ; rien d'écrit
   sur le disque du conteneur ne survit à un redémarrage.
-- **512 Mo de mémoire.** L'API et le modèle de recherche en occupent environ 300.
+- **512 Mo de mémoire.** L'API et le modèle de recherche en occupent environ 300 ;
+  l'assistant de fiche n'ajoute rien, il appelle un fournisseur.
   Au réveil, le catalogue s'encode en quelques secondes ; la recherche par le
   texte répond pendant ce temps.
 
