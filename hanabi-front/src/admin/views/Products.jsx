@@ -187,6 +187,7 @@ function ProductForm({ item, onSave, onCancel, saving }) {
     featured_order: item?.featured_order ?? 0,
     art: estPhoto(item?.art) ? item.art : item?.art || ART_DEFAUT,
     images: item?.images || [],
+    usages: item?.usages || "",
   });
   const [imgInput, setImgInput] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -303,6 +304,21 @@ function ProductForm({ item, onSave, onCancel, saving }) {
           <label className="adm-field">
             <span>Description courte</span>
             <textarea value={f.blurb} onChange={set("blurb")} rows={3} required />
+          </label>
+          <label className="adm-field">
+            <span>Usages</span>
+            <textarea
+              value={f.usages}
+              onChange={set("usages")}
+              rows={4}
+              maxLength={1000}
+              aria-describedby="usages-aide"
+              placeholder={"Veilleuse pour une chambre d'enfant\nCadeau de naissance"}
+            />
+            <small id="usages-aide" className="muted">
+              Une ligne par usage : pièce, occasion, public. Invisibles sur la fiche, ils aident la
+              recherche à trouver cet objet.
+            </small>
           </label>
           <div className="adm-row2">
             <label className="adm-field">

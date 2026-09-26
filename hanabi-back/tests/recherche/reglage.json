@@ -1,0 +1,55 @@
+{
+  "familles": {
+    "exacte": "Le mot du catalogue, tel quel ou sans accent",
+    "approchee": "Faute de frappe, graphie voisine, plusieurs mots",
+    "synonyme": "Un autre mot pour le même objet",
+    "intention": "Un besoin, une pièce, une occasion",
+    "langue": "Les mêmes besoins en anglais et en espagnol",
+    "prix": "Une contrainte chiffrée dans la phrase",
+    "vide": "Rien dans la boutique ne répond : la liste doit rester vide"
+  },
+  "requetes": [
+    {"famille": "exacte", "q": "kitsune", "lang": "fr", "attendus": ["HNB-052", "HNB-061"]},
+    {"famille": "exacte", "q": "eventail", "lang": "fr", "attendus": ["HNB-037"]},
+    {"famille": "exacte", "q": "HNB-021", "lang": "fr", "attendus": ["HNB-021"]},
+    {"famille": "exacte", "q": "lampe lune", "lang": "fr", "attendus": ["HNB-026"]},
+    {"famille": "exacte", "q": "daruma", "lang": "fr", "attendus": ["HNB-067"]},
+
+    {"famille": "approchee", "q": "maneki neko", "lang": "fr", "attendus": ["HNB-018"]},
+    {"famille": "approchee", "q": "kokechi", "lang": "fr", "attendus": ["HNB-071"]},
+    {"famille": "approchee", "q": "estampe hokusai", "lang": "fr", "attendus": ["HNB-078"]},
+    {"famille": "approchee", "q": "lanterne en papier", "lang": "fr", "attendus": ["HNB-083"]},
+    {"famille": "approchee", "q": "masque de renard", "lang": "fr", "attendus": ["HNB-061"]},
+
+    {"famille": "synonyme", "q": "renard", "lang": "fr", "attendus": ["HNB-052", "HNB-061"]},
+    {"famille": "synonyme", "q": "poupée en bois", "lang": "fr", "attendus": ["HNB-071"]},
+    {"famille": "synonyme", "q": "démon", "lang": "fr", "attendus": ["HNB-064"]},
+    {"famille": "synonyme", "q": "lampe de chevet", "lang": "fr", "attendus": ["HNB-021", "HNB-026"]},
+    {"famille": "synonyme", "q": "tableau", "lang": "fr", "attendus": ["HNB-078"]},
+    {"famille": "synonyme", "q": "chat qui salue", "lang": "fr", "attendus": ["HNB-018"]},
+
+    {"famille": "intention", "q": "veilleuse pour une chambre d'enfant", "lang": "fr", "attendus": ["HNB-021", "HNB-026"]},
+    {"famille": "intention", "q": "décoration murale", "lang": "fr", "attendus": ["HNB-037", "HNB-061", "HNB-064", "HNB-078"]},
+    {"famille": "intention", "q": "porte-bonheur", "lang": "fr", "attendus": ["HNB-018", "HNB-067"]},
+    {"famille": "intention", "q": "cadeau pour un fan de yokai", "lang": "fr", "attendus": ["HNB-052", "HNB-061"]},
+    {"famille": "intention", "q": "lumière tamisée pour le salon", "lang": "fr", "attendus": ["HNB-083", "HNB-026", "HNB-021"]},
+    {"famille": "intention", "q": "objet en bambou", "lang": "fr", "attendus": ["HNB-037", "HNB-083"]},
+
+    {"famille": "langue", "q": "lucky cat", "lang": "en", "attendus": ["HNB-018"]},
+    {"famille": "langue", "q": "night light for a kid's room", "lang": "en", "attendus": ["HNB-021", "HNB-026"]},
+    {"famille": "langue", "q": "wall art", "lang": "en", "attendus": ["HNB-037", "HNB-061", "HNB-064", "HNB-078"]},
+    {"famille": "langue", "q": "regalo zorro", "lang": "es", "attendus": ["HNB-052", "HNB-061"]},
+    {"famille": "langue", "q": "lámpara", "lang": "es", "attendus": ["HNB-021", "HNB-026", "HNB-083"]},
+    {"famille": "langue", "q": "muñeca de madera", "lang": "es", "attendus": ["HNB-071"]},
+
+    {"famille": "prix", "q": "moins de 30 €", "lang": "fr", "attendus": ["HNB-067", "HNB-037"]},
+    {"famille": "prix", "q": "lampe à moins de 70 euros", "lang": "fr", "attendus": ["HNB-021", "HNB-083"]},
+    {"famille": "prix", "q": "figurine under 40", "lang": "en", "attendus": ["HNB-018", "HNB-067", "HNB-071"]},
+
+    {"famille": "vide", "q": "pizza", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "iphone", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "chaussures de sport", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "laptop charger", "lang": "en", "attendus": []},
+    {"famille": "vide", "q": "zzzz", "lang": "fr", "attendus": []}
+  ]
+}

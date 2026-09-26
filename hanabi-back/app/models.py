@@ -86,6 +86,8 @@ class Product(Base):
     art: Mapped[str] = mapped_column(Text, default="torii,#E0452A,#0A0605")
     # Galerie : liste JSON de blasons ou d'images
     images: Mapped[str] = mapped_column(Text, default="[]")
+    # Une ligne par usage (pièce, occasion, public) : lu par la recherche, jamais affiché
+    usages: Mapped[str] = mapped_column(Text, default="")
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="product")
 

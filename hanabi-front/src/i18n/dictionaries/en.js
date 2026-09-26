@@ -18,6 +18,7 @@ export default {
   objectsN: { one: "{n} object", other: "{n} objects" },
   filterBy: "Filter by range",
   sortLabel: "Sort",
+  sortRelevance: "Relevance",
   sortPop: "Most liked",
   sortNew: "New arrivals",
   sortAsc: "Price low to high",

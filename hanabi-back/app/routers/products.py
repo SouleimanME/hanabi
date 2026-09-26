@@ -1,11 +1,10 @@
-import unicodedata
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, plongement, recherche, schemas
+from ..config import settings
 from ..antibot import verify as verify_antibot
 from ..database import get_db
 from ..deps import get_optional_user
@@ -36,42 +35,33 @@ def _to_out(p: models.Product, rating: tuple[float, int], lang: str | None) -> s
     return out
 
 
-def _sans_accents(texte: str) -> str:
-    """Minuscules sans diacritiques : « eventail » trouve « Éventail »."""
-    decompose = unicodedata.normalize("NFD", texte.lower())
-    return "".join(c for c in decompose if unicodedata.category(c) != "Mn")
-
-
 @router.get("", response_model=list[schemas.ProductOut])
 def list_products(
     db: Session = Depends(get_db),
     category: str | None = Query(None, max_length=40),
     q: str | None = Query(None, max_length=80),
-    sort: str = Query("pop", pattern="^(pop|new|asc|desc)$"),
+    sort: str = Query("pop", pattern="^(pertinence|pop|new|asc|desc)$"),
     lang: str | None = Query(None, max_length=5),
 ):
-    stmt = select(models.Product).where(models.Product.active.is_(True))
-    if category and category != "Tout":
-        stmt = stmt.where(models.Product.category == category)
-    products = db.scalars(stmt).all()
-    ratings = _ratings_map(db, [p.id for p in products])
+    products = db.scalars(select(models.Product).where(models.Product.active.is_(True))).all()
 
+    # La recherche voit tout le catalogue, dans les trois langues, avant le
+    # filtre de catégorie : le sens se juge par rapport à l'ensemble des objets
+    rang: dict[int, int] | None = None
+    if q and q.strip():
+        encodeur = plongement.encodeur() if settings.RECHERCHE_SEMANTIQUE else None
+        ordre = recherche.chercher([recherche.fiche(p) for p in products], q.strip(), encodeur)
+        rang = {pid: i for i, pid in enumerate(ordre)}
+        products = [p for p in products if p.id in rang]
+    if category and category != "Tout":
+        products = [p for p in products if p.category == category]
+
+    ratings = _ratings_map(db, [p.id for p in products])
     out = [_to_out(p, ratings.get(p.id, (0.0, 0)), lang) for p in products]
 
-    # Recherche sur ce que la personne lit (nom traduit, accroche), et sur le nom
-    # français et le code. Le catalogue tient en mémoire : douze références.
-    if q and q.strip():
-        motif = _sans_accents(q.strip())
-        francais = {p.id: p for p in products}
-        out = [
-            o
-            for o in out
-            if any(
-                motif in _sans_accents(champ)
-                for champ in (o.name, o.blurb, o.code, francais[o.id].name, o.category)
-            )
-        ]
-    if sort == "asc":
+    if sort == "pertinence" and rang is not None:
+        out.sort(key=lambda x: rang[x.id])
+    elif sort == "asc":
         out.sort(key=lambda x: x.price_cents)
     elif sort == "desc":
         out.sort(key=lambda x: -x.price_cents)

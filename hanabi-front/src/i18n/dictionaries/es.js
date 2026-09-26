@@ -18,6 +18,7 @@ export default {
   objectsN: { one: "{n} objeto", other: "{n} objetos" },
   filterBy: "Filtrar por universo",
   sortLabel: "Ordenar",
+  sortRelevance: "Relevancia",
   sortPop: "Los más valorados",
   sortNew: "Novedades",
   sortAsc: "Precio ascendente",

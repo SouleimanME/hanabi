@@ -61,6 +61,10 @@ def _masquer_si(bride: bool, ligne: dict | None) -> dict | None:
 
 
 # --- Schémas ---
+# Une dizaine de lignes d'usages : au-delà, la fiche noie la recherche
+USAGES_MAX = 1000
+
+
 class ProductIn(BaseModel):
     code: str = Field(pattern=r"^[A-Z0-9][A-Z0-9-]{1,19}$")
     name: str = Field(min_length=2, max_length=160)
@@ -74,6 +78,7 @@ class ProductIn(BaseModel):
     featured_order: int = 0
     art: str = Field(default="torii,#E0452A,#0A0605", max_length=ART_MAX_LENGTH)
     images: list[str] = Field(default=[], max_length=IMAGES_MAX)
+    usages: str = Field(default="", max_length=USAGES_MAX)
 
 
 class ProductPatch(BaseModel):
@@ -88,6 +93,7 @@ class ProductPatch(BaseModel):
     featured_order: int | None = None
     art: str | None = Field(None, max_length=ART_MAX_LENGTH)
     images: list[str] | None = Field(None, max_length=IMAGES_MAX)
+    usages: str | None = Field(None, max_length=USAGES_MAX)
 
 
 class PromoIn(BaseModel):
@@ -328,7 +334,7 @@ def create_product(data: ProductIn, db: Session = Depends(get_db), _=Depends(get
         code=data.code, name=data.name, category=data.category, blurb=data.blurb,
         price_cents=data.price_cents, stock=data.stock, is_new=data.is_new,
         active=data.active, featured=data.featured, featured_order=data.featured_order,
-        art=data.art, images=json.dumps(data.images),
+        art=data.art, images=json.dumps(data.images), usages=data.usages,
     )
     db.add(p); db.commit(); db.refresh(p)
     return _prod_dict(p)
@@ -403,7 +409,7 @@ def _prod_dict(p: models.Product) -> dict:
         "blurb": p.blurb, "price_cents": p.price_cents, "stock": p.stock,
         "is_new": p.is_new, "active": p.active,
         "featured": p.featured, "featured_order": p.featured_order,
-        "art": p.art, "images": imgs,
+        "art": p.art, "images": imgs, "usages": p.usages or "",
     }
 
 

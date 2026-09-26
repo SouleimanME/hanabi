@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Response, status
@@ -10,7 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from . import models, outbox
+from . import models, outbox, recherche
 from .audience import detacher_consultations_anciennes
 from .config import settings
 from .database import SessionLocal, get_db
@@ -54,6 +55,13 @@ async def lifespan(app: FastAPI):
             log.info("consultations detachees de leur compte", extra={"lignes": detachees})
     finally:
         db.close()
+
+    # Le modèle de recherche se charge en arrière-plan : le premier visiteur
+    # n'attend pas, il a la recherche par le texte d'ici là
+    if settings.RECHERCHE_SEMANTIQUE:
+        threading.Thread(
+            target=recherche.prechauffer, args=(SessionLocal,), name="recherche", daemon=True
+        ).start()
 
     # Remise des courriels ; à intervalle nul (tests), rien ne démarre
     arret = asyncio.Event()

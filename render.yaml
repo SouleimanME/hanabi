@@ -8,7 +8,9 @@ services:
     plan: free
     rootDir: hanabi-back
 
-    buildCommand: pip install -r requirements.txt
+    # Le modèle de recherche est téléchargé au build (révision figée, empreintes
+    # vérifiées) : le démarrage n'attend pas 120 Mo venus du réseau
+    buildCommand: pip install -r requirements.txt && python -m app.plongement
     # 0.0.0.0 et $PORT imposés par Render.
     # --forwarded-allow-ips : l'IP réelle vient du proxy de Render dans
     # X-Forwarded-For ; sans lui, toutes les requêtes comptent pour une seule IP

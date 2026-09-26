@@ -20,6 +20,7 @@ export default {
   objectsN: { one: "{n} objet", other: "{n} objets" },
   filterBy: "Filtrer par univers",
   sortLabel: "Trier",
+  sortRelevance: "Pertinence",
   sortPop: "Les plus appréciés",
   sortNew: "Nouveautés",
   sortAsc: "Prix croissant",

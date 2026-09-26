@@ -12,3 +12,8 @@ bcrypt==4.2.*
 python-multipart==0.0.*
 email-validator==2.2.*
 slowapi==0.1.*
+# Recherche par le sens (app/plongement.py) : le modèle tourne sans PyTorch,
+# qui ne tiendrait pas dans les 512 Mo de l'hébergeur
+numpy==2.*
+onnxruntime==1.30.*
+sentencepiece==0.2.*

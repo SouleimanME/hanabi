@@ -145,6 +145,55 @@ possible.
 `CHECK (stock >= 0)`. Le test lance douze fils d'exécution derrière une barrière
 de départ sur le même article : une seule commande passe.
 
+### La recherche
+
+**Par le sens, dans les trois langues.** « veilleuse pour une chambre d'enfant »
+trouve les deux lampes, « regalo zorro » le renard, « masque de démon » le masque
+Hannya. Un modèle de plongement multilingue (multilingual-e5-small, licence MIT,
+export ONNX quantifié) tourne dans l'API, sans service externe ni coût par
+requête. Le processus complet tient en 300 Mo, sous les 512 Mo de Render : le
+découpeur `tokenizer.json` du dépôt du modèle en prenait 250 à lui seul, le
+modèle SentencePiece d'origine découpe à l'identique pour 40.
+
+**Trois étages.** Le prix se lit par expressions régulières (« moins de 30 € »,
+« entre 30 et 40 », « under 40 ») : un modèle de sens lit mal les nombres. Le texte
+tolère une faute de frappe (« kokechi »). Le sens retient un objet quand il se
+détache du reste du catalogue, et les mots retrouvés dans sa fiche renforcent cet
+écart : ce modèle donne 0,80 à « pizza » contre un renard en résine, un seuil
+absolu ne tiendrait pas. Sans modèle, les deux premiers étages répondent seuls.
+
+**Des usages sur chaque fiche.** « Lampe lune, 16 couleurs, télécommande » ne dit
+pas que c'est une veilleuse. Chaque objet porte des usages (pièce, occasion,
+public), invisibles pour le client et modifiables dans le back-office.
+
+**Mesurée avant d'être réglée.** Deux séries de requêtes de référence : 36 pour
+régler les seuils et les usages, 37 écrites avant tout essai et jamais utilisées
+pour régler. Une requête réussit quand ses objets attendus sont en tête ; les
+requêtes de prix exigent exactement les bons objets, et « pizza », « katana » ou
+« thé matcha » doivent rester sans réponse.
+
+| requêtes réussies | réglage (36) | contrôle (37) |
+| --- | ---: | ---: |
+| recherche d'avant, par sous-chaîne | 11 | 14 |
+| texte et prix | 27 | 25 |
+| texte, prix et sens | 31 | 30 |
+
+Les deux réglages du sens sont pris au centre du plateau où le banc plafonne,
+loin de ses bords. La série de contrôle a été mesurée deux fois : 29, puis 30
+après un correctif dicté par un test unitaire (« art » trouvait « artisanat »).
+Les deux séries et les usages sont de la même main, ce qui reste la limite de ce
+banc. Les échecs restants mêlent deux langues : les usages ne sont écrits qu'en
+français.
+
+**Reproductible.** Le modèle quantifié calcule l'échelle de ses activations sur
+tout le lot : un texte encodé avec d'autres bougeait de 0,002, assez pour changer
+un résultat selon les objets voisins. Chaque texte s'encode seul, en 5 ms.
+
+**Tenue à l'échelle.** Sur mille objets fictifs, une recherche répond en moins de
+15 ms. Chaque mot de la requête se compare une fois au vocabulaire du catalogue,
+et non à chaque fiche (250 ms auparavant). Le catalogue s'encode au démarrage dans
+un fil à part, puis seules les fiches modifiées sont réencodées.
+
 ### Le formulaire de paiement
 
 **La carte se reconnaît sans rien envoyer.** Le réseau se lit aux premiers
@@ -324,13 +373,14 @@ source.
 | --- | --- |
 | Données | Médaillon dbt sur PostgreSQL, 27 modèles, 120 tests, orchestration Dagster par partitions, console SQL bridée |
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
+| Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
 | Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation |
 | Sécurité | Anti-robots (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, en-têtes durcis |
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 487 tests API sur SQLite et PostgreSQL, 257 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 531 tests API sur SQLite et PostgreSQL, 257 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -340,7 +390,8 @@ React 18 et Vite, sans bibliothèque de composants, de CSS, de routage ni
 d'animation. Seule dépendance d'exécution en plus de React : `lucide-react`.
 
 FastAPI, SQLAlchemy 2 et Pydantic v2 ; SQLite en local, PostgreSQL (Neon) en
-production ; JWT et bcrypt.
+production ; JWT et bcrypt. La recherche par le sens tourne avec onnxruntime et
+sentencepiece, sans PyTorch.
 
 dbt sur PostgreSQL, orchestré par Dagster.
 
@@ -357,6 +408,13 @@ python -m venv .venv
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn app.main:app --reload
+```
+
+La recherche par le sens demande son modèle (120 Mo, révision figée, empreintes
+vérifiées). Sans lui, la recherche par le texte et le prix répond seule :
+
+```bash
+cd hanabi-back && .venv/Scripts/python -m app.plongement
 ```
 
 ```bash
@@ -394,6 +452,12 @@ aucun n'est créé.
 
 ```bash
 cd hanabi-back && .venv/Scripts/python -m pytest tests/ -q
+```
+
+Le banc d'essai de la recherche affiche chaque requête et son résultat :
+
+```bash
+cd hanabi-back && .venv/Scripts/python tests/recherche/banc.py
 ```
 
 ```bash
@@ -437,6 +501,8 @@ hanabi-back/          API FastAPI
     pricing.py        calcul des montants
     analytics.py      calculs du back-office sur la base transactionnelle
     warehouse.py      lecture des agrégats dbt, console SQL
+    recherche.py      recherche du catalogue : prix, texte, sens
+    plongement.py     modèle de plongement, téléchargement vérifié
     rgpd.py           portabilité et effacement
     idempotency.py    rejeu des requêtes non répétables
     outbox.py         file des courriels
@@ -482,6 +548,11 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Messages de l'API en français**, quelle que soit la langue de l'interface. Les
   courriels déclenchés depuis une page (lettre, retour en stock) suivent sa langue.
 - **Panier et favoris en `localStorage`**, donc propres à un appareil.
+- **Usages en français seulement.** « wall art » ou « lámpara » trouvent moins
+  bien que leurs équivalents français ; les traduire est la prochaine étape.
+- **Vecteurs du catalogue en mémoire.** Ils se recalculent à chaque démarrage :
+  quelques secondes aujourd'hui, une vingtaine pour mille objets. Au-delà, ils
+  iraient en base.
 
 ---
 

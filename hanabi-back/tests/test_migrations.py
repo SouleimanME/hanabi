@@ -20,6 +20,29 @@ from app.migrate import RACINE
 AVANT_CORRECTION = "d4e7a9b1c2f3"
 
 
+# Produits tels qu'avant leurs usages : le modèle actuel lirait et écrirait une
+# colonne que les anciennes révisions n'ont pas
+PRODUITS_AVANT_USAGES = table(
+    "products",
+    column("id"), column("code"), column("name"), column("category"), column("blurb"),
+    column("price_cents"), column("cost_cents"), column("stock"), column("is_new"),
+    column("active"), column("featured"), column("featured_order"), column("art"), column("images"),
+)
+
+
+def _produit(db, code):
+    return db.execute(
+        select(PRODUITS_AVANT_USAGES).where(PRODUITS_AVANT_USAGES.c.code == code)
+    ).one_or_none()
+
+
+def _produit_ancien(db, **valeurs):
+    defauts = {"cost_cents": 0, "is_new": False, "active": True, "featured": False,
+               "featured_order": 0, "images": "[]"}
+    db.execute(insert(PRODUITS_AVANT_USAGES).values(**{**defauts, **valeurs}))
+    return _produit(db, valeurs["code"])
+
+
 def _config(connexion) -> Config:
     # Sans alembic.ini : sa configuration des journaux couperait ceux des autres tests
     cfg = Config()
@@ -79,12 +102,10 @@ class TestCorrectionDuJeuDeDemonstration:
     def _peupler(self, cx):
         maintenant = datetime.now(timezone.utc)
         with Session(bind=cx) as db:
-            produit = models.Product(
-                code="HNB-033", name="Baguettes Laquées", category="Tradition",
+            produit = _produit_ancien(
+                db, code="HNB-033", name="Baguettes Laquées", category="Tradition",
                 blurb="Paire", price_cents=2200, stock=5, art="baguettes,#E0452A,#0A0605",
             )
-            db.add(produit)
-            db.flush()
 
             genere = []
             for i in range(self.POPULATION):
@@ -219,16 +240,18 @@ class TestBasculeVersFigurinesEtDecoration:
     def _ancien_catalogue(self, cx):
         with Session(bind=cx) as db:
             for code, nom, categorie, art in ANCIEN_CATALOGUE:
-                db.add(models.Product(
-                    code=code, name=nom, category=categorie, blurb="x",
-                    price_cents=1000, stock=5, art=art, images="[]",
-                ))
-            db.flush()
+                _produit_ancien(
+                    db, code=code, name=nom, category=categorie, blurb="x",
+                    price_cents=1000, stock=5, art=art,
+                )
             # La lampe lune a déjà reçu une vraie photo du marchand
-            lune = db.scalar(select(models.Product).where(models.Product.code == "HNB-026"))
-            lune.art = PHOTO_DU_MARCHAND
+            db.execute(
+                PRODUITS_AVANT_USAGES.update()
+                .where(PRODUITS_AVANT_USAGES.c.code == "HNB-026")
+                .values(art=PHOTO_DU_MARCHAND)
+            )
             # Une commande passée sur le collier, qui doit rester lisible
-            collier = db.scalar(select(models.Product).where(models.Product.code == "HNB-014"))
+            collier = _produit(db, "HNB-014")
             client = models.User(name="Client", email="client@exemple.fr", password_hash="x")
             db.add(client)
             db.flush()
@@ -270,7 +293,8 @@ class TestBasculeVersFigurinesEtDecoration:
             yield db
 
     def _vitrine(self, db):
-        return {p.code: p for p in db.scalars(select(models.Product).where(models.Product.active.is_(True)))}
+        actifs = select(PRODUITS_AVANT_USAGES).where(PRODUITS_AVANT_USAGES.c.active.is_(True))
+        return {p.code: p for p in db.execute(actifs)}
 
     def test_la_vitrine_compte_douze_objets_des_trois_categories(self, bascule):
         from app.routers.admin import CATEGORIES
@@ -360,5 +384,30 @@ class TestBasculeVersFigurinesEtDecoration:
                 .where(models.Order.number == "HNB-GEN-1")
             ).one()
             assert (ligne.product_id, ligne.name) == (vitrine["HNB-014"].id, "Collier Maneki-neko")
-            assert db.scalar(select(models.Product).where(models.Product.code == "HNB-061")) is None
+            assert _produit(db, "HNB-061") is None
 
+
+class TestUsagesDesObjets:
+    """Les objets du catalogue de départ reçoivent leurs usages, les autres rien."""
+
+    AVANT = "b7e4d2a9c613"
+
+    def test_le_catalogue_de_depart_recoit_ses_usages(self, moteur):
+        with moteur.begin() as cx:
+            command.upgrade(_config(cx), self.AVANT)
+            with Session(bind=cx) as db:
+                for code in ("HNB-021", "MARCHAND-1"):
+                    _produit_ancien(db, code=code, name="Objet", category="Luminaires",
+                                    blurb="x", price_cents=1000, stock=1, art="torii,#E0452A,#0A0605")
+                db.commit()
+            command.upgrade(_config(cx), "head")
+        with Session(bind=moteur) as db:
+            usages = dict(db.execute(select(models.Product.code, models.Product.usages)).all())
+        assert "Veilleuse" in usages["HNB-021"]
+        assert usages["MARCHAND-1"] == ""
+
+    def test_aller_retour(self, moteur):
+        with moteur.begin() as cx:
+            command.upgrade(_config(cx), "head")
+            command.downgrade(_config(cx), self.AVANT)
+            command.upgrade(_config(cx), "head")

@@ -149,10 +149,32 @@ tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
 - Une table incrémentale mal écrite par le passé se répare par une reconstruction
   complète : lancement manuel du workflow Entrepot, case cochée.
 
+## Recherche
+
+- Deux séries de requêtes dans `tests/recherche/` : `reglage.json` sert à régler
+  seuils, usages et règles de prix ; `controle.json` ne sert qu'à mesurer. Régler
+  en regardant la seconde la rend aussi optimiste que la première. Une requête
+  ajoutée à `controle.json` après avoir vu un résultat n'a pas sa place.
+- `python tests/recherche/banc.py` affiche chaque requête et son résultat, avec et
+  sans modèle (`--sans-modele`). Les planchers de `test_recherche_banc.py` ne
+  descendent jamais ; une amélioration les relève.
+- Les tests coupent le sens par défaut (`RECHERCHE_SEMANTIQUE`) : un modèle chargé
+  en arrière-plan au milieu d'un test changerait ses résultats. Sans modèle, les
+  tests du sens sont sautés, sauf dans le job de CI qui pose `RECHERCHE_EXIGEE`.
+- Changer de modèle, c'est changer `REVISION` et les empreintes de
+  `plongement.py`, puis refaire le réglage : les scores d'un autre modèle n'ont pas
+  la même échelle.
+- Encoder un texte à la fois : le modèle quantifié calcule l'échelle de ses
+  activations sur tout le lot, et un lot rendait les résultats dépendants des
+  objets voisins.
+- Pas de PyTorch : il ne tiendrait pas dans les 512 Mo de Render.
+
 ## Pièges
 
 - Render endort l'API après quinze minutes, Neon la base après cinq : la première
-  requête peut prendre une minute.
+  requête peut prendre une minute. La recherche par le sens revient quelques
+  secondes plus tard, le temps d'encoder le catalogue ; d'ici là, la recherche par
+  le texte répond.
 - `pool_pre_ping=True` (`database.py`) évite les connexions mortes au réveil de Neon.
 - Le disque du conteneur est éphémère.
 - L'entrepôt ne se reconstruit chaque nuit que si `DWH_DATABASE_URL` est posé dans

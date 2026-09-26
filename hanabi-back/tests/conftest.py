@@ -39,6 +39,16 @@ def antibot_for():
     return solve_antibot
 
 
+# --- Recherche ---
+
+
+@pytest.fixture(autouse=True)
+def recherche_par_le_texte(monkeypatch):
+    """Sans modèle par défaut : un modèle chargé en arrière-plan au milieu d'un
+    test changerait ses résultats. Les tests du sens l'activent eux-mêmes."""
+    monkeypatch.setattr(settings, "RECHERCHE_SEMANTIQUE", False)
+
+
 # --- Courriels ---
 
 

@@ -77,6 +77,47 @@ jobs:
       - name: Tests
         run: python -m pytest tests/ -q
 
+  # Le banc d'essai de la recherche avec son modèle. Ailleurs, sans modèle, ses
+  # tests sont sautés ; ici RECHERCHE_EXIGEE interdit de les sauter
+  recherche:
+    name: Recherche par le sens (banc d'essai)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hanabi-back
+
+    env:
+      SECRET_KEY: cle-de-test-sans-valeur-en-production
+      ENV: dev
+      RECHERCHE_EXIGEE: "1"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: hanabi-back/requirements*.txt
+
+      - name: Installer les dependances
+        run: pip install -r requirements-dev.txt
+
+      # 120 Mo : téléchargés une fois par révision du modèle, pas à chaque exécution
+      - uses: actions/cache@v4
+        with:
+          path: hanabi-back/var/modeles
+          key: modele-${{ hashFiles('hanabi-back/app/plongement.py') }}
+
+      - name: Telecharger le modele (revision figee, empreintes verifiees)
+        run: python -m app.plongement
+
+      - name: Banc d'essai et tests de la recherche
+        run: python -m pytest tests/test_recherche.py tests/test_recherche_banc.py -v
+
+      - name: Rapport
+        run: python tests/recherche/banc.py
+
   entrepot:
     name: Entrepot (construit deux fois sur PostgreSQL)
     runs-on: ubuntu-latest

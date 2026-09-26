@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     # Enregistrée sur chaque commande : à changer avec le texte des CGV.
     CGV_VERSION: str = "2026-08"
 
+    # --- Recherche (voir recherche.py) ---
+    # Recherche par le sens, si le modèle est téléchargé (python -m app.plongement).
+    # Sans lui, ou à False, la recherche par le texte et le prix répond seule.
+    RECHERCHE_SEMANTIQUE: bool = True
+
     # --- Journalisation (voir observability.py) ---
     # JSON activé d'office en production, sauf réglage explicite
     LOG_JSON: bool = False

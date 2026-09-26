@@ -178,6 +178,11 @@ retard et se désactivent après soixante jours sans activité sur le dépôt.
 Le premier démarrage est plus long : Alembic crée le schéma, puis le jeu de
 démonstration est généré (`DEMO_USERS`, 100 000 comptes par défaut).
 
+Le build télécharge aussi le modèle de la recherche (120 Mo, `python -m
+app.plongement`) à une révision figée et vérifie ses empreintes : un fichier
+modifié en amont fait échouer le build au lieu d'être chargé. Si le téléchargement
+échoue, la boutique marche quand même, avec la recherche par le texte seule.
+
 Seule l'API de production (`ENV=prod`) migre la base Neon. Une API lancée sur un
 poste avec la même `DATABASE_URL` refuse de démarrer si le schéma est en retard,
 au lieu de le migrer en avance sur le code déployé.
@@ -189,6 +194,9 @@ au lieu de le migrer en avance sur le code déployé.
   Ouvre le lien une fois avant de le montrer à quelqu'un.
 - **Disque non persistant.** Les données vivent dans PostgreSQL ; rien d'écrit
   sur le disque du conteneur ne survit à un redémarrage.
+- **512 Mo de mémoire.** L'API et le modèle de recherche en occupent environ 300.
+  Au réveil, le catalogue s'encode en quelques secondes ; la recherche par le
+  texte répond pendant ce temps.
 
 ---
 
@@ -270,6 +278,8 @@ ordinateur, sans réseau local ni configuration.
 - [ ] La connexion fonctionne avec le compte d'essai affiché.
 - [ ] `/admin` **refuse** ce compte d'essai et accepte `ADMIN_EMAIL`.
 - [ ] Sur téléphone : le menu en tiroir s'ouvre depuis l'en-tête.
+- [ ] Une minute après le réveil, « veilleuse pour une chambre d'enfant » trouve
+  les deux lampes, et « pizza » ne trouve rien.
 - [ ] L'onglet **Actions** de GitHub affiche les trois tâches de CI en vert.
 
 ---

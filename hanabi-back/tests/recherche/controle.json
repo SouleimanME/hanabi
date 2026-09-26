@@ -1,0 +1,48 @@
+{
+  "regle": "Écrite avant tout essai de la recherche par le sens, et jamais consultée pour la régler : seuils, textes d'usage et règles de prix se règlent sur reglage.json. Une requête ajoutée ici après coup ne compte pas.",
+  "requetes": [
+    {"famille": "exacte", "q": "maneki-neko", "lang": "fr", "attendus": ["HNB-018"]},
+    {"famille": "exacte", "q": "hannya", "lang": "fr", "attendus": ["HNB-064"]},
+    {"famille": "exacte", "q": "ryu", "lang": "fr", "attendus": ["HNB-074"]},
+    {"famille": "exacte", "q": "lantern", "lang": "en", "attendus": ["HNB-083"]},
+
+    {"famille": "approchee", "q": "masque hanya", "lang": "fr", "attendus": ["HNB-064"]},
+    {"famille": "approchee", "q": "lampe tori", "lang": "fr", "attendus": ["HNB-021"]},
+    {"famille": "approchee", "q": "grande vague de kanagawa", "lang": "fr", "attendus": ["HNB-078"]},
+    {"famille": "approchee", "q": "figurine de dragon", "lang": "fr", "attendus": ["HNB-074"]},
+    {"famille": "approchee", "q": "kitsune mask", "lang": "en", "attendus": ["HNB-061"]},
+
+    {"famille": "synonyme", "q": "chat doré", "lang": "fr", "attendus": ["HNB-018"]},
+    {"famille": "synonyme", "q": "gravure japonaise", "lang": "fr", "attendus": ["HNB-078"]},
+    {"famille": "synonyme", "q": "lampion", "lang": "fr", "attendus": ["HNB-083"]},
+    {"famille": "synonyme", "q": "poupée japonaise", "lang": "fr", "attendus": ["HNB-071"]},
+    {"famille": "synonyme", "q": "luminaire", "lang": "fr", "attendus": ["HNB-021", "HNB-026", "HNB-083"]},
+
+    {"famille": "intention", "q": "porte-chance pour un nouveau commerce", "lang": "fr", "attendus": ["HNB-018"]},
+    {"famille": "intention", "q": "à accrocher au mur de l'entrée", "lang": "fr", "attendus": ["HNB-037", "HNB-061", "HNB-064", "HNB-078"]},
+    {"famille": "intention", "q": "faire un vœu", "lang": "fr", "attendus": ["HNB-067"]},
+    {"famille": "intention", "q": "éclairage pour une table de nuit", "lang": "fr", "attendus": ["HNB-021", "HNB-026"]},
+    {"famille": "intention", "q": "ambiance de restaurant japonais", "lang": "fr", "attendus": ["HNB-083"]},
+    {"famille": "intention", "q": "objet peint à la main", "lang": "fr", "attendus": ["HNB-052", "HNB-061", "HNB-071"]},
+
+    {"famille": "langue", "q": "dragon statue", "lang": "en", "attendus": ["HNB-074"]},
+    {"famille": "langue", "q": "japanese hand fan", "lang": "en", "attendus": ["HNB-037"]},
+    {"famille": "langue", "q": "wishing doll", "lang": "en", "attendus": ["HNB-067"]},
+    {"famille": "langue", "q": "decoración de pared", "lang": "es", "attendus": ["HNB-037", "HNB-061", "HNB-064", "HNB-078"]},
+    {"famille": "langue", "q": "gato de la suerte", "lang": "es", "attendus": ["HNB-018"]},
+    {"famille": "langue", "q": "linterna de papel", "lang": "es", "attendus": ["HNB-083"]},
+
+    {"famille": "prix", "q": "figurine à moins de 50 €", "lang": "fr", "attendus": ["HNB-052", "HNB-018", "HNB-067", "HNB-071"]},
+    {"famille": "prix", "q": "décoration moins de 40 euros", "lang": "fr", "attendus": ["HNB-037", "HNB-061"]},
+    {"famille": "prix", "q": "entre 30 et 40 €", "lang": "fr", "attendus": ["HNB-018", "HNB-071", "HNB-061"]},
+    {"famille": "prix", "q": "lámpara menos de 50", "lang": "es", "attendus": ["HNB-083"]},
+    {"famille": "prix", "q": "under 30", "lang": "en", "attendus": ["HNB-067", "HNB-037"]},
+
+    {"famille": "vide", "q": "thé matcha", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "katana", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "kimono", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "livre de cuisine", "lang": "fr", "attendus": []},
+    {"famille": "vide", "q": "coffee mug", "lang": "en", "attendus": []},
+    {"famille": "vide", "q": "zapatillas", "lang": "es", "attendus": []}
+  ]
+}

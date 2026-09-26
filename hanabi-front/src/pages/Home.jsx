@@ -113,6 +113,7 @@ export const Home = forwardRef(function Home(
               <label htmlFor="tri">{t("sortLabel")}</label>
               <span className="select">
                 <select id="tri" value={sort} onChange={(e) => setSort(e.target.value)}>
+                  {query && <option value="pertinence">{t("sortRelevance")}</option>}
                   <option value="pop">{t("sortPop")}</option>
                   <option value="new">{t("sortNew")}</option>
                   <option value="asc">{t("sortAsc")}</option>

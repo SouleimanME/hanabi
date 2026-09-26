@@ -89,6 +89,11 @@ export default function App() {
   const [sort, setSort] = useState("pop");
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query);
+  // Une recherche a son propre tri, la pertinence d'abord : les objets les plus
+  // proches de la demande en tête, pas les plus appréciés
+  const [sortRecherche, setSortRecherche] = useState("pertinence");
+  const enRecherche = debouncedQuery.trim() !== "";
+  const triActif = enRecherche ? sortRecherche : sort;
 
   const [view, setView] = useState("home");
   const [accountSection, setAccountSection] = useState(null);
@@ -126,7 +131,7 @@ export default function App() {
     refreshing,
     reload,
     remember,
-  } = useCatalog({ category, query: debouncedQuery, sort, lang });
+  } = useCatalog({ category, query: debouncedQuery, sort: triActif, lang });
 
   const cart = useCart(catalog);
   const saved = useSaved();
@@ -559,8 +564,8 @@ export default function App() {
                 setQuery("");
                 setCategory("Tout");
               }}
-              sort={sort}
-              setSort={setSort}
+              sort={triActif}
+              setSort={enRecherche ? setSortRecherche : setSort}
               wished={isWished}
               onWish={toggleWish}
               recent={byId(recentIds).slice(0, 5)}
