@@ -26,13 +26,14 @@ def test_entrepot_ouvert_a_l_administrateur(client, auth_header):
 # --- Absence d'entrepot : un etat, pas une panne ---
 
 
-def test_etat_annonce_l_absence_sans_echouer(client, auth_header):
-    """Sur SQLite, la route repond 200 et dit pourquoi il n'y a rien a montrer."""
+def test_etat_annonce_l_absence_sans_echouer(client, auth_header, moteur):
+    """La route repond 200 et dit pourquoi il n'y a rien a montrer."""
     entetes, _ = auth_header(email="chef@test.fr", is_admin=True)
     etat = client.get("/admin/warehouse", headers=entetes).json()
 
     assert etat["disponible"] is False
-    assert etat["raison"] == "moteur"
+    # SQLite ne porte pas d'entrepot ; PostgreSQL le pourrait, mais rien n'est construit
+    assert etat["raison"] == ("moteur" if moteur.dialect.name == "sqlite" else "non_construit")
     assert etat["construit_le"] is None
     # Sans entrepôt, aucun contrôle n'a pu tourner
     assert etat["controles"] == []
@@ -211,8 +212,10 @@ def test_la_console_refuse_les_clients_ordinaires(client, auth_header):
     assert reponse.status_code == 403
 
 
-def test_la_console_sans_entrepot_renvoie_409(client, auth_header):
+def test_la_console_sans_entrepot_renvoie_409(client, auth_header, moteur):
     """Sur SQLite l'entrepot n'existe pas : la console le dit, sans exploser."""
+    if moteur.dialect.name != "sqlite":
+        pytest.skip("sur PostgreSQL, `select 1` ne lit aucune table et passe sans entrepot")
     entetes, _ = auth_header(email="chef@test.fr", is_admin=True)
     reponse = client.post(
         "/admin/warehouse/sql", json={"sql": "select 1"}, headers=entetes

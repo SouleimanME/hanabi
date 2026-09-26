@@ -18,7 +18,7 @@ hanabi-back/          API FastAPI + SQLAlchemy
     demo_data.py      Jeu de données de démonstration
     routers/          Un fichier par domaine
   migrations/         Révisions Alembic
-  tests/              pytest, SQLite en mémoire
+  tests/              pytest, SQLite en mémoire ou PostgreSQL
 hanabi-front/         Interface React (Vite)
   src/
     App.jsx           Racine de la boutique, routage via lib/routes.js
@@ -48,6 +48,11 @@ cd hanabi-front && npm install && npm run dev
 API sur `http://localhost:8000` (`/docs`), front sur `http://localhost:5173`. La
 base SQLite `hanabi-back/atelier.db` se crée au premier démarrage ; la supprimer
 pour repartir de zéro.
+
+Le démarrage joue les migrations, mais hors `ENV=prod` il ne migre qu'une base
+locale : un `.env` qui viserait Neon mettrait la production en avance sur le code
+déployé, qui ne redémarrerait plus. `MIGRER_BASE_DISTANTE=1` lève ce refus quand
+la migration est voulue.
 
 ## Vérifier
 
@@ -95,9 +100,10 @@ de pousser.
 
 ## Base de données
 
-SQLite en local et en test, PostgreSQL (Neon) en production. Dans `hanabi-back/app/`,
-les requêtes restent portables : ni `strftime`, ni `date_trunc`. `hanabi-dwh/` ne
-vise que PostgreSQL et n'a pas cette contrainte.
+SQLite en local et en test, PostgreSQL (Neon) en production ; la CI rejoue la suite
+de l'API sur les deux. Dans `hanabi-back/app/`, les requêtes restent portables : ni
+`strftime`, ni `date_trunc`. `hanabi-dwh/` ne vise que PostgreSQL et n'a pas cette
+contrainte.
 
 Après une modification de `models.py` :
 
@@ -115,7 +121,9 @@ Pour rejouer la suite sur PostgreSQL :
 docker run --rm -d -p 5433:5432 -e POSTGRES_PASSWORD=hanabi -e POSTGRES_DB=hanabi --name hanabi-pg postgres:16
 ```
 
-puis `DATABASE_URL=postgresql://postgres:hanabi@localhost:5433/hanabi`.
+puis lancer `pytest` avec `TEST_DATABASE_URL=postgresql://postgres:hanabi@localhost:5433/hanabi`.
+La variable n'accepte qu'une base locale : la suite en vide les tables entre deux
+tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
 
 ## Entrepôt
 

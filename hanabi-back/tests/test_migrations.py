@@ -10,7 +10,7 @@ from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import column, create_engine, insert, select, table
+from sqlalchemy import column, create_engine, insert, select, table, text
 from sqlalchemy.orm import Session
 
 from app import models
@@ -29,10 +29,28 @@ def _config(connexion) -> Config:
 
 
 @pytest.fixture
-def moteur(tmp_path):
-    moteur = create_engine(f"sqlite:///{tmp_path / 'migrations.db'}")
+def moteur(tmp_path, moteur_postgresql):
+    """Base vide, à l'écart des tables de la suite : fichier SQLite, ou schéma PostgreSQL à part."""
+    if moteur_postgresql is None:
+        moteur = create_engine(f"sqlite:///{tmp_path / 'migrations.db'}")
+        yield moteur
+        moteur.dispose()
+        return
+
+    def ordre(sql):
+        with moteur_postgresql.begin() as cx:
+            cx.execute(text(sql))
+
+    ordre("drop schema if exists migrations cascade")
+    ordre("create schema migrations")
+    # Mêmes réglages de session que l'application, dans le schéma à part
+    moteur = create_engine(
+        moteur_postgresql.url,
+        connect_args={"options": "-c search_path=migrations -c timezone=utc"},
+    )
     yield moteur
     moteur.dispose()
+    ordre("drop schema migrations cascade")
 
 
 def test_les_migrations_rejoignent_les_modeles(moteur):
@@ -343,3 +361,4 @@ class TestBasculeVersFigurinesEtDecoration:
             ).one()
             assert (ligne.product_id, ligne.name) == (vitrine["HNB-014"].id, "Collier Maneki-neko")
             assert db.scalar(select(models.Product).where(models.Product.code == "HNB-061")) is None
+

@@ -1,7 +1,9 @@
 """Fixtures partagees par la suite de tests."""
+import os
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -9,7 +11,7 @@ from antibot_helper import solve_antibot
 
 from app import antibot
 from app.config import settings
-from app.database import Base, get_db
+from app.database import Base, base_locale, creer_moteur, get_db, normalise_url
 from app.main import app
 from app.models import Product, Promo, User
 from app.ratelimit import limiter
@@ -50,23 +52,65 @@ def boite_courriels(monkeypatch):
     return boite
 
 
+# --- Base de donnees ---
+
+# Posee, la suite tourne sur ce PostgreSQL, comme la production, au lieu de SQLite
+URL_POSTGRESQL = os.environ.get("TEST_DATABASE_URL", "")
+
+
+@pytest.fixture(scope="session")
+def moteur_postgresql():
+    """Schema cree une fois par session ; None sans TEST_DATABASE_URL."""
+    if not URL_POSTGRESQL:
+        yield None
+        return
+    url = normalise_url(URL_POSTGRESQL)
+    # La suite vide toutes les tables entre deux tests
+    if not base_locale(url):
+        pytest.exit("TEST_DATABASE_URL doit viser une base locale : la suite en vide les tables.")
+    moteur = creer_moteur(url)
+    Base.metadata.drop_all(moteur)
+    Base.metadata.create_all(moteur)
+    yield moteur
+    Base.metadata.drop_all(moteur)
+    moteur.dispose()
+
+
 @pytest.fixture
-def db_session():
-    # StaticPool : SQLite en memoire est propre a chaque connexion. Sans lui,
-    # le client HTTP et le test verraient deux bases differentes.
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
+def moteur(moteur_postgresql):
+    """Base vide pour chaque test."""
+    if moteur_postgresql is None:
+        # StaticPool : SQLite en memoire est propre a chaque connexion. Sans lui,
+        # le client HTTP et le test verraient deux bases differentes.
+        moteur = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        Base.metadata.create_all(moteur)
+        yield moteur
+        moteur.dispose()
+        return
+
+    tables = ", ".join(
+        moteur_postgresql.dialect.identifier_preparer.quote(t.name)
+        for t in Base.metadata.sorted_tables
     )
-    Base.metadata.create_all(bind=engine)
-    TestingSession = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    with moteur_postgresql.begin() as cx:
+        # Une session oubliee par le test precedent echoue ici au lieu de tout bloquer
+        cx.execute(text("set local lock_timeout = '5s'"))
+        cx.execute(text(f"truncate {tables} restart identity cascade"))
+    yield moteur_postgresql
+
+
+@pytest.fixture
+def db_session(moteur):
+    TestingSession = sessionmaker(bind=moteur, autoflush=False, expire_on_commit=False)
     session = TestingSession()
     try:
         yield session
     finally:
         session.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture

@@ -38,14 +38,16 @@ def _en_parallele(taches):
 
 
 @pytest.fixture
-def fabrique(tmp_path):
-    """Base de test sur fichier, une connexion par fil."""
-    moteur = create_engine(
-        f"sqlite:///{tmp_path / 'concurrence.db'}",
-        connect_args={"check_same_thread": False, "timeout": 30},
-        future=True,
-    )
-    Base.metadata.create_all(moteur)
+def fabrique(tmp_path, moteur):
+    """Une connexion par fil : le PostgreSQL de la suite, ou SQLite sur fichier."""
+    if moteur.dialect.name == "sqlite":
+        # La base en memoire de la suite n'a qu'une connexion, partagee
+        moteur = create_engine(
+            f"sqlite:///{tmp_path / 'concurrence.db'}",
+            connect_args={"check_same_thread": False, "timeout": 30},
+            future=True,
+        )
+        Base.metadata.create_all(moteur)
     return sessionmaker(bind=moteur, autoflush=False, expire_on_commit=False)
 
 

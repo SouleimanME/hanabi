@@ -330,7 +330,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 474 tests API, 256 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 487 tests API sur SQLite et PostgreSQL, 257 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -409,7 +409,9 @@ cd hanabi-dwh && .venv/Scripts/dbt parse --profiles-dir . --project-dir . && .ve
 ```
 
 Côté API : prix et remises, stock en concurrence, authentification, anti-robots,
-cloisonnement du back-office, export CSV, notation RFM, anonymisation.
+cloisonnement du back-office, export CSV, notation RFM, anonymisation, migrations.
+La suite tourne sur SQLite, et la CI la rejoue sur PostgreSQL 16, le moteur de la
+production : verrous de ligne, types et contraintes que SQLite laisse passer.
 
 Côté interface, les tests visent des propriétés plutôt que des valeurs figées :
 
