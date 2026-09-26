@@ -6,6 +6,7 @@ completions » convient (REDACTION_URL, REDACTION_CLE, REDACTION_MODELE). Aucun
 n'est nommé dans le code.
 """
 import json
+import logging
 import time
 import urllib.error
 import urllib.request
@@ -14,6 +15,7 @@ from pydantic import ValidationError
 
 from .config import settings
 
+log = logging.getLogger("hanabi.fournisseur")
 
 class ErreurFournisseur(Exception):
     """Un échec, avec le statut HTTP à rendre et ce qu'il faut en dire."""
@@ -75,6 +77,14 @@ def _envoyer_avec_patience(corps: dict) -> dict:
         return transport(corps)
 
 
+def _motif(e: urllib.error.HTTPError) -> str:
+    """Le corps d'un refus, qui dit quota, clé ou modèle ; jamais la demande."""
+    try:
+        return (e.read() or b"").decode("utf-8", "replace")[:300]
+    except Exception:
+        return ""
+
+
 def appeler(historique: list[dict], avec_image: bool = False, max_tokens: int = 2000) -> str:
     """Le texte de la réponse, ou une ErreurFournisseur qui dit quoi faire."""
     corps = {
@@ -87,6 +97,7 @@ def appeler(historique: list[dict], avec_image: bool = False, max_tokens: int = 
     try:
         reponse = _envoyer_avec_patience(corps)
     except urllib.error.HTTPError as e:
+        log.warning("le fournisseur refuse l'appel", extra={"statut": e.code, "motif": _motif(e)})
         if e.code in (400, 413, 415, 422) and avec_image:
             raise ImageRefusee from e
         if e.code in (401, 403):

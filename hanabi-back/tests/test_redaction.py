@@ -220,6 +220,16 @@ def test_deux_refus_pour_debit_font_une_erreur_franche(client, admin, fournisseu
     assert "saturé" in reponse.json()["detail"]
 
 
+def test_le_motif_d_un_refus_est_journalise(client, admin, fournisseur, caplog):
+    refus = urllib.error.HTTPError(
+        "https://x", 429, "refus", {}, io.BytesIO(b'{"message":"quota exceeded"}')
+    )
+    fournisseur(_http(429), refus)
+    with caplog.at_level("WARNING", logger="hanabi.fournisseur"):
+        _demander(client, admin)
+    assert any(getattr(r, "motif", "") == '{"message":"quota exceeded"}' for r in caplog.records)
+
+
 def test_non_configure_l_assistant_est_absent(client, admin, monkeypatch):
     monkeypatch.setattr(settings, "REDACTION_URL", "")
     assert client.get("/admin/redaction/etat", headers=admin).json()["actif"] is False
