@@ -77,6 +77,9 @@ class Settings(BaseSettings):
     REDACTION_PLAFOND_DEMO: int = 40
     # Conseiller cadeau, public : même fournisseur, plafond du jour à part
     CONSEIL_PLAFOND_JOUR: int = 300
+    # Questions à l'entrepôt, dans le back-office : même fournisseur, plafonds à part
+    QUESTIONS_PLAFOND_JOUR: int = 150
+    QUESTIONS_PLAFOND_DEMO: int = 50
 
     # --- Journalisation (voir observability.py) ---
     # JSON activé d'office en production, sauf réglage explicite

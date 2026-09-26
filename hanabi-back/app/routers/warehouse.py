@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from .. import warehouse
+from .. import fournisseur, question_entrepot, warehouse
 from ..database import get_db
 from ..deps import get_admin_user, is_readonly_admin
 from ..ratelimit import limiter
@@ -83,6 +83,46 @@ def executer_sql(
         raise HTTPException(422, str(refus))
     except warehouse.EntrepotAbsent:
         raise HTTPException(409, ENTREPOT_ABSENT)
+
+
+class Question(BaseModel):
+    question: str = Field(min_length=3, max_length=300)
+
+
+# Chaque question coûte un appel au fournisseur et une requête de 5 s au plus
+@router.post("/question")
+@limiter.limit("6/minute")
+def poser_une_question(
+    request: Request,
+    corps: Question,
+    db: Session = Depends(get_db),
+    admin=Depends(get_admin_user),
+):
+    """Une question en français, traduite en SQL sur gold et exécutée par la console."""
+    demo = is_readonly_admin(admin)
+    try:
+        reponse, restant = question_entrepot.demander(db, corps.question.strip(), demo)
+    except warehouse.EntrepotAbsent:
+        raise HTTPException(409, ENTREPOT_ABSENT)
+    except question_entrepot.SqlIntraduisible as echec:
+        # La base a refusé deux fois : on montre le SQL et pourquoi, à corriger à la main
+        return {
+            "question": corps.question.strip(), "sql": echec.sql, "explication": None,
+            "refus": None, "resultat": None, "erreur": echec.message, "tentatives": 2,
+            "restant": question_entrepot.restant(db, demo),
+        }
+    except fournisseur.ErreurFournisseur as e:
+        raise HTTPException(e.statut_http, e.message)
+    return {
+        "question": reponse.question,
+        "sql": reponse.sql,
+        "explication": reponse.explication,
+        "refus": reponse.refus,
+        "resultat": reponse.resultat,
+        "erreur": None,
+        "tentatives": reponse.tentatives,
+        "restant": restant,
+    }
 
 
 # (titre, schémas lus, requête) : un exemple n'est proposé qu'au compte qui peut l'exécuter
@@ -163,6 +203,8 @@ def aide_sql(admin=Depends(get_admin_user)):
         )
     return {
         "schemas": sorted(ouverts),
+        # Le champ de question n'apparaît que si le fournisseur est configuré
+        "questions": fournisseur.configure(),
         "delai_max_s": warehouse.DELAI_MAX_MS // 1000,
         "limite_max": warehouse.LIMITE_SQL_MAX,
         "regles": regles,

@@ -2040,3 +2040,67 @@ th[aria-sort] .th-sort {
     transition-duration: 1ms !important;
   }
 }
+
+/* --- Demander à l'entrepôt : la question d'abord, le SQL à portée de main --- */
+.wh-demande {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--r-panel);
+}
+.wh-demande-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wh-demande-tete h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-voice);
+  font-size: 19px;
+  font-weight: 700;
+}
+.wh-demande-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wh-demande-form input {
+  flex: 1 1 22rem;
+  min-inline-size: 0;
+}
+.wh-demande-reponse {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.wh-demande-reponse > * {
+  justify-self: stretch;
+}
+.wh-demande-reponse > .adm-btn {
+  justify-self: start;
+}
+.wh-demande-explication {
+  font-family: var(--font-voice);
+  font-size: 17px;
+  line-height: 1.4;
+}
+.wh-demande-refus {
+  padding: 10px 12px;
+  border: 1px dashed var(--line-strong, var(--line));
+  border-radius: var(--r-panel);
+}
+.wh-demande-sql summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.wh-demande-sql[open] summary {
+  margin-block-end: 8px;
+}

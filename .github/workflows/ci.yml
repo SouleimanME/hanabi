@@ -211,6 +211,15 @@ jobs:
         run: |
           dagster asset materialize --module-name orchestration --select '*' \
             --partition "$(date -u +%Y-%m-01)"
+      # Le banc de « Demander à l'entrepôt » : chaque requête de référence passe
+      # par la console sur l'entrepôt construit, sans fournisseur
+      - name: Questions de reference de l'entrepot
+        working-directory: hanabi-back
+        env:
+          DATABASE_URL: postgresql://postgres:hanabi@localhost:5432/hanabi
+          SECRET_KEY: cle-de-test-sans-valeur-en-production
+          ENV: dev
+        run: '"$RUNNER_TEMP/api/bin/python" tests/entrepot/verifier_references.py'
 
   front:
     name: Interface (lint + tests + build)

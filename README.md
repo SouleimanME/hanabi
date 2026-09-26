@@ -406,6 +406,30 @@ Les courriels sortent par défaut en `.eml` dans `var/courriels/`, message MIME
 complet. `MAIL_BACKEND=smtp` bascule sur un vrai relais (voir `.env.example`).
 L'onglet Exploitation du back-office affiche la file et les paiements à rapprocher.
 
+### Demander à l'entrepôt
+
+**Une question en français, une requête qu'on peut lire.** Dans l'onglet
+Entrepôt, « quel segment pèse le plus dans le chiffre d'affaires ? » devient une
+requête SQL sur les tables gold, exécutée par la console et ses garde-fous. La
+réponse montre la phrase qui dit ce que calcule la requête, le tableau, le SQL,
+et un bouton qui le reprend dans la console : rien n'est caché, tout se vérifie.
+
+**Le modèle écrit, la console exécute.** Il ne lit que gold, même pour un
+administrateur qui a droit à bronze et silver : ce sont les tables d'agrégats,
+sans ligne par personne. Il connaît les tables par le registre du back-office (la
+question métier de chacune), les colonnes lues dans la base au moment même, et
+les valeurs des colonnes de texte qui en ont peu : « Fideles » s'écrit sans
+accent, et c'est la base qui le dit. Une requête refusée par la base lui revient
+avec l'erreur, une fois. Il refuse une demande de données personnelles, une
+écriture ou une question hors de ces tables, en disant pourquoi.
+
+**Un banc qui ne dépend pas du modèle.** 22 questions de référence, dont trois à
+refuser, avec leur requête. Une réponse est juste quand son résultat contient,
+pour chaque colonne de la référence, une colonne aux mêmes valeurs : les noms et
+les colonnes en plus ne comptent pas. La CI exécute chaque requête de référence
+sur l'entrepôt qu'elle vient de construire, à travers la console : un renommage
+dans dbt casse le banc tout de suite, pas le jour de l'évaluation.
+
 ### La console SQL
 
 Cinq barrières : transaction en lecture seule, délai de cinq secondes, tables lues
@@ -449,7 +473,7 @@ source.
 
 | Domaine | Réalisations |
 | --- | --- |
-| Données | Médaillon dbt sur PostgreSQL, 27 modèles, 120 tests, orchestration Dagster par partitions, console SQL bridée |
+| Données | Médaillon dbt sur PostgreSQL, 27 modèles, 120 tests, orchestration Dagster par partitions, console SQL bridée, questions en français traduites en SQL sur gold |
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
 | Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle, conseiller cadeau qui ne propose que des objets en stock et dans le budget |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
@@ -458,7 +482,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 593 tests API sur SQLite et PostgreSQL, 267 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 612 tests API sur SQLite et PostgreSQL, 272 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -548,6 +572,13 @@ cd hanabi-back && .venv/Scripts/python tests/redaction/evaluer.py
 cd hanabi-back && .venv/Scripts/python tests/conseil/evaluer.py
 ```
 
+Celle des questions à l'entrepôt demande en plus un entrepôt construit
+(`DATABASE_URL` vers sa base) :
+
+```bash
+cd hanabi-back && .venv/Scripts/python tests/entrepot/evaluer.py
+```
+
 ```bash
 cd hanabi-front && npm run lint && npm run format:check && npm test && npm run build
 ```
@@ -594,6 +625,7 @@ hanabi-back/          API FastAPI
     fournisseur.py    accès neutre au fournisseur de modèle de langue
     redaction.py      assistant de fiche produit, plafond du jour
     conseil.py        conseiller cadeau : candidats, choix vérifiés
+    question_entrepot.py  questions en français, traduites en SQL sur gold
     rgpd.py           portabilité et effacement
     idempotency.py    rejeu des requêtes non répétables
     outbox.py         file des courriels

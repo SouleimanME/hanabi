@@ -180,7 +180,7 @@ tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
   migration `fiches multilingues` en garde sa propre copie figée.
 - Les usages traduits suivent les lignes françaises une à une.
 
-## Assistant de fiche et conseiller cadeau
+## Assistant de fiche, conseiller cadeau et questions à l'entrepôt
 
 - Aucun fournisseur n'est nommé dans le code : `REDACTION_URL`, `REDACTION_CLE`
   et `REDACTION_MODELE` le désignent au déploiement.
@@ -198,7 +198,12 @@ tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
   la consigne seule. `tests/conseil/demandes.json` ne sert qu'à mesurer ; une
   demande ajoutée après avoir vu une réponse n'y a pas sa place.
 - Le texte d'une demande au conseiller ne s'écrit ni en base ni dans les
-  journaux.
+  journaux ; une question à l'entrepôt non plus, ni son SQL.
+- Les questions à l'entrepôt passent toujours par `warehouse.executer_sql`,
+  limitée à gold : ne jamais exécuter le SQL du modèle par un autre chemin.
+- `tests/entrepot/questions.json` : chaque question a sa requête de référence, et
+  la CI les exécute après la construction de l'entrepôt. Renommer une colonne
+  gold, c'est aussi mettre à jour ces requêtes.
 
 ## Pièges
 

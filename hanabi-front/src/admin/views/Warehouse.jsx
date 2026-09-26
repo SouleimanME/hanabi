@@ -1,6 +1,6 @@
 /** Entrepôt : tables d'agrégats construites par dbt, et la requête qui les lit. */
 import { useEffect, useRef, useState } from "react";
-import { Copy, Play, RotateCcw } from "lucide-react";
+import { Copy, MessageSquareText, Play, RotateCcw } from "lucide-react";
 
 import { api, copierTexte } from "../api.js";
 import { anciennete, eur, fmtDate, num, pct } from "../format.js";
@@ -87,8 +87,144 @@ function TableEntrepot({ colonnes, lignes, tri, sens, onTrier, legende }) {
   );
 }
 
+/* Questions proposées au premier regard : ce que demanderait un gérant, pas un analyste */
+const QUESTIONS_EXEMPLES = [
+  "Quel segment de clients pèse le plus dans le chiffre d'affaires ?",
+  "Quels jours fériés ont le mieux vendu ?",
+  "Quelle tranche d'âge dépense le plus par client ?",
+];
+
+/** Une question en français, traduite en SQL sur gold et exécutée par la console.
+ *  Le SQL reste visible et se reprend dans la console : rien n'est caché. */
+function Question({ flash, onOuvrir }) {
+  const [question, setQuestion] = useState("");
+  const [reponse, setReponse] = useState(null);
+  const [erreur, setErreur] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const champ = useRef(null);
+
+  async function demander(e) {
+    e?.preventDefault();
+    if (question.trim().length < 3) {
+      setErreur("Pose une question en quelques mots.");
+      champ.current?.focus();
+      return;
+    }
+    setBusy(true);
+    setErreur(null);
+    try {
+      setReponse(
+        await api("/admin/warehouse/question", {
+          method: "POST",
+          body: { question: question.trim() },
+        }),
+      );
+    } catch (err) {
+      setReponse(null);
+      setErreur(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="wh-demande" aria-labelledby="demande-titre" aria-busy={busy}>
+      <div className="wh-demande-tete">
+        <h2 id="demande-titre">
+          <MessageSquareText size={18} aria-hidden="true" /> Demander à l&apos;entrepôt
+        </h2>
+        {reponse && (
+          <span className="muted num">
+            Questions restantes aujourd&apos;hui : {reponse.restant}
+          </span>
+        )}
+      </div>
+      <form className="wh-demande-form" onSubmit={demander} noValidate>
+        <label className="sr-only" htmlFor="demande-champ">
+          Question sur l&apos;activité
+        </label>
+        <input
+          id="demande-champ"
+          ref={champ}
+          value={question}
+          maxLength={300}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Quel produit rapporte le plus de marge ?"
+          aria-describedby="demande-aide"
+        />
+        <button type="submit" className="adm-btn primary" disabled={busy}>
+          {busy ? "Traduction…" : "Demander"}
+        </button>
+      </form>
+      <p className="muted" id="demande-aide">
+        Traduite en SQL sur les tables gold, puis exécutée par la console et ses garde-fous. La
+        requête reste visible.
+      </p>
+      <div className="wh-exemples">
+        {QUESTIONS_EXEMPLES.map((q) => (
+          <button
+            key={q}
+            type="button"
+            className="adm-btn sm"
+            onClick={() => {
+              setQuestion(q);
+              champ.current?.focus();
+            }}
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+
+      {erreur && (
+        <div className="adm-err" role="alert">
+          {erreur}
+        </div>
+      )}
+
+      {reponse?.refus && (
+        <p className="wh-demande-refus" role="status">
+          {reponse.refus}
+        </p>
+      )}
+
+      {reponse?.erreur && (
+        <div className="adm-err" role="alert">
+          La base a refusé la requête proposée, deux fois : {reponse.erreur}
+        </div>
+      )}
+
+      {reponse?.sql && (
+        <div className="wh-demande-reponse">
+          {reponse.explication && <p className="wh-demande-explication">{reponse.explication}</p>}
+          {reponse.resultat &&
+            (reponse.resultat.lignes.length === 0 ? (
+              <p className="wh-note">Aucune ligne ne répond à cette question.</p>
+            ) : (
+              <TableEntrepot
+                colonnes={reponse.resultat.colonnes}
+                lignes={reponse.resultat.lignes}
+                legende={reponse.question}
+              />
+            ))}
+          {reponse.tentatives > 1 && !reponse.erreur && (
+            <p className="wh-note">Requête corrigée après un premier refus de la base.</p>
+          )}
+          <details className="wh-demande-sql">
+            <summary>Voir le SQL</summary>
+            <BlocCode titre="Requête exécutée" texte={reponse.sql} flash={flash} />
+          </details>
+          <button type="button" className="adm-btn sm" onClick={() => onOuvrir(reponse.sql)}>
+            Ouvrir dans la console
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** Console en lecture seule ; les garde-fous et les messages de refus viennent du serveur. */
-function ConsoleSql({ sqlInitial, aide, flash, onResultat }) {
+function ConsoleSql({ sqlInitial, aide, flash, onResultat, injection }) {
   const [sql, setSql] = useState(sqlInitial);
   const [resultat, setResultat] = useState(null);
   const [erreur, setErreur] = useState(null);
@@ -101,6 +237,16 @@ function ConsoleSql({ sqlInitial, aide, flash, onResultat }) {
   useEffect(() => {
     if (!modifiee) setSql(sqlInitial);
   }, [sqlInitial, modifiee]);
+
+  // Une requête venue de « Demander à l'entrepôt », à reprendre à la main
+  useEffect(() => {
+    if (!injection) return;
+    setSql(injection.sql);
+    setModifiee(true);
+    setErreur(null);
+    champ.current?.scrollIntoView?.({ block: "center" });
+    champ.current?.focus();
+  }, [injection]);
 
   async function executer() {
     setBusy(true);
@@ -348,6 +494,7 @@ export function Warehouse({ flash }) {
   const [busy, setBusy] = useState(false);
   const [aide, setAide] = useState(null);
   const [resultatSql, setResultatSql] = useState(null);
+  const [injection, setInjection] = useState(null);
 
   useEffect(() => {
     api("/admin/warehouse")
@@ -442,6 +589,8 @@ export function Warehouse({ flash }) {
 
       <Controles controles={etat.controles || []} />
 
+      {aide?.questions && <Question flash={flash} onOuvrir={(sql) => setInjection({ sql })} />}
+
       <div className="adm-subnav">
         <div className="adm-segments wh-marts" role="group" aria-label="Tables d'agrégats">
           {etat.marts.map((m) => (
@@ -469,7 +618,13 @@ export function Warehouse({ flash }) {
 
       {vue && vue.cle === cle && (
         <>
-          <ConsoleSql sqlInitial={vue.sql} aide={aide} flash={flash} onResultat={setResultatSql} />
+          <ConsoleSql
+            sqlInitial={vue.sql}
+            aide={aide}
+            flash={flash}
+            onResultat={setResultatSql}
+            injection={injection}
+          />
 
           {/* Un résultat libre remplace la table */}
           {!resultatSql && (

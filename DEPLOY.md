@@ -211,6 +211,14 @@ par adresse IP. La politique de confidentialité
 (`hanabi-front/src/content/legal.js`) nomme le prestataire et son pays :
 changer de fournisseur, c'est aussi la mettre à jour, dans les trois langues.
 
+Les questions en français à l'entrepôt, dans le back-office, passent par le même
+fournisseur, avec leurs propres plafonds du jour : 150 pour le back-office
+(`QUESTIONS_PLAFOND_JOUR`), 50 pour le compte de démonstration
+(`QUESTIONS_PLAFOND_DEMO`). Le fournisseur reçoit la question, la description
+des tables gold et les valeurs de leurs colonnes de texte courtes (segments,
+catégories, noms de produits, codes promo) ; jamais le résultat d'une requête,
+qui reste chez Hanabi.
+
 ### Ce qu'implique l'offre gratuite de Render
 
 - **Mise en veille après inactivité.** La première visite après une pause

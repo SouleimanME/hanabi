@@ -382,3 +382,17 @@ class Conseil(Base):
     choix: Mapped[int] = mapped_column(Integer, default=0)
     duree_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+class QuestionEntrepot(Base):
+    """Une question posée à l'entrepôt. Ni la question ni le SQL : seulement de
+    quoi compter celles du jour et suivre leur issue."""
+
+    __tablename__ = "questions_entrepot"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
+    demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    # en_cours | ok | refus | echec
+    statut: Mapped[str] = mapped_column(String(20), default="en_cours")
+    # 2 : la base a refusé la première requête, le modèle l'a corrigée
+    tentatives: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    duree_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
