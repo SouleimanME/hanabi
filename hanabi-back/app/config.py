@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12
     ALGORITHM: str = "HS256"
     DATABASE_URL: str = "sqlite:///./atelier.db"
+    # Hors production, le démarrage ne migre qu'une base locale (voir migrate.py).
+    # À 1 pour migrer à dessein une base distante depuis un poste de travail.
+    MIGRER_BASE_DISTANTE: bool = False
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     # --- Compte administrateur ---

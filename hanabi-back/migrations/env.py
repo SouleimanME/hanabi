@@ -10,7 +10,9 @@ from app.database import DATABASE_URL, Base
 
 config = context.config
 
-if config.config_file_name is not None:
+# En ligne de commande seulement : au démarrage de l'API, `fileConfig` désactiverait
+# tous les journaux déjà créés et remplacerait leur format (voir app/migrate.py)
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
 # Renseignee ici plutot que dans alembic.ini, voir l'en-tete

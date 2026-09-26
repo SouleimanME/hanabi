@@ -178,6 +178,10 @@ retard et se désactivent après soixante jours sans activité sur le dépôt.
 Le premier démarrage est plus long : Alembic crée le schéma, puis le jeu de
 démonstration est généré (`DEMO_USERS`, 100 000 comptes par défaut).
 
+Seule l'API de production (`ENV=prod`) migre la base Neon. Une API lancée sur un
+poste avec la même `DATABASE_URL` refuse de démarrer si le schéma est en retard,
+au lieu de le migrer en avance sur le code déployé.
+
 ### Ce qu'implique l'offre gratuite de Render
 
 - **Mise en veille après inactivité.** La première visite après une pause
