@@ -80,7 +80,7 @@ jobs:
   # Le banc d'essai de la recherche avec son modèle. Ailleurs, sans modèle, ses
   # tests sont sautés ; ici RECHERCHE_EXIGEE interdit de les sauter
   recherche:
-    name: Recherche par le sens (banc d'essai)
+    name: Recherche par le sens (bancs d'essai)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -113,7 +113,7 @@ jobs:
         run: python -m app.plongement
 
       - name: Banc d'essai et tests de la recherche
-        run: python -m pytest tests/test_recherche.py tests/test_recherche_banc.py -v
+        run: python -m pytest tests/test_recherche.py tests/test_recherche_banc.py tests/test_conseil_banc.py -v
 
       - name: Rapport
         run: python tests/recherche/banc.py

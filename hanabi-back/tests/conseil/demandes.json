@@ -1,0 +1,26 @@
+{
+  "regle": "Écrites avant le conseiller et jamais utilisées pour le régler. « acceptables » : les objets qu'un vendeur attentif proposerait ; une liste vide attend une réponse sans objet. « budget » : le plafond, en centimes, que la demande impose.",
+  "demandes": [
+    {"demande": "Un cadeau pour ma sœur qui adore les yokai, 50 € maximum", "lang": "fr", "budget": 5000, "acceptables": ["HNB-052", "HNB-061"]},
+    {"demande": "Pour mon père qui a déjà tout, il aime la mer et la peinture japonaise", "lang": "fr", "acceptables": ["HNB-078"]},
+    {"demande": "Un cadeau de naissance pour le bébé d'une amie", "lang": "fr", "acceptables": ["HNB-071", "HNB-026", "HNB-021"]},
+    {"demande": "Mon collègue ouvre son restaurant de ramen le mois prochain", "lang": "fr", "acceptables": ["HNB-083", "HNB-018"]},
+    {"demande": "Une amie passe un concours la semaine prochaine, un porte-bonheur à moins de 30 €", "lang": "fr", "budget": 3000, "acceptables": ["HNB-067"]},
+    {"demande": "Pour quelqu'un qui aime les dragons et la fantasy", "lang": "fr", "acceptables": ["HNB-074"]},
+    {"demande": "Une lampe pour la chambre de ma fille de six ans", "lang": "fr", "acceptables": ["HNB-026", "HNB-021"]},
+    {"demande": "De la déco pour un bar à cocktails japonais, 60 € maximum", "lang": "fr", "budget": 6000, "acceptables": ["HNB-083", "HNB-037", "HNB-061"]},
+    {"demande": "Pour un passionné de théâtre nô", "lang": "fr", "acceptables": ["HNB-064"]},
+    {"demande": "Pour mon grand-père qui collectionne les objets en bois", "lang": "fr", "acceptables": ["HNB-071"]},
+    {"demande": "Souhaiter bonne chance à une amie qui lance son entreprise", "lang": "fr", "acceptables": ["HNB-018", "HNB-067"]},
+    {"demande": "Un cadeau à moins de 20 €", "lang": "fr", "budget": 2000, "acceptables": []},
+
+    {"demande": "Something for a teenager who loves anime, under 45 euros", "lang": "en", "budget": 4500, "acceptables": ["HNB-061", "HNB-018"]},
+    {"demande": "A wedding gift, something to hang on the wall", "lang": "en", "acceptables": ["HNB-078", "HNB-037", "HNB-064"]},
+    {"demande": "My brother does karate and loves Japanese culture", "lang": "en", "acceptables": ["HNB-064", "HNB-074"]},
+    {"demande": "A housewarming present for friends who like cosy lighting", "lang": "en", "acceptables": ["HNB-083", "HNB-026", "HNB-021"]},
+
+    {"demande": "Regalo para mi hermana que estudia para un examen, como máximo 30 €", "lang": "es", "budget": 3000, "acceptables": ["HNB-067"]},
+    {"demande": "Una lámpara para un amigo que ama la astronomía", "lang": "es", "acceptables": ["HNB-026"]},
+    {"demande": "Algo bonito para el escritorio de mi jefa, entre 30 y 40 euros", "lang": "es", "budget": 4000, "acceptables": ["HNB-071", "HNB-018"]}
+  ]
+}

@@ -2,9 +2,8 @@
 photo, il propose la fiche entière en trois langues. Le marchand relit, corrige
 et enregistre ; rien n'est publié sans lui.
 
-Le fournisseur se choisit au déploiement : tout point d'accès au format « chat
-completions » qui lit les images convient (REDACTION_URL, REDACTION_CLE,
-REDACTION_MODELE). Seuls le texte et la photo de l'objet partent chez lui.
+Le fournisseur se choisit au déploiement (voir `fournisseur.py`) et doit lire
+les images. Seuls le texte et la photo de l'objet partent chez lui.
 
 La réponse est un JSON validé champ par champ. Invalide, elle est redemandée une
 fois avec l'erreur ; invalide encore, l'assistant le dit au lieu de remplir le
@@ -14,8 +13,6 @@ import json
 import logging
 import re
 import time
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, time as heure, timezone
 from typing import Literal
@@ -24,8 +21,11 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import models
+from . import fournisseur, models
 from .config import settings
+from .fournisseur import ErreurFournisseur as ErreurRedaction
+from .fournisseur import ImageRefusee as _ImageRefusee
+from .fournisseur import configure
 from .translations import traductions
 
 log = logging.getLogger("hanabi.redaction")
@@ -103,20 +103,6 @@ class Demande(BaseModel):
         return v or None
 
 
-# --- Erreurs, avec ce qu'il faut dire au marchand ---
-
-
-class ErreurRedaction(Exception):
-    def __init__(self, statut_http: int, message: str):
-        super().__init__(message)
-        self.statut_http = statut_http
-        self.message = message
-
-
-class _ImageRefusee(Exception):
-    pass
-
-
 # --- Consigne ---
 
 CONSIGNE = """Tu rédiges la fiche d'un objet pour Hanabi, une boutique en ligne d'objets japonais choisis un par un : figurines, décoration, luminaires.
@@ -184,75 +170,11 @@ def messages(demande: Demande, exemples: list[dict], avec_image: bool) -> list[d
     return [{"role": "system", "content": systeme}, {"role": "user", "content": contenu}]
 
 
-# --- Fournisseur ---
-
-
-def configure() -> bool:
-    return bool(settings.REDACTION_URL and settings.REDACTION_CLE and settings.REDACTION_MODELE)
-
-
-def _envoyer(corps: dict) -> dict:
-    """Un appel au fournisseur. Remplacé dans les tests."""
-    requete = urllib.request.Request(
-        settings.REDACTION_URL.rstrip("/") + "/chat/completions",
-        data=json.dumps(corps).encode(),
-        headers={
-            "Authorization": f"Bearer {settings.REDACTION_CLE}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(requete, timeout=settings.REDACTION_DELAI_SECONDES) as reponse:
-        return json.loads(reponse.read())
-
-
-transport = _envoyer
-
-
-def _appeler(historique: list[dict], avec_image: bool) -> str:
-    corps = {
-        "model": settings.REDACTION_MODELE,
-        "messages": historique,
-        "response_format": {"type": "json_object"},
-        "temperature": 0.3,
-        "max_tokens": 2000,
-    }
-    try:
-        reponse = transport(corps)
-    except urllib.error.HTTPError as e:
-        if e.code in (400, 413, 415, 422) and avec_image:
-            raise _ImageRefusee from e
-        if e.code in (401, 403):
-            raise ErreurRedaction(503, "Le fournisseur refuse la clé : vérifier REDACTION_CLE.") from e
-        if e.code == 429:
-            raise ErreurRedaction(503, "Le fournisseur est saturé : réessayer dans une minute.") from e
-        raise ErreurRedaction(502, f"Le fournisseur a répondu {e.code}.") from e
-    except (urllib.error.URLError, TimeoutError, OSError) as e:
-        raise ErreurRedaction(504, "Le fournisseur ne répond pas : réessayer plus tard.") from e
-    try:
-        contenu = reponse["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError) as e:
-        raise ErreurRedaction(502, "Réponse du fournisseur illisible.") from e
-    if isinstance(contenu, list):
-        contenu = "".join(p.get("text", "") for p in contenu if isinstance(p, dict))
-    return contenu or ""
-
-
 def _lire(contenu: str) -> Proposition:
-    """Le JSON de la réponse, même entouré de texte ou d'une clôture de code."""
-    debut, fin = contenu.find("{"), contenu.rfind("}")
-    if debut < 0 or fin < debut:
-        raise ValueError("aucun objet JSON dans la réponse")
-    proposition = Proposition.model_validate(json.loads(contenu[debut : fin + 1]))
+    proposition = Proposition.model_validate(fournisseur.extraire_json(contenu))
     if not proposition.lignes_paralleles():
         raise ValueError("les trois langues n'ont pas le même nombre de lignes d'usages")
     return proposition
-
-
-def _erreur_lisible(e: Exception) -> str:
-    if isinstance(e, ValidationError):
-        return "; ".join(f"{'.'.join(map(str, err['loc']))} : {err['msg']}" for err in e.errors()[:6])
-    return str(e)
 
 
 @dataclass
@@ -266,22 +188,22 @@ def rediger(demande: Demande, exemples: list[dict]) -> Resultat:
     avec_image = demande.image is not None
     try:
         historique = messages(demande, exemples, avec_image)
-        contenu = _appeler(historique, avec_image)
+        contenu = fournisseur.appeler(historique, avec_image)
     except _ImageRefusee:
         avec_image = False
         historique = messages(demande, exemples, avec_image)
-        contenu = _appeler(historique, avec_image)
+        contenu = fournisseur.appeler(historique, avec_image)
 
     try:
         proposition = _lire(contenu)
     except (ValueError, ValidationError) as e:
-        log.info("proposition invalide, second essai", extra={"erreur": _erreur_lisible(e)[:200]})
+        log.info("proposition invalide, second essai", extra={"erreur": fournisseur.erreur_lisible(e)[:200]})
         historique = historique + [
             {"role": "assistant", "content": contenu},
-            {"role": "user", "content": f"Réponse invalide : {_erreur_lisible(e)}. "
+            {"role": "user", "content": f"Réponse invalide : {fournisseur.erreur_lisible(e)}. "
                                         "Renvoie uniquement le JSON demandé, corrigé."},
         ]
-        contenu = _appeler(historique, avec_image)
+        contenu = fournisseur.appeler(historique, avec_image)
         try:
             proposition = _lire(contenu)
         except (ValueError, ValidationError) as e2:

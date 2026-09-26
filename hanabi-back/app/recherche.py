@@ -64,11 +64,15 @@ GENERIQUES = frozenset(
 
 _NOMBRE = r"(\d+(?:[.,]\d{1,2})?)"
 _MONNAIE = r"(?:\s*(?:€|euros?\b|eur\b))?"
+# « €50 », « $40 » : le symbole avant le nombre, à l'anglaise
+_AVANT = r"(?:[€$]\s*)?"
 _PRIX = [
     # Deux bornes : « entre 30 et 40 € », « de 30 à 40 », « 30-40 € »
-    (re.compile(rf"(?:\b(?:entre|between|de|from|desde)\s+)?{_NOMBRE}{_MONNAIE}\s*(?:\bet\b|\band\b|\ba\b|\by\b|\bto\b|-)\s*{_NOMBRE}{_MONNAIE}"), "entre"),
-    (re.compile(rf"(?:\bmoins de|\bmax(?:imum)?|\bjusqu ?a|\bpas plus de|\bunder|\bbelow|\bless than|\bup to|\bmenos de|\bhasta|<=?)\s*{_NOMBRE}{_MONNAIE}"), "max"),
-    (re.compile(rf"(?:\bplus de|\bau moins|\ba partir de|\bover|\babove|\bmore than|\bmas de|>=?)\s*{_NOMBRE}{_MONNAIE}"), "min"),
+    (re.compile(rf"(?:\b(?:entre|between|de|from|desde)\s+)?{_AVANT}{_NOMBRE}{_MONNAIE}\s*(?:\bet\b|\band\b|\ba\b|\by\b|\bto\b|-)\s*{_AVANT}{_NOMBRE}{_MONNAIE}"), "entre"),
+    # Le plafond après le nombre : « 50 € maximum », « 40 euros au plus »
+    (re.compile(rf"{_AVANT}{_NOMBRE}{_MONNAIE}\s*(?:max(?:imum)?|maxi|au plus|at most|or less|ou moins|como maximo|maximo)\b"), "max"),
+    (re.compile(rf"(?:\bmoins de|\bmax(?:imum)?|\bjusqu ?a|\bpas plus de|\bau plus|\bbudget(?: de| of| max(?:imum)?)?|\bunder|\bbelow|\bless than|\bup to|\bat most|\bmenos de|\bhasta|\bpresupuesto(?: de)?|\b(?:como )?maximo|<=?)\s*{_AVANT}{_NOMBRE}{_MONNAIE}"), "max"),
+    (re.compile(rf"(?:\bplus de|\bau moins|\ba partir de|\bover|\babove|\bmore than|\bmas de|>=?)\s*{_AVANT}{_NOMBRE}{_MONNAIE}"), "min"),
 ]
 
 
@@ -149,7 +153,7 @@ def analyser(q: str) -> Requete:
             bas = _cents(m.group(1))
         texte = (texte[: m.start()] + " " + texte[m.end():]).strip()
         break
-    texte = re.sub(r"(?:€|\beuros?\b|\beur\b)", " ", texte)
+    texte = re.sub(r"(?:[€$]|\beuros?\b|\beur\b)", " ", texte)
     return Requete(" ".join(texte.split()), bas, haut)
 
 
@@ -313,6 +317,20 @@ def prechauffer(ouvrir_session) -> None:
 # --- Assemblage ---
 
 
+def pertinence(fiches: list[Fiche], texte: str, encodeur=None) -> tuple[np.ndarray, np.ndarray]:
+    """Score de chaque fiche pour `texte`, et si tous ses mots s'y retrouvent.
+
+    Le sens se juge sur tout le catalogue : un budget serré ne doit pas faire
+    paraître pertinent le moins mauvais des objets restants. Sans modèle, le
+    score est la part des mots retrouvés.
+    """
+    couv = couvertures(fiches, texte)
+    if encodeur is None or len(fiches) < 2:
+        return couv, couv == 1.0
+    sens = INDEX.scores(encodeur, fiches, texte)
+    return sens - sens.mean() + POIDS_TEXTE * couv, couv == 1.0
+
+
 def chercher(fiches: list[Fiche], q: str, encodeur=None) -> list[int]:
     """Identifiants des objets qui répondent à `q`, du plus au moins pertinent."""
     requete = analyser(q)
@@ -328,17 +346,12 @@ def chercher(fiches: list[Fiche], q: str, encodeur=None) -> list[int]:
             return []
         return [f.id for f in sorted(dans_le_budget, key=lambda f: f.prix_cents)]
 
-    couv = couvertures(fiches, requete.texte)
-    complets = couv == 1.0
+    score, complets = pertinence(fiches, requete.texte, encodeur)
     budget = set(dans_le_budget)
 
     if encodeur is None or len(fiches) < 2:
         return [f.id for f, c in zip(fiches, complets) if c and f in budget]
 
-    # Le sens se juge sur tout le catalogue : un budget serré ne doit pas
-    # faire paraître pertinent le moins mauvais des objets restants
-    sens = INDEX.scores(encodeur, fiches, requete.texte)
-    score = sens - sens.mean() + POIDS_TEXTE * couv
     retenus = complets | (score >= SEUIL)
 
     choisis = [i for i, f in enumerate(fiches) if retenus[i] and f in budget]

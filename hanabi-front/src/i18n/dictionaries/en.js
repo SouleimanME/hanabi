@@ -391,4 +391,23 @@ export default {
   rgpdDeleteReviews: "The text of your reviews stays online, under an anonymous author.",
   rgpdDeleteType: "Type « {formule} » to confirm",
   rgpdDeleteDone: "Your account has been deleted.",
+  // Conseil cadeau
+  giftTitle: "Looking for a gift?",
+  giftIntro:
+    "Describe the person and the occasion, with a budget if you have one. The adviser picks from the shop and tells you why.",
+  giftLabel: "Who is it for, and what's the occasion?",
+  giftPrivacy:
+    "Your request is sent to a service provider to answer it, then forgotten. Leave out names and contact details.",
+  giftSubmit: "Find a gift",
+  giftLoading: "The adviser is looking…",
+  giftExamples: "For example",
+  giftEx1: "For my sister who loves yokai, 50 € at most",
+  giftEx2: "A lucky charm for someone sitting an exam",
+  giftEx3: "A night light for a child's room",
+  giftTooShort: "Describe the person in a few words.",
+  giftResults: "The adviser's suggestions",
+  giftBudget: "Nothing in stock within this budget for now. Try a little wider.",
+  giftNone: "Nothing in the shop really suits them.",
+  giftLimit: "The adviser has done enough for today. Come back tomorrow, or browse the selection.",
+  giftError: "The adviser couldn't answer. Try again in a moment.",
 };

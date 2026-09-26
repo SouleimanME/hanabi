@@ -56,7 +56,7 @@ def configure(monkeypatch):
 def fournisseur(monkeypatch):
     def poser(*reponses):
         faux = Fournisseur(*reponses)
-        monkeypatch.setattr(redaction, "transport", faux)
+        monkeypatch.setattr("app.fournisseur.transport", faux)
         return faux
 
     return poser

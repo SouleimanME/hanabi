@@ -397,4 +397,24 @@ export default {
   rgpdDeleteReviews: "Le texte de tes avis reste en ligne, sous un auteur anonyme.",
   rgpdDeleteType: "Recopie « {formule} » pour confirmer",
   rgpdDeleteDone: "Ton compte a été supprimé.",
+  // Conseil cadeau
+  giftTitle: "Un cadeau à trouver ?",
+  giftIntro:
+    "Décris la personne et l'occasion, avec un budget si tu en as un. Le conseiller choisit dans la boutique et te dit pourquoi.",
+  giftLabel: "Pour qui, et pour quelle occasion ?",
+  giftPrivacy:
+    "Ta demande est transmise à un prestataire pour y répondre, puis oubliée. N'y mets ni nom ni coordonnées.",
+  giftSubmit: "Trouver un cadeau",
+  giftLoading: "Le conseiller cherche…",
+  giftExamples: "Par exemple",
+  giftEx1: "Pour ma sœur qui adore les yokai, 50 € maximum",
+  giftEx2: "Un porte-bonheur pour quelqu'un qui passe un examen",
+  giftEx3: "Une veilleuse pour une chambre d'enfant",
+  giftTooShort: "Décris la personne en quelques mots.",
+  giftResults: "Suggestions du conseiller",
+  giftBudget: "Rien en stock dans ce budget pour l'instant. Essaie un peu plus large.",
+  giftNone: "Rien dans la boutique ne lui correspond vraiment.",
+  giftLimit:
+    "Le conseiller a assez travaillé pour aujourd'hui. Reviens demain, ou parcours la sélection.",
+  giftError: "Le conseiller n'a pas pu répondre. Réessaie dans un instant.",
 };

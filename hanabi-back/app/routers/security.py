@@ -7,7 +7,7 @@ from ..ratelimit import limiter
 router = APIRouter(prefix="/security", tags=["security"])
 
 # Un défi ne vaut que pour l'usage demandé
-ALLOWED_PURPOSES = {"register", "login", "notify", "review", "subscribe"}
+ALLOWED_PURPOSES = {"register", "login", "notify", "review", "subscribe", "conseil"}
 
 
 @router.get("/challenge", response_model=Challenge)

@@ -187,10 +187,10 @@ Seule l'API de production (`ENV=prod`) migre la base Neon. Une API lancée sur u
 poste avec la même `DATABASE_URL` refuse de démarrer si le schéma est en retard,
 au lieu de le migrer en avance sur le code déployé.
 
-### L'assistant de fiche produit (facultatif)
+### L'assistant de fiche et le conseiller cadeau (facultatifs)
 
 Sans ces trois variables, le panneau de l'assistant n'apparaît pas dans le
-back-office. Elles se saisissent dans le tableau de bord de Render :
+back-office, ni le conseiller sur l'accueil. Elles se saisissent dans le tableau de bord de Render :
 
 | Variable | Valeur |
 | --- | --- |
@@ -203,6 +203,14 @@ rien d'autre. Deux plafonds bornent le coût, par jour : 200 demandes pour le
 back-office (`REDACTION_PLAFOND_JOUR`), 40 pour le compte de démonstration
 (`REDACTION_PLAFOND_DEMO`). Avant d'ouvrir la démonstration, lancer
 l'évaluation une fois avec ces variables (voir le README).
+
+Le conseiller cadeau, public, envoie au même fournisseur le texte de la demande
+du visiteur, avec les fiches des objets candidats. Son plafond du jour est à part
+(`CONSEIL_PLAFOND_JOUR`, 300 par défaut), en plus de vingt demandes par jour et
+par adresse IP. Avant de l'ouvrir, compléter dans la politique de
+confidentialité (`hanabi-front/src/content/legal.js`) les mentions entre
+crochets sur le prestataire : son nom, son pays d'établissement, la durée de
+conservation prévue par son contrat.
 
 ### Ce qu'implique l'offre gratuite de Render
 
@@ -298,6 +306,8 @@ ordinateur, sans réseau local ni configuration.
 - [ ] Sur téléphone : le menu en tiroir s'ouvre depuis l'en-tête.
 - [ ] Une minute après le réveil, « veilleuse pour une chambre d'enfant » trouve
   les deux lampes, et « pizza » ne trouve rien.
+- [ ] Si le fournisseur est configuré : le conseiller apparaît sous la sélection,
+  et « un cadeau à moins de 20 € » répond sans objet.
 - [ ] L'onglet **Actions** de GitHub affiche les trois tâches de CI en vert.
 
 ---

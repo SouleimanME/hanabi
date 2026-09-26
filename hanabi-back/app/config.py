@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     # publique, à part : un visiteur ne peut pas épuiser le quota du marchand
     REDACTION_PLAFOND_JOUR: int = 200
     REDACTION_PLAFOND_DEMO: int = 40
+    # Conseiller cadeau, public : même fournisseur, plafond du jour à part
+    CONSEIL_PLAFOND_JOUR: int = 300
 
     # --- Journalisation (voir observability.py) ---
     # JSON activé d'office en production, sauf réglage explicite

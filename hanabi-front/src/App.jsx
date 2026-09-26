@@ -572,6 +572,7 @@ export default function App() {
               loading={loading}
               refreshing={refreshing}
               eur={eur}
+              lang={lang}
             />
           )}
 

@@ -224,6 +224,14 @@ export const Promos = {
     request("/promos/validate", { method: "POST", body: { code, subtotal_cents: subtotalCents } }),
 };
 
+/** Conseiller cadeau : `etat` dit s'il répond ; `demander` rend
+ *  `{ message, vide, choix: [{ produit, raison }] }`. */
+export const Conseil = {
+  etat: () => request("/conseil/etat"),
+  demander: (demande, lang, antibot) =>
+    request("/conseil", { method: "POST", body: { demande, lang, antibot } }),
+};
+
 export const Newsletter = {
   /** Inscrit une adresse et renvoie `{ ok, code }`, `code` etant l'offre de
    *  bienvenue si elle est active en base. */

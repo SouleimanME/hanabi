@@ -367,3 +367,18 @@ class Redaction(Base):
     photo_lue: Mapped[bool] = mapped_column(Boolean, default=False)
     duree_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+
+class Conseil(Base):
+    """Une demande au conseiller cadeau. Ni le texte, ni l'adresse IP : seulement
+    de quoi compter les demandes du jour et suivre leur issue."""
+
+    __tablename__ = "conseils"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
+    # en_cours | ok | echec
+    statut: Mapped[str] = mapped_column(String(20), default="en_cours")
+    # Nombre d'objets proposés, de zéro à trois
+    choix: Mapped[int] = mapped_column(Integer, default=0)
+    duree_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+

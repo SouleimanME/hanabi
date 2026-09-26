@@ -240,6 +240,38 @@ parallèles), puis rejoue le banc de recherche avec les usages de l'assistant à
 la place de ceux écrits à la main. Les tests de la suite passent par un faux
 fournisseur : réponses invalides, photo refusée, clé refusée, panne, plafonds.
 
+### Le conseiller cadeau
+
+**Un vendeur qui connaît la boutique.** Sur l'accueil, on décrit à qui l'on
+offre : « pour ma sœur qui adore les yokai, 50 € maximum ». Le conseiller
+propose un à trois objets, du plus au moins adapté, et dit pourquoi chacun
+convient.
+
+**Le modèle choisit, la base affirme.** Le serveur lit le budget dans la phrase,
+écarte ce qui est épuisé ou hors budget, classe le reste avec la recherche et ne
+montre que ces candidats au modèle. Celui-ci rend des codes de la liste et une
+raison par objet ; le nom, le prix, le stock et la photo viennent de la base. Un
+code hors liste, un objet proposé deux fois ou une raison qui cite un prix sont
+refusés et redemandés une fois. Un seul appel par demande, aucun quand rien
+n'est en stock dans le budget. Pas de boucle d'outils : avec une présélection
+faite côté serveur, elle ajouterait de la latence sans ajouter de garantie.
+
+**Une fonction publique qui coûte.** Preuve anti-robots, trois demandes par
+minute et vingt par jour pour une même adresse IP, plafond global du jour compté
+en base. Le texte de la demande part chez le fournisseur pour y répondre et
+n'est conservé nulle part ; le journal ne garde que l'heure, l'issue et le
+nombre d'objets proposés. Le formulaire le dit, et la politique de
+confidentialité ajoute ce destinataire.
+
+**Mesuré en deux temps.** Ce que le serveur montre au modèle se mesure en CI,
+sans fournisseur : sur 19 demandes en trois langues, le budget est toujours
+tenu, et un objet acceptable figure dans les trois premiers candidats 18 fois,
+avec ou sans modèle de sens. Le choix du modèle se mesure à la main
+(`tests/conseil/evaluer.py`). Un faux fournisseur qui prend simplement les deux
+premiers candidats obtient déjà un objet acceptable pour 17 demandes sur 18, et
+le bon premier choix pour 14 : c'est le plancher qu'un vrai modèle doit battre,
+sur le premier choix et sur la justesse des raisons.
+
 ### Le formulaire de paiement
 
 **La carte se reconnaît sans rien envoyer.** Le réseau se lit aux premiers
@@ -419,14 +451,14 @@ source.
 | --- | --- |
 | Données | Médaillon dbt sur PostgreSQL, 27 modèles, 120 tests, orchestration Dagster par partitions, console SQL bridée |
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
-| Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle |
+| Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle, conseiller cadeau qui ne propose que des objets en stock et dans le budget |
 | Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
 | Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation, assistant de fiche en trois langues |
 | Sécurité | Anti-robots (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, en-têtes durcis |
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 568 tests API sur SQLite et PostgreSQL, 261 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 591 tests API sur SQLite et PostgreSQL, 267 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -513,6 +545,10 @@ cd hanabi-back && .venv/Scripts/python tests/redaction/evaluer.py
 ```
 
 ```bash
+cd hanabi-back && .venv/Scripts/python tests/conseil/evaluer.py
+```
+
+```bash
 cd hanabi-front && npm run lint && npm run format:check && npm test && npm run build
 ```
 
@@ -555,7 +591,9 @@ hanabi-back/          API FastAPI
     warehouse.py      lecture des agrégats dbt, console SQL
     recherche.py      recherche du catalogue : prix, texte, sens
     plongement.py     modèle de plongement, téléchargement vérifié
+    fournisseur.py    accès neutre au fournisseur de modèle de langue
     redaction.py      assistant de fiche produit, plafond du jour
+    conseil.py        conseiller cadeau : candidats, choix vérifiés
     rgpd.py           portabilité et effacement
     idempotency.py    rejeu des requêtes non répétables
     outbox.py         file des courriels
@@ -601,9 +639,9 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Messages de l'API en français**, quelle que soit la langue de l'interface. Les
   courriels déclenchés depuis une page (lettre, retour en stock) suivent sa langue.
 - **Panier et favoris en `localStorage`**, donc propres à un appareil.
-- **Assistant évalué hors de la CI.** Son évaluation coûte des appels et
-  demande une clé ; elle se lance à la main, et à chaque changement de consigne
-  ou de modèle.
+- **Assistant et conseiller évalués hors de la CI.** Leur évaluation coûte des
+  appels et demande une clé ; elle se lance à la main, et à chaque changement de
+  consigne ou de modèle.
 - **Vecteurs du catalogue en mémoire.** Ils se recalculent à chaque démarrage :
   quelques secondes aujourd'hui, une vingtaine pour mille objets. Au-delà, ils
   iraient en base.

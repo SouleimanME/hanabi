@@ -24,7 +24,7 @@ from .seed import seed, ensure_admin, ensure_public_admin
 from .ratelimit import limiter, SecurityHeadersMiddleware, BodySizeLimitMiddleware
 from .routers import (
     auth, products, orders, reviews, promos, admin, security, newsletter, warehouse,
-    exploitation, compte, redaction,
+    exploitation, compte, redaction, conseil,
 )
 
 log = logging.getLogger("hanabi.demarrage")
@@ -119,6 +119,7 @@ app.include_router(security.router)
 app.include_router(auth.router)
 app.include_router(compte.router)
 app.include_router(products.router)
+app.include_router(conseil.router)
 app.include_router(reviews.router)
 app.include_router(promos.router)
 app.include_router(newsletter.router)

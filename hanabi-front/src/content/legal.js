@@ -1,7 +1,7 @@
 /** Textes légaux affichés en fenêtre : mentions, CGV, confidentialité, cookies. */
 
 /** Dernière révision, affichée en pied de chaque texte. */
-export const LEGAL_UPDATED = "23 septembre 2026";
+export const LEGAL_UPDATED = "26 septembre 2026";
 
 export const LEGAL_CONTENT = {
   mentions: {
@@ -298,6 +298,7 @@ Délégué à la protection des données : [nom et contact du DPO, ou « aucun D
 • Avis produit : note, texte, prénom affiché. Dépôt facultatif.
 • Alerte de réapprovisionnement : adresse électronique. Dépôt facultatif.
 • Lettre d'information : adresse électronique et langue. Inscription facultative.
+• Conseil cadeau : le texte de votre demande, transmis au prestataire de traitement du langage pour y répondre, puis oublié. Hanabi n'en garde que l'heure et l'issue, pour compter les demandes du jour. Demande facultative.
 • Consultations de fiches produit : produit et date. Rattachées à votre compte uniquement avec votre accord, donné ou refusé dans le bandeau cookies.
 • Données techniques : adresse IP et journaux de connexion du serveur, à des fins de sécurité.
 
@@ -307,18 +308,19 @@ Délégué à la protection des données : [nom et contact du DPO, ou « aucun D
 • Publication des avis produit : consentement (art. 6.1.a), retirable à tout moment.
 • Alertes de réapprovisionnement : consentement.
 • Prospection commerciale par courrier électronique, le cas échéant : consentement.
+• Conseil cadeau : mesures précontractuelles prises à votre demande (art. 6.1.b).
 • Sécurité du service, prévention de la fraude et des abus : intérêt légitime (art. 6.1.f).
 • Mesure d'audience rattachée au compte : consentement (art. 6.1.a et article 82 de la loi Informatique et Libertés), retirable depuis « Gérer mes cookies ».
 • Statistiques internes et segmentation de la clientèle (fréquence et montant des achats, tranche d'âge, ville et civilité lorsqu'elles sont renseignées) : intérêt légitime, pour comprendre la clientèle et orienter l'offre.
 • Respect des obligations comptables et fiscales : obligation légale (art. 6.1.c).
 
 **Destinataires**
-Les données sont accessibles au personnel habilité de Hanabi et à ses sous-traitants, agissant sur instruction et liés par une obligation de confidentialité : hébergeur, prestataire de paiement, transporteur, service d'envoi de courriers électroniques. Aucune donnée n'est vendue, louée ou cédée à des tiers à des fins publicitaires.
+Les données sont accessibles au personnel habilité de Hanabi et à ses sous-traitants, agissant sur instruction et liés par une obligation de confidentialité : hébergeur, prestataire de paiement, transporteur, service d'envoi de courriers électroniques, prestataire de traitement du langage ([nom du prestataire, pays d'établissement]) pour le conseil cadeau. Aucune donnée n'est vendue, louée ou cédée à des tiers à des fins publicitaires.
 Les photographies du catalogue sont servies par Unsplash, société établie aux États-Unis : l'adresse IP de votre navigateur lui parvient à chaque affichage d'une photo, sans autre donnée.
 Au paiement, l'adresse en cours de saisie et le code postal sont envoyés à la Géoplateforme de l'Institut national de l'information géographique et forestière (IGN, France), qui renvoie des adresses complètes à proposer. La banque de votre carte, elle, est cherchée dans une table enregistrée dans votre navigateur : aucun chiffre de la carte ne quitte votre appareil pour l'afficher.
 
 **Transferts hors Union européenne**
-Les données sont hébergées au sein de l'Union européenne. Seule l'adresse IP transmise à Unsplash pour afficher les photographies quitte l'Union (voir Destinataires). Si un sous-traitant conduisait un transfert vers un pays tiers, celui-ci serait encadré par une décision d'adéquation de la Commission européenne ou par les clauses contractuelles types, assorties des mesures complémentaires nécessaires.
+Les données sont hébergées au sein de l'Union européenne. Seules l'adresse IP transmise à Unsplash pour afficher les photographies et, si le prestataire de traitement du langage est établi hors de l'Union, les demandes au conseil cadeau quittent l'Union (voir Destinataires). Si un sous-traitant conduisait un transfert vers un pays tiers, celui-ci serait encadré par une décision d'adéquation de la Commission européenne ou par les clauses contractuelles types, assorties des mesures complémentaires nécessaires.
 
 **Durées de conservation**
 • Compte client : durée de vie du compte, puis trois (3) ans à compter du dernier contact, avant suppression ou anonymisation.
@@ -326,6 +328,7 @@ Les données sont hébergées au sein de l'Union européenne. Seule l'adresse IP
 • Avis produit : jusqu'au retrait du consentement ou à la suppression du compte.
 • Prospection : trois (3) ans à compter du dernier contact.
 • Journaux de connexion : douze (12) mois.
+• Demandes au conseil cadeau : aucune conservation par Hanabi ; chez le prestataire, [durée de conservation prévue par son contrat].
 • Consultations de fiches : rattachement au compte effacé au bout de treize (13) mois ; le comptage anonyme reste pour les statistiques.
 • Lettre d'information : jusqu'à la désinscription. L'adresse est ensuite gardée comme opposition, pour ne plus vous écrire.
 • Choix sur la mesure d'audience : six (6) mois dans votre navigateur, puis redemandé.
@@ -354,21 +357,22 @@ Data protection officer: [name and contact, or "none appointed"]
 • Saved payment methods, if you choose to: card network, last four digits, expiry date and a reference issued by the payment provider. The full card number and security code are never stored.
 • Orders: delivery address, order contents and amount, required to perform the contract.
 • Product reviews, restock alerts and newsletter: optional.
+• Gift adviser: the text of your request, sent to the language processing provider to answer it, then forgotten. Hanabi keeps only the time and outcome, to count the day's requests. Optional.
 • Product page views: product and date, linked to your account only with your consent, given or refused in the cookie banner.
 • Technical data: IP address and server logs, for security purposes.
 
 **Purposes and legal bases**
-Order and after-sales management, account management: performance of the contract. Reviews, restock alerts and marketing e-mails: consent, withdrawable at any time. Service security and fraud prevention: legitimate interest. Accounting obligations: legal obligation. Audience measurement linked to your account: consent, withdrawable from the Manage cookies link. Internal statistics and customer segmentation (purchase frequency and amount, age band, city and title when provided): legitimate interest.
+Order and after-sales management, account management: performance of the contract. Reviews, restock alerts and marketing e-mails: consent, withdrawable at any time. Gift adviser: pre-contractual steps taken at your request. Service security and fraud prevention: legitimate interest. Accounting obligations: legal obligation. Audience measurement linked to your account: consent, withdrawable from the Manage cookies link. Internal statistics and customer segmentation (purchase frequency and amount, age band, city and title when provided): legitimate interest.
 
 **Recipients**
-Authorised Hanabi staff and processors bound by confidentiality: hosting provider, payment provider, carrier, e-mail service. Data is never sold or rented to third parties. Catalogue photographs are served by Unsplash, a company based in the United States: your browser's IP address reaches it each time a photo is displayed, with no other data.
+Authorised Hanabi staff and processors bound by confidentiality: hosting provider, payment provider, carrier, e-mail service, language processing provider ([provider name, country of establishment]) for the gift adviser. Data is never sold or rented to third parties. Catalogue photographs are served by Unsplash, a company based in the United States: your browser's IP address reaches it each time a photo is displayed, with no other data.
 At checkout, the address being typed and the postcode are sent to the Géoplateforme of the French National Institute of Geographic and Forest Information (IGN, France), which returns complete addresses to suggest. Your card's bank is looked up in a table stored in your browser: no card digit leaves your device to display it.
 
 **Transfers outside the EU**
-Data is hosted within the European Union. Only the IP address sent to Unsplash to display photographs leaves the Union (see Recipients). Any transfer to a third country would be covered by an adequacy decision or the standard contractual clauses.
+Data is hosted within the European Union. Only the IP address sent to Unsplash to display photographs and, if the language processing provider is established outside the Union, gift adviser requests leave the Union (see Recipients). Any transfer to a third country would be covered by an adequacy decision or the standard contractual clauses.
 
 **Retention**
-Account: life of the account, then three (3) years after last contact. Orders and accounting records: ten (10) years. Marketing: three (3) years after last contact. Server logs: twelve (12) months. Product page views: link to your account erased after thirteen (13) months. Newsletter: until you unsubscribe, the address then being kept as an objection. Audience choice: six (6) months.
+Account: life of the account, then three (3) years after last contact. Orders and accounting records: ten (10) years. Marketing: three (3) years after last contact. Server logs: twelve (12) months. Gift adviser requests: not kept by Hanabi; at the provider, [retention period set by its contract]. Product page views: link to your account erased after thirteen (13) months. Newsletter: until you unsubscribe, the address then being kept as an objection. Audience choice: six (6) months.
 
 **Your rights**
 Under Articles 15 to 22 GDPR you have the rights of access, rectification, erasure, restriction of processing, objection and portability, and the right to withdraw consent at any time. Exercise them at contact@hanabi.fr; you will receive a reply within one (1) month.
@@ -392,21 +396,22 @@ Delegado de protección de datos: [nombre y contacto, o «no designado»]
 • Medios de pago guardados, si usted lo decide: red de la tarjeta, últimos cuatro dígitos, fecha de caducidad y una referencia del proveedor de pago. El número completo y el código de seguridad nunca se guardan.
 • Pedidos: dirección de envío, contenido e importe, necesarios para ejecutar el contrato.
 • Opiniones, avisos de reposición y boletín: facultativos.
+• Asesor de regalos: el texto de su petición, enviado al proveedor de tratamiento del lenguaje para responderla y luego olvidado. Hanabi solo conserva la hora y el resultado, para contar las peticiones del día. Facultativo.
 • Consultas de fichas de producto: producto y fecha, vinculadas a su cuenta solo con su consentimiento, dado o rechazado en el banner de cookies.
 • Datos técnicos: dirección IP y registros del servidor, con fines de seguridad.
 
 **Finalidades y bases jurídicas**
-Gestión de pedidos, entrega y posventa, y gestión de la cuenta: ejecución del contrato. Opiniones, avisos de reposición y comunicaciones comerciales: consentimiento, revocable en cualquier momento. Seguridad y prevención del fraude: interés legítimo. Obligaciones contables: obligación legal. Medición de audiencia vinculada a la cuenta: consentimiento, revocable desde «Gestionar cookies». Estadísticas internas y segmentación de la clientela (frecuencia e importe de las compras, franja de edad, ciudad y tratamiento cuando se indican): interés legítimo.
+Gestión de pedidos, entrega y posventa, y gestión de la cuenta: ejecución del contrato. Opiniones, avisos de reposición y comunicaciones comerciales: consentimiento, revocable en cualquier momento. Asesor de regalos: medidas precontractuales adoptadas a petición suya. Seguridad y prevención del fraude: interés legítimo. Obligaciones contables: obligación legal. Medición de audiencia vinculada a la cuenta: consentimiento, revocable desde «Gestionar cookies». Estadísticas internas y segmentación de la clientela (frecuencia e importe de las compras, franja de edad, ciudad y tratamiento cuando se indican): interés legítimo.
 
 **Destinatarios**
-Personal autorizado de Hanabi y encargados sujetos a confidencialidad: proveedor de alojamiento, de pago, transportista y servicio de correo. Los datos nunca se venden ni alquilan a terceros. Las fotografías del catálogo las sirve Unsplash, empresa establecida en Estados Unidos: la dirección IP de su navegador le llega cada vez que se muestra una foto, sin ningún otro dato.
+Personal autorizado de Hanabi y encargados sujetos a confidencialidad: proveedor de alojamiento, de pago, transportista, servicio de correo y proveedor de tratamiento del lenguaje ([nombre del proveedor, país de establecimiento]) para el asesor de regalos. Los datos nunca se venden ni alquilan a terceros. Las fotografías del catálogo las sirve Unsplash, empresa establecida en Estados Unidos: la dirección IP de su navegador le llega cada vez que se muestra una foto, sin ningún otro dato.
 En el pago, la dirección que se está escribiendo y el código postal se envían a la Géoplateforme del Instituto nacional de información geográfica y forestal (IGN, Francia), que devuelve direcciones completas para sugerir. El banco de su tarjeta se busca en una tabla guardada en su navegador: ningún dígito de la tarjeta sale de su dispositivo para mostrarlo.
 
 **Transferencias fuera de la UE**
-Los datos se alojan en la Unión Europea. Solo la dirección IP enviada a Unsplash para mostrar las fotografías sale de la Unión (véase Destinatarios). Cualquier transferencia a un tercer país estaría amparada por una decisión de adecuación o por las cláusulas contractuales tipo.
+Los datos se alojan en la Unión Europea. Solo la dirección IP enviada a Unsplash para mostrar las fotografías y, si el proveedor de tratamiento del lenguaje está establecido fuera de la Unión, las peticiones al asesor de regalos salen de la Unión (véase Destinatarios). Cualquier transferencia a un tercer país estaría amparada por una decisión de adecuación o por las cláusulas contractuales tipo.
 
 **Plazos de conservación**
-Cuenta: vigencia de la cuenta y tres (3) años desde el último contacto. Pedidos y documentos contables: diez (10) años. Prospección: tres (3) años. Registros de conexión: doce (12) meses. Consultas de fichas: vínculo con la cuenta borrado a los trece (13) meses. Boletín: hasta la baja; la dirección se conserva después como oposición. Elección sobre la medición de audiencia: seis (6) meses.
+Cuenta: vigencia de la cuenta y tres (3) años desde el último contacto. Pedidos y documentos contables: diez (10) años. Prospección: tres (3) años. Registros de conexión: doce (12) meses. Peticiones al asesor de regalos: Hanabi no las conserva; en el proveedor, [plazo de conservación previsto en su contrato]. Consultas de fichas: vínculo con la cuenta borrado a los trece (13) meses. Boletín: hasta la baja; la dirección se conserva después como oposición. Elección sobre la medición de audiencia: seis (6) meses.
 
 **Sus derechos**
 Conforme a los artículos 15 a 22 del RGPD, tiene derecho de acceso, rectificación, supresión, limitación, oposición y portabilidad, así como a retirar su consentimiento en cualquier momento. Ejerza estos derechos en contact@hanabi.fr.

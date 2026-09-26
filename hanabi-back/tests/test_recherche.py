@@ -56,6 +56,12 @@ class EncodeurFactice:
         ("cadeau 30-40€", "cadeau", 3000, 4000),
         ("plus de 60 €", "", 6000, None),
         ("moins de 19,90 €", "", None, 1990),
+        # Les tournures d'un budget cadeau
+        ("pour ma sœur, 50 € maximum", "pour ma sœur,", None, 5000),
+        ("budget de 40 euros pour un ami", "pour un ami", None, 4000),
+        ("something under €30", "something", None, 3000),
+        ("regalo como máximo 25 €", "regalo", None, 2500),
+        ("a gift, $45 max", "a gift,", None, 4500),
         # Un nombre sans mot de prix reste du texte : une taille, un code
         ("figurine 15 cm", "figurine 15 cm", None, None),
         ("HNB-021", "hnb-021", None, None),

@@ -7,6 +7,7 @@ import { ProductArt } from "../components/brand/ProductArt.jsx";
 import { ProductCard } from "../components/catalog/ProductCard.jsx";
 import { CardSkeleton } from "../components/catalog/CardSkeleton.jsx";
 import { Segments } from "../components/catalog/Segments.jsx";
+import { ConseilCadeau } from "../components/catalog/ConseilCadeau.jsx";
 
 /** Le segment entre crochets de l'accroche est posé sur une plaque de vermillon. */
 function surPlaque(titre) {
@@ -40,6 +41,7 @@ export const Home = forwardRef(function Home(
     loading,
     refreshing,
     eur,
+    lang,
   },
   ref,
 ) {
@@ -179,6 +181,8 @@ export const Home = forwardRef(function Home(
           </section>
         )}
       </section>
+
+      <ConseilCadeau lang={lang} onOpen={onOpen} onAdd={onAdd} eur={eur} />
 
       <section className="wrap triptyque" aria-labelledby="maison-titre">
         <h2 id="maison-titre">{t("houseTitle")}</h2>

@@ -180,18 +180,25 @@ tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
   migration `fiches multilingues` en garde sa propre copie figée.
 - Les usages traduits suivent les lignes françaises une à une.
 
-## Assistant de fiche
+## Assistant de fiche et conseiller cadeau
 
 - Aucun fournisseur n'est nommé dans le code : `REDACTION_URL`, `REDACTION_CLE`
   et `REDACTION_MODELE` le désignent au déploiement.
-- Les tests remplacent `redaction.transport` par un faux fournisseur ; aucun ne
-  sort sur le réseau.
+- Les deux passent par `fournisseur.py`. Les tests remplacent
+  `app.fournisseur.transport` par un faux fournisseur ; aucun ne sort sur le
+  réseau.
 - Changer la consigne ou le modèle, c'est relancer `tests/redaction/evaluer.py`
   et comparer le banc obtenu à celui des usages écrits à la main.
 - Une réponse n'est jamais crue : forme validée, texte alternatif vidé si la
   photo n'a pas été lue, tirets cadratins remplacés.
 - Rien de personnel ne part chez le fournisseur : ni compte, ni adresse, ni
   commande. Le champ de notes le rappelle.
+- Le conseiller ne montre au modèle que des candidats déjà filtrés (stock,
+  budget) : une règle métier nouvelle va dans `conseil.candidats`, jamais dans
+  la consigne seule. `tests/conseil/demandes.json` ne sert qu'à mesurer ; une
+  demande ajoutée après avoir vu une réponse n'y a pas sa place.
+- Le texte d'une demande au conseiller ne s'écrit ni en base ni dans les
+  journaux.
 
 ## Pièges
 
