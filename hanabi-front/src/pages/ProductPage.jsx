@@ -210,7 +210,13 @@ export function ProductPage({
                 libelle={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
                 aide="zoom-aide"
               >
-                <ProductArt art={vues[vue]} scene={vue === 0} taille={TAILLE_VUE} priorite />
+                <ProductArt
+                  art={vues[vue]}
+                  alt={vue === 0 ? p.alt : ""}
+                  scene={vue === 0}
+                  taille={TAILLE_VUE}
+                  priorite
+                />
               </ZoomPhoto>
             </div>
             <p className="zoom-aide" id="zoom-aide">

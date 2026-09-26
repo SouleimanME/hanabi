@@ -3,6 +3,7 @@
 Jouées au démarrage de l'API en production (`app/migrate.py`) : une erreur ici
 se découvrait jusqu'alors au déploiement.
 """
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -405,6 +406,38 @@ class TestUsagesDesObjets:
             usages = dict(db.execute(select(models.Product.code, models.Product.usages)).all())
         assert "Veilleuse" in usages["HNB-021"]
         assert usages["MARCHAND-1"] == ""
+
+    def test_aller_retour(self, moteur):
+        with moteur.begin() as cx:
+            command.upgrade(_config(cx), "head")
+            command.downgrade(_config(cx), self.AVANT)
+            command.upgrade(_config(cx), "head")
+
+
+class TestFichesMultilingues:
+    """Les traductions du catalogue de départ passent du code à la base."""
+
+    AVANT = "c1a8e5f3b2d7"
+
+    def test_le_catalogue_de_depart_recoit_ses_traductions(self, moteur):
+        with moteur.begin() as cx:
+            command.upgrade(_config(cx), self.AVANT)
+            avec_usages = table("products", *(column(c.name) for c in PRODUITS_AVANT_USAGES.c), column("usages"))
+            with Session(bind=cx) as db:
+                for code in ("HNB-064", "MARCHAND-1"):
+                    db.execute(insert(avec_usages).values(
+                        code=code, name="Objet", category="Décoration", blurb="x", price_cents=1000,
+                        cost_cents=0, stock=1, is_new=False, active=True, featured=False,
+                        featured_order=0, art="torii,#E0452A,#0A0605", images="[]", usages="",
+                    ))
+                db.commit()
+            command.upgrade(_config(cx), "head")
+        with Session(bind=moteur) as db:
+            lignes = dict(db.execute(select(models.Product.code, models.Product.traductions)).all())
+        traductions = json.loads(lignes["HNB-064"])
+        assert traductions["en"]["name"] == "Hannya Mask"
+        assert "demon" in traductions["en"]["usages"]
+        assert lignes["MARCHAND-1"] == "{}"
 
     def test_aller_retour(self, moteur):
         with moteur.begin() as cx:

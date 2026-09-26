@@ -172,6 +172,38 @@ function lireDataUrl(file) {
   });
 }
 
+const LANGUES = [
+  { code: "en", nom: "Anglais" },
+  { code: "es", nom: "Espagnol" },
+];
+const TRADUCTION_VIDE = { name: "", blurb: "", usages: "", alt: "" };
+
+/* Une langue de la fiche : ce que lit un visiteur du site anglais ou espagnol */
+function ChampsTraduction({ langue, nom, valeurs, onChange }) {
+  const champ = (k) => (e) => onChange(langue, k, e.target.value);
+  return (
+    <fieldset className="adm-langue" lang={langue}>
+      <legend>{nom}</legend>
+      <label className="adm-field">
+        <span>Nom</span>
+        <input value={valeurs.name} onChange={champ("name")} maxLength={160} />
+      </label>
+      <label className="adm-field">
+        <span>Description courte</span>
+        <textarea value={valeurs.blurb} onChange={champ("blurb")} rows={2} maxLength={255} />
+      </label>
+      <label className="adm-field">
+        <span>Usages</span>
+        <textarea value={valeurs.usages} onChange={champ("usages")} rows={3} maxLength={1000} />
+      </label>
+      <label className="adm-field">
+        <span>Texte alternatif de la photo</span>
+        <input value={valeurs.alt} onChange={champ("alt")} maxLength={300} />
+      </label>
+    </fieldset>
+  );
+}
+
 function ProductForm({ item, onSave, onCancel, saving }) {
   const [f, setF] = useState({
     id: item?.id,
@@ -188,6 +220,10 @@ function ProductForm({ item, onSave, onCancel, saving }) {
     art: estPhoto(item?.art) ? item.art : item?.art || ART_DEFAUT,
     images: item?.images || [],
     usages: item?.usages || "",
+    alt: item?.alt || "",
+    traductions: Object.fromEntries(
+      LANGUES.map(({ code }) => [code, { ...TRADUCTION_VIDE, ...item?.traductions?.[code] }]),
+    ),
   });
   const [imgInput, setImgInput] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -196,6 +232,11 @@ function ProductForm({ item, onSave, onCancel, saving }) {
   const set = (k) => (e) =>
     setF((s) => ({ ...s, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const setNum = (k) => (e) => setF((s) => ({ ...s, [k]: parseInt(e.target.value, 10) || 0 }));
+  const setTraduction = (langue, k, valeur) =>
+    setF((s) => ({
+      ...s,
+      traductions: { ...s.traductions, [langue]: { ...s.traductions[langue], [k]: valeur } },
+    }));
 
   const blason = estPhoto(f.art) ? ART_DEFAUT : f.art;
   const [forme, trace, fond] = blason.split(",");
@@ -278,7 +319,7 @@ function ProductForm({ item, onSave, onCancel, saving }) {
               value={f.code}
               onChange={(e) => setF((s) => ({ ...s, code: e.target.value.toUpperCase() }))}
               placeholder="HNB-000"
-              pattern="[A-Z0-9][A-Z0-9-]{1,19}"
+              pattern="[A-Z0-9][A-Z0-9\-]{1,19}"
               readOnly={Boolean(item)}
               aria-describedby={item ? "code-fige" : undefined}
               required
@@ -318,6 +359,19 @@ function ProductForm({ item, onSave, onCancel, saving }) {
             <small id="usages-aide" className="muted">
               Une ligne par usage : pièce, occasion, public. Invisibles sur la fiche, ils aident la
               recherche à trouver cet objet.
+            </small>
+          </label>
+          <label className="adm-field">
+            <span>Texte alternatif de la photo</span>
+            <input
+              value={f.alt}
+              onChange={set("alt")}
+              maxLength={300}
+              aria-describedby="alt-aide"
+              placeholder="Renard blanc en résine, assis, motifs rouges peints à la main"
+            />
+            <small id="alt-aide" className="muted">
+              Ce que montre la photo principale, lu à qui ne la voit pas.
             </small>
           </label>
           <div className="adm-row2">
@@ -518,6 +572,25 @@ function ProductForm({ item, onSave, onCancel, saving }) {
           </div>
         </div>
       </div>
+
+      <section className="adm-langues" aria-labelledby="traductions-titre">
+        <h3 id="traductions-titre">Traductions</h3>
+        <p className="muted">
+          Un champ vide reprend l&apos;anglais, puis le français : une fiche traduite à moitié reste
+          lisible.
+        </p>
+        <div className="adm-langues-grille">
+          {LANGUES.map(({ code, nom }) => (
+            <ChampsTraduction
+              key={code}
+              langue={code}
+              nom={nom}
+              valeurs={f.traductions[code]}
+              onChange={setTraduction}
+            />
+          ))}
+        </div>
+      </section>
 
       <div className="adm-form-actions">
         <button

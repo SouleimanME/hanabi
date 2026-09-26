@@ -162,9 +162,11 @@ détache du reste du catalogue, et les mots retrouvés dans sa fiche renforcent 
 écart : ce modèle donne 0,80 à « pizza » contre un renard en résine, un seuil
 absolu ne tiendrait pas. Sans modèle, les deux premiers étages répondent seuls.
 
-**Des usages sur chaque fiche.** « Lampe lune, 16 couleurs, télécommande » ne dit
-pas que c'est une veilleuse. Chaque objet porte des usages (pièce, occasion,
-public), invisibles pour le client et modifiables dans le back-office.
+**Des usages sur chaque fiche, dans les trois langues.** « Lampe lune, 16
+couleurs, télécommande » ne dit pas que c'est une veilleuse. Chaque objet porte
+des usages (pièce, occasion, public), invisibles pour le client et modifiables
+dans le back-office. Leurs traductions reprennent les lignes françaises une à
+une, sans rien y ajouter.
 
 **Mesurée avant d'être réglée.** Deux séries de requêtes de référence : 36 pour
 régler les seuils et les usages, 37 écrites avant tout essai et jamais utilisées
@@ -175,15 +177,15 @@ requêtes de prix exigent exactement les bons objets, et « pizza », « katana 
 | requêtes réussies | réglage (36) | contrôle (37) |
 | --- | ---: | ---: |
 | recherche d'avant, par sous-chaîne | 11 | 14 |
-| texte et prix | 27 | 25 |
-| texte, prix et sens | 31 | 30 |
+| texte et prix | 30 | 25 |
+| texte, prix et sens | 32 | 31 |
 
-Les deux réglages du sens sont pris au centre du plateau où le banc plafonne,
-loin de ses bords. La série de contrôle a été mesurée deux fois : 29, puis 30
-après un correctif dicté par un test unitaire (« art » trouvait « artisanat »).
+Les deux réglages du sens sont pris au centre de la zone où le banc plafonne,
+loin de ses bords. La série de contrôle a été mesurée trois fois : 29 ; 30 après
+un correctif dicté par un test unitaire (« art » trouvait « artisanat ») ; 31 une
+fois les usages traduits, les réglages refaits sur la seule série de réglage.
 Les deux séries et les usages sont de la même main, ce qui reste la limite de ce
-banc. Les échecs restants mêlent deux langues : les usages ne sont écrits qu'en
-français.
+banc.
 
 **Reproductible.** Le modèle quantifié calcule l'échelle de ses activations sur
 tout le lot : un texte encodé avec d'autres bougeait de 0,002, assez pour changer
@@ -193,6 +195,14 @@ un résultat selon les objets voisins. Chaque texte s'encode seul, en 5 ms.
 15 ms. Chaque mot de la requête se compare une fois au vocabulaire du catalogue,
 et non à chaque fiche (250 ms auparavant). Le catalogue s'encode au démarrage dans
 un fil à part, puis seules les fiches modifiées sont réencodées.
+
+### Des fiches traduites en base
+
+Les traductions anglaises et espagnoles vivaient dans le code : un objet ajouté
+depuis le back-office restait en français sur les deux autres versions du site.
+Elles passent en base avec les usages et un texte alternatif pour la photo
+principale, et se modifient dans le back-office. Un champ vide reprend
+l'anglais, puis le français : une fiche traduite à moitié reste lisible.
 
 ### Le formulaire de paiement
 
@@ -380,7 +390,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 531 tests API sur SQLite et PostgreSQL, 257 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
+| Qualité | 543 tests API sur SQLite et PostgreSQL, 257 tests d'interface, 18 parcours e2e, 120 assertions dbt, 14 tests des contrôles de l'entrepôt, budget de poids |
 
 ---
 
@@ -548,8 +558,6 @@ Conventions et pièges connus : [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Messages de l'API en français**, quelle que soit la langue de l'interface. Les
   courriels déclenchés depuis une page (lettre, retour en stock) suivent sa langue.
 - **Panier et favoris en `localStorage`**, donc propres à un appareil.
-- **Usages en français seulement.** « wall art » ou « lámpara » trouvent moins
-  bien que leurs équivalents français ; les traduire est la prochaine étape.
 - **Vecteurs du catalogue en mémoire.** Ils se recalculent à chaque démarrage :
   quelques secondes aujourd'hui, une vingtaine pour mille objets. Au-delà, ils
   iraient en base.

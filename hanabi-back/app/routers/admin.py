@@ -7,6 +7,7 @@ import csv
 import io
 import json
 from datetime import datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field, model_validator
@@ -21,6 +22,7 @@ from ..pii import (
     masquer_date_naissance, masquer_email, masquer_nom, masquer_personne, masquer_ville,
 )
 from ..ratelimit import limiter
+from ..translations import traductions
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -63,6 +65,18 @@ def _masquer_si(bride: bool, ligne: dict | None) -> dict | None:
 # --- Schémas ---
 # Une dizaine de lignes d'usages : au-delà, la fiche noie la recherche
 USAGES_MAX = 1000
+# Une ou deux phrases : un lecteur d'écran lit le texte alternatif d'une traite
+ALT_MAX = 300
+
+
+class TraductionIn(BaseModel):
+    name: str = Field("", max_length=160)
+    blurb: str = Field("", max_length=255)
+    usages: str = Field("", max_length=USAGES_MAX)
+    alt: str = Field("", max_length=ALT_MAX)
+
+
+Traductions = dict[Literal["en", "es"], TraductionIn]
 
 
 class ProductIn(BaseModel):
@@ -79,6 +93,8 @@ class ProductIn(BaseModel):
     art: str = Field(default="torii,#E0452A,#0A0605", max_length=ART_MAX_LENGTH)
     images: list[str] = Field(default=[], max_length=IMAGES_MAX)
     usages: str = Field(default="", max_length=USAGES_MAX)
+    alt: str = Field(default="", max_length=ALT_MAX)
+    traductions: Traductions = {}
 
 
 class ProductPatch(BaseModel):
@@ -94,6 +110,9 @@ class ProductPatch(BaseModel):
     art: str | None = Field(None, max_length=ART_MAX_LENGTH)
     images: list[str] | None = Field(None, max_length=IMAGES_MAX)
     usages: str | None = Field(None, max_length=USAGES_MAX)
+    alt: str | None = Field(None, max_length=ALT_MAX)
+    # Par langue : une langue envoyée remplace la sienne, les autres restent
+    traductions: Traductions | None = None
 
 
 class PromoIn(BaseModel):
@@ -334,7 +353,8 @@ def create_product(data: ProductIn, db: Session = Depends(get_db), _=Depends(get
         code=data.code, name=data.name, category=data.category, blurb=data.blurb,
         price_cents=data.price_cents, stock=data.stock, is_new=data.is_new,
         active=data.active, featured=data.featured, featured_order=data.featured_order,
-        art=data.art, images=json.dumps(data.images), usages=data.usages,
+        art=data.art, images=json.dumps(data.images), usages=data.usages, alt=data.alt,
+        traductions=_traductions_json({}, data.traductions),
     )
     db.add(p); db.commit(); db.refresh(p)
     return _prod_dict(p)
@@ -357,6 +377,8 @@ def update_product(product_id: int, data: ProductPatch, db: Session = Depends(ge
     for field, val in data.model_dump(exclude_none=True).items():
         if field == "images":
             setattr(p, "images", json.dumps(val))
+        elif field == "traductions":
+            p.traductions = _traductions_json(traductions(p), data.traductions)
         else:
             setattr(p, field, val)
 
@@ -398,6 +420,11 @@ def delete_product(product_id: int, db: Session = Depends(get_db), _=Depends(get
     return {"action": action}
 
 
+def _traductions_json(existantes: dict, nouvelles: Traductions) -> str:
+    fusion = {**existantes, **{langue: t.model_dump() for langue, t in nouvelles.items()}}
+    return json.dumps(fusion, ensure_ascii=False)
+
+
 def _prod_dict(p: models.Product) -> dict:
     imgs = []
     try:
@@ -409,7 +436,8 @@ def _prod_dict(p: models.Product) -> dict:
         "blurb": p.blurb, "price_cents": p.price_cents, "stock": p.stock,
         "is_new": p.is_new, "active": p.active,
         "featured": p.featured, "featured_order": p.featured_order,
-        "art": p.art, "images": imgs, "usages": p.usages or "",
+        "art": p.art, "images": imgs, "usages": p.usages or "", "alt": p.alt or "",
+        "traductions": traductions(p),
     }
 
 

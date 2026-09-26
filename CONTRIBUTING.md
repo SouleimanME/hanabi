@@ -168,6 +168,17 @@ tests. Les migrations s'y jouent dans un schéma à part, `migrations`.
   activations sur tout le lot, et un lot rendait les résultats dépendants des
   objets voisins.
 - Pas de PyTorch : il ne tiendrait pas dans les 512 Mo de Render.
+- Toucher aux usages ou à leurs traductions déplace les scores : refaire le
+  réglage sur `reglage.json`, puis mesurer `controle.json` une fois.
+
+## Traductions
+
+- Le français vit dans les colonnes du produit, l'anglais et l'espagnol dans
+  `traductions` (JSON) ; `translations.localize` les lit champ par champ, avec
+  repli sur l'anglais puis le français.
+- `translations.py` ne sert plus qu'au catalogue de départ (`seed`) ; la
+  migration `fiches multilingues` en garde sa propre copie figée.
+- Les usages traduits suivent les lignes françaises une à une.
 
 ## Pièges
 

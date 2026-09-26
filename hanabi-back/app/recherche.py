@@ -28,18 +28,18 @@ import numpy as np
 from sqlalchemy import select
 
 from . import models, plongement
-from .translations import PRODUCT_I18N
+from .translations import traductions
 
 log = logging.getLogger("hanabi.recherche")
 
 # Réglés sur tests/recherche/reglage.json, jamais sur controle.json.
 # Poids d'une fiche dont tous les mots de la requête se retrouvent, face à
 # l'écart de sens au score moyen du catalogue
-# (Le banc plafonne sur un plateau, poids de 0,025 à 0,040 et seuil de 0,028 à
-# 0,034 : on en prend le centre, le plus loin possible des bords)
-POIDS_TEXTE = 0.035
+# (Le banc plafonne sur une bande qui va de 0,035 à 0,055 pour le poids, le
+# seuil suivant de quelques millièmes : on en prend le centre, loin des bords)
+POIDS_TEXTE = 0.045
 # Score minimal pour qu'un objet soit retenu sans correspondance complète
-SEUIL = 0.031
+SEUIL = 0.037
 
 CATEGORIES = {
     "Figurines": ("Figurines", "Figures", "Figuras"),
@@ -82,14 +82,23 @@ class Fiche:
     prix_cents: int
     # (nom, accroche) en français, puis dans chaque traduction
     libelles: tuple[tuple[str, str], ...]
-    usages: tuple[str, ...]
+    # (nom dans la langue de l'usage, usage), toutes langues confondues
+    usages: tuple[tuple[str, str], ...]
+
+
+def _lignes(texte: str | None) -> list[str]:
+    return [u.strip() for u in (texte or "").splitlines() if u.strip()]
 
 
 def fiche(p) -> Fiche:
     libelles = [(p.name, p.blurb)]
-    libelles += [(t["name"], t["blurb"]) for t in PRODUCT_I18N.get(p.code, {}).values()]
-    usages = tuple(u.strip() for u in (p.usages or "").splitlines() if u.strip())
-    return Fiche(p.id, p.code, p.category, p.price_cents, tuple(libelles), usages)
+    usages = [(p.name, u) for u in _lignes(p.usages)]
+    for t in traductions(p).values():
+        nom = t.get("name", "").strip() or p.name
+        if t.get("name", "").strip() or t.get("blurb", "").strip():
+            libelles.append((nom, t.get("blurb", "")))
+        usages += [(nom, u) for u in _lignes(t.get("usages"))]
+    return Fiche(p.id, p.code, p.category, p.price_cents, tuple(libelles), tuple(usages))
 
 
 def normaliser(texte: str) -> str:
@@ -149,7 +158,7 @@ def analyser(q: str) -> Requete:
 
 @lru_cache(maxsize=20_000)
 def _vocabulaire(f: Fiche) -> frozenset[str]:
-    textes = [f.code, *CATEGORIES.get(f.categorie, (f.categorie,)), *f.usages]
+    textes = [f.code, *CATEGORIES.get(f.categorie, (f.categorie,)), *(u for _, u in f.usages)]
     for nom, accroche in f.libelles:
         textes += [nom, accroche]
     return frozenset(m for t in textes for m in _mots(t))
@@ -226,8 +235,7 @@ def passages(f: Fiche) -> list[str]:
         f"{nom}. {accroche}. {categories[min(i, len(categories) - 1)]}"
         for i, (nom, accroche) in enumerate(f.libelles)
     ]
-    nom = f.libelles[0][0]
-    sortie += [f"{nom} : {u}" for u in f.usages]
+    sortie += [f"{nom} : {u}" for nom, u in f.usages]
     return sortie
 
 

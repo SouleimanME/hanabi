@@ -9,6 +9,7 @@ from . import models
 from .config import settings
 from .passwords import validate_password
 from .security import hash_password
+from .translations import PRODUCT_I18N
 from .usages import USAGES
 
 log = logging.getLogger("hanabi.seed")
@@ -126,7 +127,8 @@ def seed(db: Session) -> None:
         p = models.Product(code=code, name=name, category=cat, blurb=blurb,
                             price_cents=price, cost_cents=COUTS.get(code, 0),
                             stock=stock, is_new=is_new, art=art,
-                            images=json.dumps([art]), usages=USAGES.get(code, ""))
+                            images=json.dumps([art]), usages=USAGES.get(code, ""),
+                            traductions=json.dumps(PRODUCT_I18N.get(code, {}), ensure_ascii=False))
         db.add(p)
         db.flush()
         code_to_id[code] = p.id

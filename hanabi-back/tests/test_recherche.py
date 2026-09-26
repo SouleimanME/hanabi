@@ -11,7 +11,7 @@ from app.recherche import Fiche, analyser, chercher, couverture
 
 
 def _fiche(id, code, nom, accroche, categorie="Figurines", prix=3000, usages=()):
-    return Fiche(id, code, categorie, prix, ((nom, accroche),), tuple(usages))
+    return Fiche(id, code, categorie, prix, ((nom, accroche),), tuple((nom, u) for u in usages))
 
 
 RENARD = _fiche(1, "TST-001", "Figurine Kitsune", "Renard en résine", prix=4800)

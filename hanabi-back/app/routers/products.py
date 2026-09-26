@@ -27,7 +27,7 @@ def _ratings_map(db: Session, product_ids: list[int]) -> dict[int, tuple[float, 
 
 def _to_out(p: models.Product, rating: tuple[float, int], lang: str | None) -> schemas.ProductOut:
     out = schemas.ProductOut.model_validate(p)
-    out.name, out.blurb = localize(p.code, lang, p.name, p.blurb)
+    out.name, out.blurb, out.alt = localize(p, lang)
     if not out.images:
         out.images = [p.art]
     out.rating_avg = round(rating[0], 2)

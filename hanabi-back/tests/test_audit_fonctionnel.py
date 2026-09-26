@@ -383,6 +383,7 @@ class TestRechercheDuCatalogue:
         p = models.Product(
             code="HNB-061", name="Masque Kitsune", category="Décoration",
             blurb="Résine peinte main", price_cents=3900, stock=5, art="kitsune,#E0452A,#0A0605",
+            traductions='{"en": {"name": "Kitsune Mask", "blurb": "Hand-painted resin"}}',
         )
         eventail = models.Product(
             code="HNB-037", name="Éventail Sensu", category="Décoration",

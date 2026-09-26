@@ -88,6 +88,10 @@ class Product(Base):
     images: Mapped[str] = mapped_column(Text, default="[]")
     # Une ligne par usage (pièce, occasion, public) : lu par la recherche, jamais affiché
     usages: Mapped[str] = mapped_column(Text, default="")
+    # Ce que montre la photo principale, pour qui ne la voit pas
+    alt: Mapped[str] = mapped_column(String(300), default="")
+    # {"en": {"name", "blurb", "usages", "alt"}, "es": {...}} : voir translations.py
+    traductions: Mapped[str] = mapped_column(Text, default="{}")
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="product")
 

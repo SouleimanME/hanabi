@@ -18,8 +18,8 @@ from app.seed import seed
 from recherche.banc import afficher, chercheur_api, mesurer
 
 # Recherche par sous-chaîne d'avant : 11 sur 36 en réglage, 14 sur 37 en contrôle
-PLANCHERS_TEXTE = {"reglage": 27, "controle": 25}
-PLANCHERS_SENS = {"reglage": 31, "controle": 30}
+PLANCHERS_TEXTE = {"reglage": 30, "controle": 25}
+PLANCHERS_SENS = {"reglage": 32, "controle": 31}
 
 
 def _modele_ou_saut():

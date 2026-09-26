@@ -32,7 +32,7 @@ def signaler_retour(db: Session, produit: models.Product) -> int:
 
     for alerte in alertes:
         # Nom de l'objet tel que la personne l'a lu sur la fiche
-        nom, _ = localize(produit.code, alerte.lang, produit.name, produit.blurb)
+        nom, _, _ = localize(produit, alerte.lang)
         sujet, texte, html = emails.retour_en_stock(produit.id, nom, alerte.lang)
         outbox.deposer(db, alerte.email, sujet, texte, html)
         alerte.notified = True
