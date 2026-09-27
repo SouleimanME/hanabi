@@ -218,6 +218,10 @@ export default {
     "Informations d'entreprise non renseignées : ce site est un projet personnel et n'exerce aucune activité commerciale.",
   legalUpdated: "Dernière mise à jour : {date}",
   zoomHint: "Clic, molette ou pincement pour zoomer ; glisser pour se déplacer.",
+  zoomHintTouch: "Touchez la photo pour l'agrandir, glissez pour voir la suivante.",
+  zoomHintTouchOne: "Touchez la photo pour l'agrandir.",
+  zoomHintFull: "Pincez ou touchez pour zoomer, glissez pour changer de photo.",
+  zoomHintFullOne: "Pincez ou touchez pour zoomer.",
   consentTitle: "Mesure d'audience",
   consentText:
     "Aucun traceur publicitaire ici. Avec ton accord, les fiches que tu consultes sont rattachées à ton compte pour mesurer l'audience. Sans accord, elles sont comptées sans nom.",

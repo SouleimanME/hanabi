@@ -216,6 +216,10 @@ export default {
     "Datos de empresa sin cumplimentar: este sitio es un proyecto personal y no ejerce ninguna actividad comercial.",
   legalUpdated: "Última actualización: {date}",
   zoomHint: "Clic, rueda o pellizco para ampliar; arrastra para desplazarte.",
+  zoomHintTouch: "Toca la foto para ampliarla, desliza para ver la siguiente.",
+  zoomHintTouchOne: "Toca la foto para ampliarla.",
+  zoomHintFull: "Pellizca o toca para ampliar, desliza para cambiar de foto.",
+  zoomHintFullOne: "Pellizca o toca para ampliar.",
   consentTitle: "Medición de audiencia",
   consentText:
     "Aquí no hay rastreadores publicitarios. Con tu consentimiento, las fichas que consultas se vinculan a tu cuenta para medir la audiencia. Sin él, se cuentan de forma anónima.",

@@ -428,9 +428,12 @@
   .product-grid {
     padding-block-start: var(--space-m);
   }
-  /* Sur téléphone, la photo prend toute la largeur : c'est elle qui vend */
+  /* Sur téléphone, la photo va bord à bord : c'est elle qui vend. Un portrait
+     se pose sur la laque, jamais sur le vermillon */
   .stage .gallery-main {
     max-inline-size: none;
+    margin-inline: calc(-1 * var(--space-s-l));
+    background: var(--lacquer);
   }
   .stage .thumbs {
     justify-content: center;
@@ -489,6 +492,78 @@
 }
 .stage .zoom-aide {
   color: var(--lacquer);
+}
+.aide-doigt {
+  display: none;
+}
+@media (pointer: coarse) {
+  .aide-souris {
+    display: none;
+  }
+  .aide-doigt {
+    display: inline;
+  }
+}
+
+/* Visionneuse : la photo seule sur la laque, tous les gestes au doigt */
+.zoom-plein {
+  touch-action: none;
+}
+.visionneuse {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--lacquer);
+  color: var(--washi);
+  overscroll-behavior: contain;
+}
+.visionneuse-barre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 8px var(--space-s-l);
+  padding-block-start: max(8px, env(safe-area-inset-top));
+}
+.visionneuse-compte {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.visionneuse-fermer {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-control);
+  background: var(--vermilion-bright);
+  color: var(--lacquer);
+}
+.visionneuse-cadre {
+  display: grid;
+  place-items: center;
+  min-block-size: 0;
+}
+.visionneuse-cadre .zoom {
+  inline-size: min(100vw, 100%);
+  block-size: auto;
+  aspect-ratio: 1;
+  max-block-size: 100%;
+}
+.visionneuse-cadre .art-photo {
+  object-fit: contain;
+}
+.visionneuse-aide {
+  margin: 0;
+  padding: var(--space-s) var(--space-s-l);
+  padding-block-end: max(var(--space-s), env(safe-area-inset-bottom));
+  font-size: var(--step--1);
+  text-align: center;
+}
+.visionneuse :focus-visible {
+  outline-color: var(--vermilion-bright);
 }
 
 /* --- Déclinaisons : une pastille par couleur --- */

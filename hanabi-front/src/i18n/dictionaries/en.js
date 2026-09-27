@@ -216,6 +216,10 @@ export default {
     "Company details are not filled in: this site is a personal project and carries out no commercial activity.",
   legalUpdated: "Last updated: {date}",
   zoomHint: "Click, scroll or pinch to zoom; drag to move around.",
+  zoomHintTouch: "Tap the photo to enlarge it, swipe to see the next one.",
+  zoomHintTouchOne: "Tap the photo to enlarge it.",
+  zoomHintFull: "Pinch or tap to zoom, swipe to change photo.",
+  zoomHintFullOne: "Pinch or tap to zoom.",
   consentTitle: "Audience measurement",
   consentText:
     "No advertising trackers here. With your consent, the product pages you view are linked to your account to measure audience. Without it, they are counted anonymously.",

@@ -9,10 +9,17 @@ const MAX = 4;
 const AU_CLIC = 2.5;
 // Au-delà, le geste est un déplacement et non un clic
 const TOLERANCE_CLIC_PX = 6;
+// Glissé horizontal qui fait passer à la vue voisine
+const BALAYAGE_PX = 48;
 
 const borner = (v, min, max) => Math.min(max, Math.max(min, v));
 
-export function ZoomPhoto({ children, libelle, aide }) {
+/**
+ * @param plein  plein écran : le cadre garde tous les gestes, pincement compris.
+ * @param onOuvrir  au doigt, une tape ouvre ce plein écran au lieu d'agrandir sur place.
+ * @param onBalayage  reçoit 1 ou -1 quand on glisse vers la vue voisine, photo au plein cadre.
+ */
+export function ZoomPhoto({ children, libelle, aide, plein = false, onOuvrir, onBalayage }) {
   const cadre = useRef(null);
   const plan = useRef(null);
   const etat = useRef({ s: 1, x: 0, y: 0 });
@@ -125,11 +132,19 @@ export function ZoomPhoto({ children, libelle, aide }) {
   const surRelache = (e) => {
     const [px, py] = point(e);
     const etaitSeul = doigts.current.size === 1;
+    const g = geste.current;
     doigts.current.delete(e.pointerId);
     if (doigts.current.size < 2) pince.current = null;
+    if (etaitSeul && g && onBalayage && etat.current.s <= 1 && e.type === "pointerup") {
+      const dx = px - g.depart[0];
+      if (Math.abs(dx) > BALAYAGE_PX && Math.abs(dx) > Math.abs(py - g.depart[1])) {
+        onBalayage(dx < 0 ? 1 : -1);
+      }
+    }
     // Bouton principal seulement : un clic droit garde son menu
-    if (etaitSeul && geste.current?.clic && e.button === 0 && e.type === "pointerup") {
-      basculer(px, py);
+    if (etaitSeul && g?.clic && e.button === 0 && e.type === "pointerup") {
+      if (onOuvrir && e.pointerType === "touch" && etat.current.s <= 1) onOuvrir();
+      else basculer(px, py);
     }
     geste.current = null;
   };
@@ -160,7 +175,7 @@ export function ZoomPhoto({ children, libelle, aide }) {
   return (
     <div
       ref={cadre}
-      className="zoom"
+      className={plein ? "zoom zoom-plein" : "zoom"}
       data-zoom="non"
       tabIndex={0}
       role="button"

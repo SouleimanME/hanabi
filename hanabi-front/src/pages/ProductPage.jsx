@@ -18,10 +18,12 @@ import { useAntiBot } from "../hooks/useAntiBot.js";
 
 // Seulement sur une fiche qui a une vidéo
 const LecteurVideo = lazy(() => import("../components/catalog/LecteurVideo.jsx"));
+// Seulement quand on touche une photo sur téléphone
+const Visionneuse = lazy(() => import("../components/catalog/Visionneuse.jsx"));
 
 const AVIS_VISIBLES = 6;
-// Largeur affichée de la vue principale : 34rem sur la scène, 13rem sur téléphone
-const TAILLE_VUE = "(min-width: 56rem) 34rem, 13rem";
+// Largeur affichée de la vue principale : 34rem sur la scène, bord à bord sur téléphone
+const TAILLE_VUE = "(min-width: 56rem) 34rem, 100vw";
 
 export function ProductPage({
   p,
@@ -78,6 +80,12 @@ export function ProductPage({
   const vues = variante?.image
     ? [variante.image, ...galerie.filter((v) => v !== variante.image)]
     : galerie;
+  const photos = vues.filter((v) => !estVideo(v));
+  const [visionneuse, setVisionneuse] = useState(false);
+  const voisine = (pas) => {
+    setLancee(false);
+    setVue((n) => (n + pas + vues.length) % vues.length);
+  };
   const max = Math.max(1, stock);
   const moisAnnee = new Intl.DateTimeFormat(lang, { month: "long", year: "numeric" });
   // « 4,3 » en français, « 4.3 » en anglais : toFixed ignorait la langue
@@ -112,6 +120,7 @@ export function ProductPage({
     setQty(1);
     setChoixId(null);
     setLancee(false);
+    setVisionneuse(false);
     setNotifyDone(false);
     setTousLesAvis(false);
   }, [p.id]);
@@ -249,6 +258,8 @@ export function ProductPage({
                   key={`${p.id}-${vue}`}
                   libelle={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
                   aide="zoom-aide"
+                  onOuvrir={() => setVisionneuse(true)}
+                  onBalayage={vues.length > 1 ? voisine : undefined}
                 >
                   <ProductArt
                     art={vues[vue]}
@@ -262,8 +273,21 @@ export function ProductPage({
             </div>
             {!estVideo(vues[vue]) && (
               <p className="zoom-aide" id="zoom-aide">
-                {t("zoomHint")}
+                <span className="aide-souris">{t("zoomHint")}</span>
+                <span className="aide-doigt">
+                  {vues.length > 1 ? t("zoomHintTouch") : t("zoomHintTouchOne")}
+                </span>
               </p>
+            )}
+            {visionneuse && (
+              <Suspense fallback={null}>
+                <Visionneuse
+                  photos={photos}
+                  depart={Math.max(0, photos.indexOf(vues[vue]))}
+                  nom={p.name}
+                  onFermer={() => setVisionneuse(false)}
+                />
+              </Suspense>
             )}
             {vues.length > 1 && (
               <div

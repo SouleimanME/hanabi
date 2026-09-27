@@ -1,5 +1,5 @@
 /** Zoom de la fiche : molette, pincement, clavier ; la page défile toujours au plein cadre. */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, fireEvent, act } from "@testing-library/react";
 
 import { ZoomPhoto } from "./ZoomPhoto.jsx";
@@ -9,6 +9,7 @@ class PointerEventDeTest extends MouseEvent {
   constructor(type, init = {}) {
     super(type, init);
     this.pointerId = init.pointerId ?? 1;
+    this.pointerType = init.pointerType ?? "mouse";
   }
 }
 window.PointerEvent = PointerEventDeTest;
@@ -31,9 +32,9 @@ const trame = () => act(() => new Promise((r) => requestAnimationFrame(() => r()
 const echelle = (c) =>
   Number(c.querySelector(".zoom-plan").style.transform.match(/scale\(([\d.]+)\)/)?.[1] ?? 1);
 
-function monter() {
+function monter(props = {}) {
   const { container } = render(
-    <ZoomPhoto libelle="Vue 1 sur 1">
+    <ZoomPhoto libelle="Vue 1 sur 1" {...props}>
       <img alt="" sizes="96px" src="x.jpg" />
     </ZoomPhoto>,
   );
@@ -139,5 +140,85 @@ describe("clavier", () => {
     const evt = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
     zoom.dispatchEvent(evt);
     expect(evt.defaultPrevented).toBe(false);
+  });
+});
+
+describe("au doigt", () => {
+  const tape = (zoom, x = 100) => {
+    fireEvent.pointerDown(zoom, {
+      pointerId: 1,
+      button: 0,
+      pointerType: "touch",
+      clientX: x,
+      clientY: 100,
+    });
+    fireEvent.pointerUp(zoom, {
+      pointerId: 1,
+      button: 0,
+      pointerType: "touch",
+      clientX: x,
+      clientY: 100,
+    });
+  };
+  const glisse = (zoom, de, a) => {
+    fireEvent.pointerDown(zoom, {
+      pointerId: 1,
+      button: 0,
+      pointerType: "touch",
+      clientX: de,
+      clientY: 200,
+    });
+    fireEvent.pointerMove(zoom, { pointerId: 1, pointerType: "touch", clientX: a, clientY: 205 });
+    fireEvent.pointerUp(zoom, {
+      pointerId: 1,
+      button: 0,
+      pointerType: "touch",
+      clientX: a,
+      clientY: 205,
+    });
+  };
+
+  it("une tape ouvre le plein écran au lieu d'agrandir sur place", async () => {
+    const onOuvrir = vi.fn();
+    const { container, zoom } = monter({ onOuvrir });
+    tape(zoom);
+    await trame();
+    expect(onOuvrir).toHaveBeenCalledTimes(1);
+    expect(echelle(container)).toBe(1);
+  });
+
+  it("à la souris, le clic agrandit toujours sur place", async () => {
+    const onOuvrir = vi.fn();
+    const { container, zoom } = monter({ onOuvrir });
+    fireEvent.pointerDown(zoom, { pointerId: 1, button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(zoom, { pointerId: 1, button: 0, clientX: 100, clientY: 100 });
+    await trame();
+    expect(onOuvrir).not.toHaveBeenCalled();
+    expect(echelle(container)).toBe(2.5);
+  });
+
+  it("glisser vers la gauche passe à la vue suivante, vers la droite à la précédente", () => {
+    const onBalayage = vi.fn();
+    const { zoom } = monter({ onBalayage });
+    glisse(zoom, 300, 100);
+    glisse(zoom, 100, 300);
+    expect(onBalayage.mock.calls).toEqual([[1], [-1]]);
+  });
+
+  it("un petit glissé ne change pas de vue", () => {
+    const onBalayage = vi.fn();
+    const { zoom } = monter({ onBalayage });
+    glisse(zoom, 200, 170);
+    expect(onBalayage).not.toHaveBeenCalled();
+  });
+
+  it("photo agrandie, glisser la déplace sans changer de vue", async () => {
+    const onBalayage = vi.fn();
+    const { zoom } = monter({ onBalayage, plein: true });
+    expect(zoom).toHaveClass("zoom-plein");
+    tape(zoom);
+    await trame();
+    glisse(zoom, 300, 100);
+    expect(onBalayage).not.toHaveBeenCalled();
   });
 });
