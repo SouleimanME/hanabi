@@ -43,11 +43,12 @@ def _nombres(texte: str) -> set[str]:
     return set(re.findall(r"\d+(?:[.,]\d+)?", texte))
 
 
-# Matières qu'une photo ne prouve pas : écrites sans être dans les notes, elles sont inventées
+# Matières qu'une photo ne prouve pas : écrites sans être dans les notes, elles sont inventées.
+# Les couleurs (doré, argenté) se voient sur la photo et n'y figurent pas.
 MATIERES = (
     "résine", "bois", "métal", "laiton", "cuivre", "bronze", "fonte", "acier", "céramique", "porcelaine",
     "grès", "verre", "cristal", "papier", "bambou", "soie", "coton", "lin", "plastique", "silicone",
-    "cuir", "laque", "tissu", "pierre", "marbre", "or", "doré", "argent",
+    "cuir", "laque", "tissu", "pierre", "marbre",
 )
 
 
