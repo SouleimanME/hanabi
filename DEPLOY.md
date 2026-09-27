@@ -231,11 +231,45 @@ Le fournisseur reçoit le texte de chaque avis approuvé, une seule fois, sans
 l'auteur ni l'objet. 400 textes au plus par construction ; ensuite, seuls les
 nouveaux avis. Sans ces secrets, l'entrepôt se construit sans les thèmes.
 
+### Garder l'API éveillée
+
+Render endort l'offre gratuite après quinze minutes sans requête ; le visiteur
+suivant attend jusqu'à une minute. Le Worker `hanabi-reveil/` appelle `/healthz`
+toutes les cinq minutes depuis Cloudflare, dont les tâches planifiées partent à
+l'heure (celles de GitHub prennent jusqu'à une demi-heure de retard). `/healthz`
+ne touche pas à la base : Neon continue de se suspendre et ne consomme pas son
+quota.
+
+**Déployer, sans rien installer :**
+
+1. Tableau de bord Cloudflare, **Workers & Pages**, **Create**, **Create Worker**.
+   Nom : `hanabi-reveil`. **Deploy**.
+2. **Edit code** : remplacer tout le contenu par celui de `hanabi-reveil/worker.js`,
+   puis **Deploy**.
+3. **Settings**, **Variables and Secrets**, **Add** : `API_URL` (texte), valeur
+   `https://hanabi-api-myk8.onrender.com`, sans barre finale. **Deploy**.
+4. **Settings**, **Trigger Events** (ou **Triggers**), **Add**, **Cron Triggers** :
+   `*/5 * * * *`. **Add**.
+5. **Vérifier** : ouvrir l'adresse du Worker (`https://hanabi-reveil.<compte>.workers.dev`).
+   La réponse doit être `{"api":"éveillée", ...}`. Puis, dans l'onglet **Logs**,
+   une ligne « API éveillée » doit apparaître toutes les cinq minutes.
+6. **Activer la surveillance du réveil** : sur GitHub, Settings, Secrets and
+   variables, Actions, onglet **Variables**, **New repository variable** :
+   `REVEIL_ACTIF` = `true`. La sonde horaire échoue alors, courriel à l'appui, si
+   elle trouve l'API endormie.
+
+Avec Wrangler, `npx wrangler deploy` depuis `hanabi-reveil/` fait les étapes 1 à 4.
+
+**À surveiller :** l'offre gratuite de Render accorde 750 heures par mois et par
+espace de travail. Un service éveillé en permanence en consomme 744 au plus : il
+ne faut aucun autre service gratuit dans le même espace, sinon le quota s'épuise
+avant la fin du mois et Render suspend l'API jusqu'au mois suivant. L'offre
+Starter (7 $ par mois) supprime à la fois la mise en veille et ce plafond.
+
 ### Ce qu'implique l'offre gratuite de Render
 
-- **Mise en veille après inactivité.** La première visite après une pause
-  réveille le service et peut demander une minute. Les suivantes sont normales.
-  Ouvre le lien une fois avant de le montrer à quelqu'un.
+- **Mise en veille après inactivité.** Sans le réveil ci-dessus, la première
+  visite après une pause réveille le service et peut demander une minute.
 - **Disque non persistant.** Les données vivent dans PostgreSQL ; rien d'écrit
   sur le disque du conteneur ne survit à un redémarrage.
 - **512 Mo de mémoire.** L'API et le modèle de recherche en occupent environ 300 ;

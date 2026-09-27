@@ -148,6 +148,17 @@ def root():
     return fiche
 
 
+@app.get("/healthz", tags=["meta"])
+def vivant():
+    """Le processus répond, sans toucher à la base.
+
+    Appelée toutes les cinq minutes par le réveil (hanabi-reveil/) pour que
+    l'hébergeur n'endorme pas l'API. Passer par la base empêcherait celle-ci de
+    se suspendre et consommerait son quota gratuit.
+    """
+    return {"status": "ok"}
+
+
 @app.get("/health", tags=["meta"])
 def health(response: Response, db: Session = Depends(get_db)):
     """État vérifié du service.

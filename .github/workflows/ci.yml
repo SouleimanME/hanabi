@@ -253,6 +253,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Le Worker qui garde l'API éveillée : essais, pauses, adresse visée
+      - name: Tests du reveil
+        working-directory: hanabi-reveil
+        run: npm test
+
   e2e:
     name: Parcours de bout en bout (Playwright)
     runs-on: ubuntu-latest

@@ -47,6 +47,21 @@ class TestSante:
             "courriels": {"en_attente": 0, "abandonnes": 0},
         }
 
+    def test_la_sonde_de_vie_ne_touche_pas_la_base(self, client):
+        """Le réveil l'appelle toutes les cinq minutes : la base doit pouvoir dormir."""
+        from app.database import get_db
+        from app.main import app
+
+        def sans_base():
+            raise AssertionError("la sonde de vie a ouvert une session")
+            yield  # noqa: unreachable
+
+        app.dependency_overrides[get_db] = sans_base
+        res = client.get("/healthz")
+
+        assert res.status_code == 200
+        assert res.json() == {"status": "ok"}
+
     def test_la_sonde_signale_les_courriels_abandonnes(self, client, db_session):
         """Une file en echec ne se voit nulle part ailleurs."""
         from app import models

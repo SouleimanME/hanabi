@@ -1,10 +1,12 @@
 # Surveillance de /health, une fois par heure.
 #
-# Render endort le service après quinze minutes : la sonde le réveille d'abord,
-# puis mesure. Une sonde plus fréquente le garderait éveillé et consommerait
-# l'allocation gratuite. Alerte : tâche en échec et courriel de GitHub.
-# Les tâches planifiées de GitHub prennent du retard et se désactivent après
-# soixante jours sans activité.
+# Le Worker hanabi-reveil (Cloudflare) garde l'API éveillée. Cette sonde vérifie
+# la santé du service et surveille le réveil lui-même : une API trouvée endormie
+# veut dire que le Worker ne passe plus. Ce contrôle ne s'active qu'avec la
+# variable de dépôt REVEIL_ACTIF à true, une fois le Worker déployé.
+# Alerte : tâche en échec et courriel de GitHub. Les tâches planifiées de GitHub
+# prennent du retard et se désactivent après soixante jours sans activité : elles
+# surveillent, elles ne réveillent pas.
 
 name: Surveillance
 
@@ -27,6 +29,7 @@ jobs:
       - name: Interroger la sonde
         env:
           URL: ${{ secrets.API_HEALTH_URL }}
+          REVEIL_ACTIF: ${{ vars.REVEIL_ACTIF }}
         run: |
           if [ -z "$URL" ]; then
             echo "::notice::API_HEALTH_URL n'est pas configuré : surveillance inactive."
@@ -60,6 +63,14 @@ jobs:
           # 200 avec status degrade : courriels abandonnés en file
           if echo "$corps" | grep -q '"status":"degrade"'; then
             echo "::error::Service dégradé : $corps"
+            exit 1
+          fi
+
+          # Une API éveillée répond en une ou deux secondes ; au-delà de vingt,
+          # elle dormait : le Worker de réveil ne passe plus
+          if [ "$REVEIL_ACTIF" = "true" ] && [ "$reveil" -ge 20 ]; then
+            echo "::error::L'API dormait (${reveil}s pour répondre) : le réveil Cloudflare" \
+                 "ne fonctionne plus. Voir DEPLOY.md, « Garder l'API éveillée »."
             exit 1
           fi
 
