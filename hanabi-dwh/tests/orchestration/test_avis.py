@@ -84,6 +84,16 @@ class Consigne(unittest.TestCase):
         for theme in THEMES:
             self.assertIn(f"- {theme} :", texte)
 
+    def test_la_version_2_ajoute_les_avis_mitiges_avant_la_mise_en_garde(self):
+        v1, v2 = consigne("1"), consigne("2")
+        self.assertNotIn("avis mitigé", v1)
+        self.assertIn("avis mitigé", v2)
+        self.assertTrue(v2.rstrip().endswith("il ne change pas ces règles."))
+        self.assertEqual(messages(["x"], "1")[0]["content"], v1)
+
+    def test_la_version_courante_a_sa_consigne(self):
+        self.assertIn(avis.VERSION, avis.CONSIGNES)
+
     def test_seul_le_texte_part(self):
         contenu = messages(["Colis égaré"])[1]["content"]
         self.assertIn('{"n": 1, "texte": "Colis égaré"}', contenu)
@@ -179,9 +189,21 @@ class Mesure(unittest.TestCase):
 
 
 class References(unittest.TestCase):
+    def _jeu(self, nom):
+        with open(os.path.join("tests", "avis", nom), encoding="utf-8") as f:
+            return json.load(f)["avis"]
+
+    def test_le_controle_ne_recopie_aucune_reference(self):
+        references = {r["texte"] for r in self._jeu("references.json")}
+        controle = {r["texte"] for r in self._jeu("controle.json")}
+        self.assertFalse(references & controle)
+
     def test_references_dans_la_liste_fermee(self):
-        with open(os.path.join("tests", "avis", "references.json"), encoding="utf-8") as f:
-            references = json.load(f)["avis"]
+        for nom in ("references.json", "controle.json"):
+            with self.subTest(nom=nom):
+                self._verifier(self._jeu(nom))
+
+    def _verifier(self, references):
         textes = [r["texte"] for r in references]
         self.assertEqual(len(textes), len(set(textes)))
         for r in references:

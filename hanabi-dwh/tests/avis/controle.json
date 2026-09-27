@@ -1,0 +1,37 @@
+{
+  "description": "Jeu de contrôle des avis mitigés, écrit avant la version 2 de la consigne et jamais utilisé pour la régler. Mêmes règles que references.json. Il mesure deux choses : que l'éloge d'un avis mitigé soit relevé, et qu'un éloge général (« Super achat ») accolé à un reproche ne devienne pas un thème.",
+  "avis": [
+    {"texte": "Magnifique, mais arrivé avec un coin cassé.", "attendu": [["esthetique", "positif"], ["emballage", "negatif"]], "tolere": [["qualite", "negatif"]]},
+    {"texte": "Couleurs superbes, en revanche le socle est bancal.", "attendu": [["esthetique", "positif"], ["qualite", "negatif"]]},
+    {"texte": "Solide et bien fini, dommage qu'il soit si petit.", "attendu": [["qualite", "positif"], ["taille", "negatif"]]},
+    {"texte": "Livraison express, mais l'objet est terne comparé aux photos.", "attendu": [["livraison", "positif"], ["conformite", "negatif"]], "tolere": [["esthetique", "negatif"]]},
+    {"texte": "Cher pour ce que c'est, même si la finition est irréprochable.", "attendu": [["prix", "negatif"], ["qualite", "positif"]]},
+    {"texte": "Malgré un colis en retard, la lampe est splendide.", "attendu": [["livraison", "negatif"], ["esthetique", "positif"]]},
+    {"texte": "La peinture s'écaille déjà, c'est dommage car le motif est ravissant.", "attendu": [["qualite", "negatif"], ["esthetique", "positif"]]},
+    {"texte": "Emballage parfait, objet un peu plus fragile que prévu.", "attendu": [["emballage", "positif"], ["qualite", "negatif"]]},
+    {"texte": "Joli et pas cher, mais la notice est uniquement en japonais.", "attendu": [["esthetique", "positif"], ["prix", "positif"], ["service", "negatif"]]},
+    {"texte": "Très réussi comme cadeau, même si la taille m'a surpris.", "attendu": [["cadeau", "positif"], ["taille", "negatif"]]},
+    {"texte": "Lovely colours, though the paper feels thin.", "attendu": [["esthetique", "positif"], ["qualite", "negatif"]]},
+    {"texte": "Great value, but it took two weeks to arrive.", "attendu": [["prix", "positif"], ["livraison", "negatif"]]},
+    {"texte": "Precioso, aunque llegó con la caja rota.", "attendu": [["esthetique", "positif"], ["emballage", "negatif"]]},
+    {"texte": "Buena calidad, pero más pequeño de lo esperado.", "attendu": [["qualite", "positif"], ["taille", "negatif"]]},
+    {"texte": "Fidèle à la fiche, seul bémol : le prix a augmenté depuis.", "attendu": [["conformite", "positif"], ["prix", "negatif"]]},
+    {"texte": "Le service client a remplacé la pièce cassée en trois jours, bravo, même si l'envoi initial était mal protégé.", "attendu": [["service", "positif"], ["emballage", "negatif"]]},
+    {"texte": "Beau travail d'artisan, livré en retard.", "attendu": [["qualite", "positif"], ["livraison", "negatif"]], "tolere": [["esthetique", "positif"]]},
+    {"texte": "Taille idéale pour mon bureau, les couleurs un peu ternes.", "attendu": [["taille", "positif"], ["esthetique", "negatif"]]},
+
+    {"texte": "Super achat, mais la livraison a traîné.", "attendu": [["livraison", "negatif"]]},
+    {"texte": "Je recommande, même si c'est un peu cher.", "attendu": [["prix", "negatif"]]},
+    {"texte": "Très content, dommage pour le carton abîmé.", "attendu": [["emballage", "negatif"]]},
+    {"texte": "Top, sauf la taille, plus petite qu'imaginé.", "attendu": [["taille", "negatif"]]},
+    {"texte": "Nice purchase overall, shipping was slow though.", "attendu": [["livraison", "negatif"]]},
+
+    {"texte": "Fragile, mal emballé et en retard.", "attendu": [["qualite", "negatif"], ["emballage", "negatif"], ["livraison", "negatif"]]},
+    {"texte": "Trop petit et trop cher.", "attendu": [["taille", "negatif"], ["prix", "negatif"]]},
+    {"texte": "Superbe, solide, bien emballé.", "attendu": [["esthetique", "positif"], ["qualite", "positif"], ["emballage", "positif"]]},
+    {"texte": "Rien à dire, parfait.", "attendu": []},
+    {"texte": "Pas mal, sans plus.", "attendu": []},
+    {"texte": "Il n'est pas moche, mais pas vraiment beau non plus.", "attendu": [], "tolere": [["esthetique", "negatif"]]},
+    {"texte": "Correct pour le prix, livraison rapide.", "attendu": [["livraison", "positif"]], "tolere": [["prix", "positif"], ["prix", "negatif"]]}
+  ]
+}

@@ -291,7 +291,27 @@ n'a besoin que des trois variables :
 
 ```bash
 cd hanabi-dwh && .venv/Scripts/python tests/avis/evaluer.py
+cd hanabi-dwh && .venv/Scripts/python tests/avis/evaluer.py --jeu controle --version 1
 ```
+
+La version 1 oubliait l'éloge des avis mitigés (« Très joli, mais plus fragile »
+ne donnait que la qualité négative). La version 2 l'a corrigé ; elle se mesure sur
+`tests/avis/controle.json`, trente avis écrits avant elle et jamais utilisés pour
+la régler, dont des éloges généraux accolés à un reproche, qui doivent rester sans
+thème. Critères posés avant la mesure : F1 de contrôle en hausse, précision de
+contrôle d'au moins 0,90, F1 de référence d'au moins 0,80.
+
+| | version 1 | version 2 |
+| --- | ---: | ---: |
+| contrôle, F1 | 0,814 | 0,970 |
+| contrôle, rappel | 0,686 | 0,941 |
+| contrôle, précision | 1,000 | 1,000 |
+| référence, F1 | 0,862 | 0,899 |
+| référence, précision | 0,949 | 0,925 |
+
+La précision de référence baisse d'un cran : « Belle finition » compte désormais
+aussi pour l'esthétique. Corriger ce cas en le regardant sur ce banc ôterait au
+banc sa valeur ; il attend un prochain jeu de contrôle.
 
 ### Contrôles de volume et de fraîcheur
 
