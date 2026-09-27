@@ -1,18 +1,22 @@
 /** Back-office : pilotage et gestion de la boutique. */
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, lazy, useState, useEffect, useCallback } from "react";
 import { setToken } from "../lib/api.js";
 import { LogoMark } from "../components/brand/LogoMark.jsx";
 import { api } from "./api.js";
 import { Ico, Chargement } from "./ui.jsx";
 import { Dashboard } from "./views/Dashboard.jsx";
 import { Analytics } from "./views/Analytics.jsx";
-import { Warehouse } from "./views/Warehouse.jsx";
 import { Exploitation } from "./views/Exploitation.jsx";
 import { Products } from "./views/Products.jsx";
 import { Promos } from "./views/Promos.jsx";
 import { Orders } from "./views/Orders.jsx";
 import { Users } from "./views/Users.jsx";
 import "./admin.css";
+
+// Console SQL, graphe et questions : le plus lourd des onglets, chargé à l'ouverture
+const Warehouse = lazy(() =>
+  import("./views/Warehouse.jsx").then((m) => ({ default: m.Warehouse })),
+);
 
 const GROUPES = [
   {
@@ -201,7 +205,11 @@ export default function Admin() {
           <Chargement>Chargement du tableau de bord</Chargement>
         )}
         {tab === "analytics" && <Analytics flash={flash} />}
-        {tab === "warehouse" && <Warehouse flash={flash} />}
+        {tab === "warehouse" && (
+          <Suspense fallback={<Chargement>Ouverture de l&apos;entrepôt…</Chargement>}>
+            <Warehouse flash={flash} />
+          </Suspense>
+        )}
         {tab === "exploitation" && <Exploitation />}
         {tab === "products" && (
           <Products

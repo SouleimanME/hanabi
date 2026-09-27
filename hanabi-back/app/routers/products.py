@@ -3,7 +3,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from .. import models, plongement, recherche, schemas
+from .. import demandes, models, plongement, recherche, schemas
 from ..config import settings
 from ..antibot import verify as verify_antibot
 from ..database import get_db
@@ -53,6 +53,10 @@ def list_products(
         ordre = recherche.chercher([recherche.fiche(p) for p in products], q.strip(), encodeur)
         rang = {pid: i for i, pid in enumerate(ordre)}
         products = [p for p in products if p.id in rang]
+    # Rien dans tout le catalogue : un besoin que la boutique ne couvre pas.
+    # Après un filtre de famille, un résultat vide ne dirait rien de tel.
+    if rang is not None and not products:
+        demandes.noter(db, "recherche", q, lang)
     if category and category != "Tout":
         products = [p for p in products if p.category == category]
 

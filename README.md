@@ -430,6 +430,23 @@ Les courriels sortent par défaut en `.eml` dans `var/courriels/`, message MIME
 complet. `MAIL_BACKEND=smtp` bascule sur un vrai relais (voir `.env.example`).
 L'onglet Exploitation du back-office affiche la file et les paiements à rapprocher.
 
+### Ce que les visiteurs cherchent
+
+**Les demandes sans réponse deviennent une liste d'achats.** Une recherche qui ne
+rend aucun objet est gardée trente jours, sans compte ni adresse. Quand le
+conseiller ne trouve rien, il rend aussi le besoin en quelques mots génériques
+(« coque de téléphone ») : seul ce libellé est gardé, la demande reste oubliée
+comme la page le promet. Le tableau de bord les regroupe en besoins, du plus au
+moins demandé. Le modèle dit quelles lignes vont ensemble ; les comptes sont faits
+par le serveur, qui écarte un numéro inventé ou répété. Le compte de
+démonstration voit les besoins, jamais ce que les visiteurs ont tapé.
+
+**Le conseiller lit les avis.** Chaque objet candidat arrive avec ce que ses avis
+louent ou reprochent nettement, tiré de `gold_themes_avis` : trois mentions au
+moins, la livraison et l'emballage exclus puisqu'ils parlent de la boutique. Il
+peut s'appuyer sur un point loué, écarter un objet qu'un reproche disqualifie, et
+ne prête aux clients rien d'autre.
+
 ### Demander à l'entrepôt
 
 **Une question en français, une requête qu'on peut lire.** Dans l'onglet
@@ -507,7 +524,7 @@ source.
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 630 tests API sur SQLite et PostgreSQL, 280 tests d'interface, 18 parcours e2e, 133 assertions dbt, 35 tests de l'orchestration, budget de poids |
+| Qualité | 650 tests API sur SQLite et PostgreSQL, 284 tests d'interface, 18 parcours e2e, 133 assertions dbt, 35 tests de l'orchestration, budget de poids |
 
 ---
 

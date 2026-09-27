@@ -2114,3 +2114,62 @@ th[aria-sort] .th-sort {
 .wh-demande-sql[open] summary {
   margin-block-end: 8px;
 }
+
+/* --- Ce que les visiteurs cherchent --- */
+.dm-liste {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dm-besoin {
+  display: grid;
+  gap: 6px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-radius: 2px;
+}
+.dm-tete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dm-nom {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink);
+}
+.dm-compte {
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* Le volume se lit d'un coup d'œil : une arête de vermillon, pas un graphique */
+.dm-barre {
+  display: block;
+  block-size: 3px;
+  background: var(--line);
+}
+.dm-barre > span {
+  display: block;
+  block-size: 100%;
+  background: var(--accent);
+}
+.dm-pied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.dm-exemples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.dm-vide {
+  color: var(--muted);
+}

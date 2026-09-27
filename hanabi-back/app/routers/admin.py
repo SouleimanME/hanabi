@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import exists, func, literal_column, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from .. import analytics, medias, models, restock
+from .. import analytics, demandes, medias, models, restock
 from ..analytics import REVENUE_STATUSES
 from ..database import get_db
 from ..deps import get_admin_user, get_admin_writer, is_readonly_admin
@@ -330,6 +330,17 @@ def analytics_affinities(
 ):
     """Produits achetés ensemble, classés par lift."""
     return analytics.affinities(db, limit)
+
+
+# --- Ce que les visiteurs cherchent sans le trouver ---
+@router.get("/demandes")
+@limiter.limit("20/minute")
+def demandes_sans_reponse(
+    request: Request, db: Session = Depends(get_db), user=Depends(get_admin_user),
+):
+    """Besoins regroupés sur trente jours. Le compte de démonstration ne voit pas
+    ce que les visiteurs ont tapé, seulement les besoins et leurs comptes."""
+    return demandes.synthese(db, avec_exemples=not is_readonly_admin(user))
 
 
 # --- Produits ---

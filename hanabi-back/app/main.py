@@ -15,6 +15,7 @@ from . import models, outbox, recherche
 from .audience import detacher_consultations_anciennes
 from .config import settings
 from .database import SessionLocal, get_db
+from .demandes import purger as purger_demandes
 from .demo_data import ensure_demo_dataset
 from .idempotency import purger as purger_idempotence
 from .medias import OrigineDesMedias
@@ -51,6 +52,9 @@ async def lifespan(app: FastAPI):
         jetons_morts = purger_jetons(db)
         if jetons_morts:
             log.info("jetons expires purges", extra={"lignes": jetons_morts})
+        effacees = purger_demandes(db)
+        if effacees:
+            log.info("demandes sans reponse effacees", extra={"lignes": effacees})
         detachees = detacher_consultations_anciennes(db)
         if detachees:
             log.info("consultations detachees de leur compte", extra={"lignes": detachees})

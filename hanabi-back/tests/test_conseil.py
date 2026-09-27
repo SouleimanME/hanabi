@@ -3,6 +3,7 @@ de la boutique, en stock et dans le budget, sans jamais citer de prix."""
 import json
 
 import pytest
+from sqlalchemy import text
 
 from app import models
 from app.config import settings
@@ -143,6 +144,59 @@ def test_un_besoin_precis_n_accepte_pas_un_objet_voisin(client, antibot_for, fou
     consigne = faux.recus[0]["messages"][0]["content"]
     assert "seul un objet qui fait exactement cela convient" in consigne
     assert "Le nom et l'accroche disent ce qu'est l'objet" in consigne
+
+
+def test_ce_que_disent_les_avis_accompagne_la_fiche(client, antibot_for, fournisseur, db_session, monkeypatch):
+    kitsune = db_session.query(models.Product).filter_by(code="HNB-052").one()
+    monkeypatch.setattr(
+        "app.conseil.echos_des_avis",
+        lambda db, ids: {kitsune.id: {"loue": ["la finition"], "reproche": ["la taille"]}},
+    )
+    faux = fournisseur(_reponse("HNB-052"))
+    _demander(client, antibot_for, "Pour ma sœur qui adore les yokai")
+    fiches = [json.loads(l) for l in faux.recus[0]["messages"][1]["content"].split("\n") if l.startswith("{")]
+    par_code = {f["code"]: f for f in fiches}
+    assert par_code["HNB-052"]["avis_clients"] == {"loue": ["la finition"], "reproche": ["la taille"]}
+    # Un objet sans avis marquants n'en porte pas
+    assert all("avis_clients" not in f for c, f in par_code.items() if c != "HNB-052")
+    assert "N'attribue aux clients rien d'autre" in faux.recus[0]["messages"][0]["content"]
+
+
+def test_sans_entrepot_le_conseiller_fait_sans_les_avis(db_session):
+    from app.conseil import echos_des_avis
+
+    # SQLite : pas de schéma gold
+    assert echos_des_avis(db_session, [1, 2]) == {}
+
+
+@pytest.fixture
+def themes_avis(moteur):
+    if moteur.dialect.name != "postgresql":
+        pytest.skip("demande PostgreSQL (TEST_DATABASE_URL)")
+    with moteur.begin() as cx:
+        cx.execute(text("drop schema if exists gold cascade"))
+        cx.execute(text("create schema gold"))
+        cx.execute(text(
+            "create table gold.gold_themes_avis "
+            "(produit_id int, theme text, mentions int, taux_negatif numeric)"
+        ))
+        cx.execute(text(
+            "insert into gold.gold_themes_avis values "
+            "(1, 'qualite', 8, 0.1), (1, 'taille', 5, 0.8), (1, 'livraison', 9, 0.9), "
+            "(1, 'esthetique', 2, 0.0), (1, 'prix', 6, 0.4), (2, 'qualite', 4, 0.0)"
+        ))
+    yield
+    with moteur.begin() as cx:
+        cx.execute(text("drop schema gold cascade"))
+
+
+def test_l_entrepot_dit_ce_que_les_avis_louent_et_reprochent(themes_avis, db_session):
+    from app.conseil import echos_des_avis
+
+    echos = echos_des_avis(db_session, [1, 3])
+    # Livraison : la boutique, pas l'objet. Esthétique : trop peu de mentions.
+    # Prix : avis partagés, rien de net.
+    assert echos == {1: {"loue": ["la finition"], "reproche": ["la taille"]}}
 
 
 def test_la_demande_reste_une_demande(client, antibot_for, fournisseur):

@@ -1,7 +1,7 @@
 /** Textes légaux affichés en fenêtre : mentions, CGV, confidentialité, cookies. */
 
 /** Dernière révision, affichée en pied de chaque texte. */
-export const LEGAL_UPDATED = "27 septembre 2026";
+export const LEGAL_UPDATED = "28 septembre 2026";
 
 export const LEGAL_CONTENT = {
   mentions: {
@@ -328,7 +328,8 @@ Les données sont hébergées au sein de l'Union européenne. Seule l'adresse IP
 • Avis produit : jusqu'au retrait du consentement ou à la suppression du compte.
 • Prospection : trois (3) ans à compter du dernier contact.
 • Journaux de connexion : douze (12) mois.
-• Demandes au conseil cadeau : aucune conservation par Hanabi ; chez Mistral AI, la durée prévue par son accord de traitement des données, sans utilisation pour l'entraînement de ses modèles.
+• Demandes au conseil cadeau : aucune conservation par Hanabi ; chez Mistral AI, la durée prévue par son accord de traitement des données, sans utilisation pour l'entraînement de ses modèles. Quand le conseiller ne trouve rien, seul le besoin reformulé en quelques mots génériques (« coque de téléphone ») est gardé trente (30) jours, pour savoir quels objets ajouter.
+• Recherches sans résultat : le texte cherché, sans lien avec un compte ni une adresse IP, trente (30) jours, pour savoir quels objets ajouter.
 • Consultations de fiches : rattachement au compte effacé au bout de treize (13) mois ; le comptage anonyme reste pour les statistiques.
 • Lettre d'information : jusqu'à la désinscription. L'adresse est ensuite gardée comme opposition, pour ne plus vous écrire.
 • Choix sur la mesure d'audience : six (6) mois dans votre navigateur, puis redemandé.
@@ -372,7 +373,7 @@ At checkout, the address being typed and the postcode are sent to the Géoplatef
 Data is hosted within the European Union. Only the IP address sent to Unsplash to display photographs leaves the Union (see Recipients). Any transfer to a third country would be covered by an adequacy decision or the standard contractual clauses.
 
 **Retention**
-Account: life of the account, then three (3) years after last contact. Orders and accounting records: ten (10) years. Marketing: three (3) years after last contact. Server logs: twelve (12) months. Gift adviser requests: not kept by Hanabi; at Mistral AI, the period set by its data processing agreement, with no use for training its models. Product page views: link to your account erased after thirteen (13) months. Newsletter: until you unsubscribe, the address then being kept as an objection. Audience choice: six (6) months.
+Account: life of the account, then three (3) years after last contact. Orders and accounting records: ten (10) years. Marketing: three (3) years after last contact. Server logs: twelve (12) months. Gift adviser requests: not kept by Hanabi; at Mistral AI, the period set by its data processing agreement, with no use for training its models. When the adviser finds nothing, only the need restated in a few generic words ("phone case") is kept for thirty (30) days, to decide which items to add. Searches with no result: the search text, linked to no account or IP address, thirty (30) days, for the same purpose. Product page views: link to your account erased after thirteen (13) months. Newsletter: until you unsubscribe, the address then being kept as an objection. Audience choice: six (6) months.
 
 **Your rights**
 Under Articles 15 to 22 GDPR you have the rights of access, rectification, erasure, restriction of processing, objection and portability, and the right to withdraw consent at any time. Exercise them at contact@hanabi.fr; you will receive a reply within one (1) month.
@@ -411,7 +412,7 @@ En el pago, la dirección que se está escribiendo y el código postal se envía
 Los datos se alojan en la Unión Europea. Solo la dirección IP enviada a Unsplash para mostrar las fotografías sale de la Unión (véase Destinatarios). Cualquier transferencia a un tercer país estaría amparada por una decisión de adecuación o por las cláusulas contractuales tipo.
 
 **Plazos de conservación**
-Cuenta: vigencia de la cuenta y tres (3) años desde el último contacto. Pedidos y documentos contables: diez (10) años. Prospección: tres (3) años. Registros de conexión: doce (12) meses. Peticiones al asesor de regalos: Hanabi no las conserva; en Mistral AI, el plazo previsto en su acuerdo de tratamiento de datos, sin uso para entrenar sus modelos. Consultas de fichas: vínculo con la cuenta borrado a los trece (13) meses. Boletín: hasta la baja; la dirección se conserva después como oposición. Elección sobre la medición de audiencia: seis (6) meses.
+Cuenta: vigencia de la cuenta y tres (3) años desde el último contacto. Pedidos y documentos contables: diez (10) años. Prospección: tres (3) años. Registros de conexión: doce (12) meses. Peticiones al asesor de regalos: Hanabi no las conserva; en Mistral AI, el plazo previsto en su acuerdo de tratamiento de datos, sin uso para entrenar sus modelos. Cuando el asesor no encuentra nada, solo se guarda la necesidad reformulada en pocas palabras genéricas (« funda de móvil ») durante treinta (30) días, para decidir qué artículos añadir. Búsquedas sin resultado: el texto buscado, sin vínculo con una cuenta ni una dirección IP, treinta (30) días, con el mismo fin. Consultas de fichas: vínculo con la cuenta borrado a los trece (13) meses. Boletín: hasta la baja; la dirección se conserva después como oposición. Elección sobre la medición de audiencia: seis (6) meses.
 
 **Sus derechos**
 Conforme a los artículos 15 a 22 del RGPD, tiene derecho de acceso, rectificación, supresión, limitación, oposición y portabilidad, así como a retirar su consentimiento en cualquier momento. Ejerza estos derechos en contact@hanabi.fr.

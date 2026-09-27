@@ -353,6 +353,21 @@ class PaymentMethod(Base):
     user: Mapped["User"] = relationship()
 
 
+class DemandeSansReponse(Base):
+    """Une recherche sans résultat, ou le besoin reformulé d'une demande au
+    conseiller restée sans objet. Ni compte, ni adresse IP, ni texte de
+    demande au conseiller ; effacée au bout de trente jours (app/demandes.py)."""
+
+    __tablename__ = "demandes_sans_reponse"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
+    # recherche | conseil
+    source: Mapped[str] = mapped_column(String(20))
+    texte: Mapped[str] = mapped_column(String(80))
+    lang: Mapped[str] = mapped_column(String(5), default="fr")
+
+
 class Media(Base):
     """Une photo téléversée, rangée sous l'empreinte SHA-256 de son contenu et
     servie par /media/<empreinte> (voir app/medias.py)."""

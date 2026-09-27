@@ -1,11 +1,14 @@
 /** Tableau de bord : chiffres cles, profil clients explorable, dernieres commandes. */
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import { api } from "../api.js";
 import { eur, fmtDate, num, pct } from "../format.js";
 import { BarChart } from "../charts.jsx";
 import { Chargement, SousTitre, StatusBadge } from "../ui.jsx";
+
+// À part : le lot du back-office est au bord de son budget
+const Demandes = lazy(() => import("./Demandes.jsx"));
 
 /* Le graphique affiche des libelles, l'API attend les codes stockes en base */
 const CIVILITE_LIBELLES = {
@@ -185,6 +188,10 @@ export function Dashboard({ stats }) {
           attente
         </p>
       )}
+
+      <Suspense fallback={null}>
+        <Demandes />
+      </Suspense>
 
       <SousTitre note="Choisis une tranche, une ville ou un genre pour voir ce que ce segment achète. Les critères se combinent ; un second clic retire le filtre.">
         Profil clients
