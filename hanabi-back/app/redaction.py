@@ -348,9 +348,26 @@ def rediger(demande: Demande, exemples: list[dict]) -> Resultat:
     brouillon se repère mécaniquement ; le vérifier coûte moins que l'espérer.
     """
     resultat = _rediger_une_fois(demande, exemples)
-    if resultat.proposition.brouillon_meme_objet or not demande.notes.strip():
+    if not demande.notes.strip():
         return resultat
-    repris = mots_du_brouillon_repris(demande, resultat.proposition)
+    p = resultat.proposition
+
+    # Photo d'un autre objet que celui des notes : les notes font foi. Mesuré,
+    # un modèle qui voit la contradiction rédige pourtant la fiche de la photo
+    # (« Masque de renard » pour une coque). La fiche est refaite sans la
+    # photo ; la remarque, elle, reste.
+    if resultat.photo_lue and p.photo_contredit:
+        log.info("photo contraire aux notes, fiche refaite sans elle")
+        sans_photo = demande.model_copy(update={"image": None})
+        if not p.brouillon_meme_objet:
+            sans_photo = sans_photo.model_copy(update={"name": "", "category": "", "blurb": "", "usages": ""})
+        refaite = _rediger_une_fois(sans_photo, exemples)
+        refaite.proposition.photo_contredit = True
+        return Resultat(refaite.proposition, photo_lue=True)
+
+    if p.brouillon_meme_objet:
+        return resultat
+    repris = mots_du_brouillon_repris(demande, p)
     if not repris:
         return resultat
     log.info("brouillon d'un autre objet repris, second essai sans lui", extra={"mots": sorted(repris)[:8]})

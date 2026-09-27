@@ -188,12 +188,34 @@ def test_une_fiche_se_redige_a_temperature_nulle(client, admin, fournisseur, mon
 
 
 def test_une_photo_qui_contredit_les_notes_se_signale(client, admin, fournisseur):
-    fournisseur(dict(VALIDE, categorie="Accessoires", photo_contredit=True,
-                     manque="le modèle d'iPhone — compatible"))
+    fournisseur(
+        dict(VALIDE, categorie="Accessoires", photo_contredit=True, manque="le modèle d'iPhone — compatible"),
+        dict(VALIDE, categorie="Accessoires"),
+    )
     corps = _demander(client, admin, notes="Coque d'iPhone").json()
     assert corps["categorie"] == "Accessoires"
     # Écrite par le serveur ; `manque`, trop souvent faux, n'est pas montré
     assert corps["remarque"] == "La photo ne montre pas l'objet décrit dans tes notes."
+
+
+def test_une_photo_contraire_aux_notes_ne_dicte_pas_la_fiche(client, admin, fournisseur):
+    """Photo d'un masque, notes « coque » : la fiche suit les notes, la remarque reste."""
+    de_la_photo = dict(
+        VALIDE, photo_contredit=True, brouillon_meme_objet=False, objet_sur_la_photo="masque de renard",
+        fr=_fiche("Masque de renard"), en=_fiche("Fox Mask"), es=_fiche("Máscara de zorro"),
+    )
+    des_notes = dict(
+        VALIDE, categorie="Accessoires",
+        fr=_fiche("Coque iPhone", alt=""), en=_fiche("iPhone Case", alt=""), es=_fiche("Funda iPhone", alt=""),
+    )
+    faux = fournisseur(de_la_photo, des_notes)
+    corps = _demander(client, admin, name="Masque Kitsune", notes="Coque d'iPhone").json()
+    assert corps["fr"]["name"] == "Coque iPhone"
+    assert corps["remarque"] == "La photo ne montre pas l'objet décrit dans tes notes."
+    # Second appel : ni photo, ni brouillon d'un autre objet
+    second = faux.recus[1]["messages"][1]["content"]
+    assert not any(bloc.get("type") == "image_url" for bloc in second)
+    assert "Brouillon" not in second[0]["text"]
 
 
 def test_sans_photo_aucune_contradiction_ne_peut_se_signaler(client, admin, fournisseur):
