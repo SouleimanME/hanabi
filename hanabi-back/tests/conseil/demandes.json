@@ -13,6 +13,9 @@
     {"demande": "Pour mon grand-père qui collectionne les objets en bois", "lang": "fr", "acceptables": ["HNB-071"]},
     {"demande": "Souhaiter bonne chance à une amie qui lance son entreprise", "lang": "fr", "acceptables": ["HNB-018", "HNB-067"]},
     {"demande": "Un cadeau à moins de 20 €", "lang": "fr", "budget": 2000, "acceptables": []},
+    {"demande": "Pour protéger mon téléphone", "lang": "fr", "acceptables": []},
+    {"demande": "Des écouteurs sans fil pour mon frère", "lang": "fr", "acceptables": []},
+    {"demande": "A case for my phone", "lang": "en", "acceptables": []},
 
     {"demande": "Something for a teenager who loves anime, under 45 euros", "lang": "en", "budget": 4500, "acceptables": ["HNB-061", "HNB-018"]},
     {"demande": "A wedding gift, something to hang on the wall", "lang": "en", "acceptables": ["HNB-078", "HNB-037", "HNB-064"]},

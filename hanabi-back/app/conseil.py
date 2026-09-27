@@ -108,6 +108,8 @@ Rends uniquement un objet JSON de cette forme :
 
 Règles :
 - message : une phrase qui répond à la personne, 160 caractères au plus.
+- Un objet convient s'il remplit le besoin tel qu'il est dit. Quand la demande nomme une fonction ou un appareil (protéger un téléphone, écouter de la musique), seul un objet qui fait exactement cela convient : une coque pour un autre appareil ne protège pas un téléphone.
+- Le nom et l'accroche disent ce qu'est l'objet ; les usages ne font que compléter.
 - code : exactement le code d'un objet de la liste.
 - raison : pourquoi cet objet convient à la personne décrite, en une ou deux phrases, 200 caractères au plus. Appuie-toi sur la fiche : n'invente ni matière, ni dimension, ni fonction.
 - Ne cite ni prix, ni délai de livraison, ni stock : la page les affiche.
