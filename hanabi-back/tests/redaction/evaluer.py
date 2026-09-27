@@ -43,9 +43,26 @@ def _nombres(texte: str) -> set[str]:
     return set(re.findall(r"\d+(?:[.,]\d+)?", texte))
 
 
+# Matières qu'une photo ne prouve pas : écrites sans être dans les notes, elles sont inventées
+MATIERES = (
+    "résine", "bois", "métal", "laiton", "cuivre", "bronze", "fonte", "acier", "céramique", "porcelaine",
+    "grès", "verre", "cristal", "papier", "bambou", "soie", "coton", "lin", "plastique", "silicone",
+    "cuir", "laque", "tissu", "pierre", "marbre", "or", "doré", "argent",
+)
+
+
+def _matieres(texte: str) -> set[str]:
+    bas = texte.lower()
+    return {m for m in MATIERES if re.search(rf"\b{m}\b", bas)}
+
+
 def _controler(notes: str, proposition: redaction.Proposition) -> list[str]:
     defauts = []
     connus = _nombres(notes)
+    fr = proposition.fr
+    matieres = _matieres(" ".join([fr.name, fr.blurb, *fr.usages])) - _matieres(notes)
+    if matieres:
+        defauts.append(f"fr : matières absentes des notes {sorted(matieres)}")
     for langue in redaction.LANGUES:
         fiche = getattr(proposition, langue)
         if len(fiche.blurb) > 120:
@@ -80,15 +97,28 @@ def _banc(produits, encodeur) -> dict[str, int]:
     return scores
 
 
-def reecritures() -> int:
+def _juger(c: dict, p, remarque: str) -> list[str]:
+    ecarts = []
+    if not re.search(c["nom"], p.fr.name, re.I):
+        ecarts.append(f"nom « {p.fr.name} »")
+    if c.get("interdit") and re.search(c["interdit"], f"{p.fr.name} {p.fr.blurb}", re.I):
+        ecarts.append(f"reste du brouillon : « {p.fr.name} », « {p.fr.blurb} »")
+    if p.categorie != c["categorie"]:
+        ecarts.append(f"catégorie {p.categorie}")
+    if bool(remarque) != c["remarque"]:
+        ecarts.append(f"remarque « {remarque} »" if remarque else "aucune remarque")
+    return ecarts
+
+
+def reecritures(repetitions: int) -> int:
     """Les notes et la photo passent-elles devant la fiche actuelle ? Cas de
-    tests/redaction/reecritures.json, écrits avant la consigne qui le demande."""
+    tests/redaction/reecritures.json. Chaque cas est joué plusieurs fois : un
+    passage unique ne distingue pas un défaut d'un tirage malchanceux."""
     cas = json.loads((Path(__file__).parent / "reecritures.json").read_text(encoding="utf-8"))["cas"]
     par_code = {p[0]: p for p in PRODUCTS}
-    reussis = 0
-    for i, c in enumerate(cas):
-        if i:
-            time.sleep(PAUSE)
+    stables, instables, rates = 0, 0, 0
+    premier = True
+    for c in cas:
         fiche = par_code.get(c["fiche"]) if c["fiche"] else None
         photo = PHOTOS[c["photo_de"]] if c.get("photo_de") else (PHOTOS[c["fiche"]] if c.get("photo") else None)
         demande = redaction.Demande(
@@ -96,33 +126,40 @@ def reecritures() -> int:
             blurb=fiche[3] if fiche else "", usages=USAGES.get(c["fiche"], "") if fiche else "",
             notes=c["notes"], image=photo,
         )
-        try:
-            resultat = redaction.rediger(demande, exemples=[])
-            p = resultat.proposition
-            remarque = redaction.remarque_pour(p, resultat.photo_lue)
-        except redaction.ErreurRedaction as e:
-            print(f"ÉCHEC  {c['titre']} : {e.message}")
-            continue
-        ecarts = []
-        if not re.search(c["nom"], p.fr.name, re.I):
-            ecarts.append(f"nom « {p.fr.name} »")
-        if c.get("interdit") and re.search(c["interdit"], f"{p.fr.name} {p.fr.blurb}", re.I):
-            ecarts.append(f"reste du brouillon : « {p.fr.name} », « {p.fr.blurb} »")
-        if p.categorie != c["categorie"]:
-            ecarts.append(f"catégorie {p.categorie}")
-        if bool(remarque) != c["remarque"]:
-            ecarts.append(f"remarque « {remarque} »" if remarque else "aucune remarque")
-        reussis += not ecarts
-        print(f"{'ok    ' if not ecarts else 'ÉCART '} {c['titre']} : {', '.join(ecarts) or p.fr.name}")
-    print(f"\n{reussis} cas sur {len(cas)}")
-    return 0 if reussis == len(cas) else 1
-
+        passes, vus = 0, []
+        for _ in range(repetitions):
+            if not premier:
+                time.sleep(PAUSE)
+            premier = False
+            try:
+                resultat = redaction.rediger(demande, exemples=redaction.EXEMPLES_DE_FORME)
+            except redaction.ErreurRedaction as e:
+                vus.append(f"échec : {e.message}")
+                continue
+            ecarts = _juger(c, resultat.proposition, redaction.remarque_pour(resultat.proposition, resultat.photo_lue))
+            passes += not ecarts
+            vus.append(", ".join(ecarts) or resultat.proposition.fr.name)
+        if passes == repetitions:
+            stables += 1
+            etat = "ok      "
+        elif passes == 0:
+            rates += 1
+            etat = "ÉCART   "
+        else:
+            instables += 1
+            etat = "INSTABLE"
+        print(f"{etat} {passes}/{repetitions}  {c['titre']}")
+        for v in dict.fromkeys(vus):
+            print(f"           {v}")
+    print(f"\n{stables} cas toujours justes, {instables} instables, {rates} toujours faux, sur {len(cas)}")
+    return 0 if stables == len(cas) else 1
 
 def main() -> None:
     if not redaction.configure():
         sys.exit("REDACTION_URL, REDACTION_CLE et REDACTION_MODELE doivent être posées.")
     if "--reecritures" in sys.argv:
-        sys.exit(reecritures())
+        repetitions = int(os.environ.get("EVAL_REPETITIONS", "3"))
+        sys.exit(reecritures(repetitions))
     encodeur = plongement.encodeur(attendre=True)
     if encodeur is None:
         sys.exit("Modèle de recherche absent : python -m app.plongement")
@@ -134,7 +171,7 @@ def main() -> None:
         a_la_main.append(_produit(i, code, nom, categorie, accroche, prix, USAGES[code], PRODUCT_I18N[code]))
         demande = redaction.Demande(name=nom, category=categorie, notes=accroche, image=PHOTOS[code])
         try:
-            resultat = redaction.rediger(demande, exemples=[])
+            resultat = redaction.rediger(demande, exemples=redaction.EXEMPLES_DE_FORME)
         except redaction.ErreurRedaction as e:
             rapport.append({"code": code, "erreur": e.message})
             print(f"{code} {nom} : échec, {e.message}")

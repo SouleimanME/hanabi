@@ -142,7 +142,9 @@ def test_un_besoin_precis_n_accepte_pas_un_objet_voisin(client, antibot_for, fou
     faux = fournisseur({"message": "Rien ici ne protège un téléphone.", "choix": []})
     _demander(client, antibot_for, "Pour protéger mon téléphone")
     consigne = faux.recus[0]["messages"][0]["content"]
-    assert "seul un objet qui fait exactement cela convient" in consigne
+    assert "seul un objet qui remplit exactement cette fonction convient" in consigne
+    # Règle générale : aucun cas du banc écrit dans la consigne
+    assert "téléphone" not in consigne
     assert "Le nom et l'accroche disent ce qu'est l'objet" in consigne
 
 

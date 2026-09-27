@@ -201,6 +201,7 @@ back-office, ni le conseiller sur l'accueil. Elles se saisissent dans le tableau
 | `REDACTION_URL` | adresse du point d'accès « chat completions » du fournisseur, sans `/chat/completions` |
 | `REDACTION_CLE` | la clé d'API du fournisseur |
 | `REDACTION_MODELE` | un modèle qui lit les images, en version datée plutôt qu'un alias « latest » : les évaluations ne valent que pour le modèle évalué |
+| `REDACTION_MODELE_FICHE` | facultatif : un modèle qui lit mieux les photos, pour l'assistant de fiche seulement. Vide, il prend `REDACTION_MODELE` |
 
 Le fournisseur reçoit le nom, les notes, la description et la photo de l'objet,
 rien d'autre. Deux plafonds bornent le coût, par jour : 200 demandes pour le

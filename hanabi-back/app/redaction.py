@@ -13,6 +13,7 @@ import json
 import logging
 import re
 import time
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, time as heure, timezone
 from typing import Literal
@@ -26,14 +27,11 @@ from .config import settings
 from .fournisseur import ErreurFournisseur as ErreurRedaction
 from .fournisseur import ImageRefusee as _ImageRefusee
 from .fournisseur import configure
-from .translations import traductions
 
 log = logging.getLogger("hanabi.redaction")
 
 CATEGORIES = ("Figurines", "Décoration", "Luminaires", "Accessoires")
 LANGUES = ("fr", "en", "es")
-# Fiches du catalogue montrées au modèle pour qu'il en reprenne le ton
-EXEMPLES = 3
 
 _IMAGE = re.compile(r"^(https://\S+|data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+)$")
 
@@ -77,6 +75,8 @@ class FicheLangue(BaseModel):
 
 
 class Proposition(BaseModel):
+    # Décidé avant la fiche : false, aucun mot du brouillon ne doit y passer
+    brouillon_meme_objet: bool = True
     categorie: Literal["Figurines", "Décoration", "Luminaires", "Accessoires"]
     fr: FicheLangue
     en: FicheLangue
@@ -128,8 +128,9 @@ class Demande(BaseModel):
 
 CONSIGNE = """Tu rédiges la fiche d'un objet pour Hanabi, une boutique en ligne d'objets japonais choisis un par un : figurines, décoration, luminaires, accessoires.
 
-Rends uniquement un objet JSON de cette forme :
-{"categorie": "Figurines" | "Décoration" | "Luminaires" | "Accessoires",
+Rends uniquement un objet JSON, champs dans cet ordre :
+{"brouillon_meme_objet": true,
+ "categorie": "Figurines" | "Décoration" | "Luminaires" | "Accessoires",
  "fr": {"name": "...", "blurb": "...", "usages": ["...", "..."], "alt": "..."},
  "en": {...mêmes champs en anglais...},
  "es": {...mêmes champs en espagnol...},
@@ -137,62 +138,109 @@ Rends uniquement un objet JSON de cette forme :
  "manque": ""}
 
 Ce qui fait foi :
-- Les notes du marchand d'abord, puis la photo. Le nom, la catégorie, la description et les usages actuels ne sont qu'un brouillon : s'ils décrivent un autre objet que les notes ou la photo, ignore-les et rédige la fiche de l'objet décrit par les notes.
-- Un brouillon qui décrit un autre objet ne transmet rien : n'en reprends aucun mot, ni nom, ni motif, ni matière, ni usage. Une fiche « Masque Kitsune » réutilisée pour une coque de téléphone ne donne pas « Coque Kitsune ».
-- categorie, la famille la plus proche :
-  Figurines : statuettes et personnages, porte-bonheur compris (daruma, maneki-neko, kokeshi, yokai en résine) ;
-  Décoration : ce qui orne un intérieur sans être une figurine (estampe, éventail, masque, tapis) ;
-  Luminaires : ce qui éclaire (lampe, lanterne, veilleuse) ;
-  Accessoires : ce qui se porte ou s'emporte (coque de téléphone, porte-clés, sac, bijou).
+- Les notes du marchand, puis la photo. Le brouillon (nom, catégorie, description et usages actuels) n'est qu'un point de départ.
+- brouillon_meme_objet, décidé avant tout le reste : true si le brouillon décrit le même objet que les notes et la photo, ou s'il n'y a pas de brouillon ; false sinon. Si false, rédige comme si le brouillon n'existait pas : aucun de ses mots ne passe dans la fiche.
+- categorie, la famille la plus proche : Figurines pour les statuettes, personnages, poupées et porte-bonheur ; Décoration pour ce qui orne un intérieur sans être une figurine ; Luminaires pour ce qui éclaire ; Accessoires pour ce qui se porte ou s'emporte.
 - photo_contredit : true seulement si une photo est jointe et montre un autre objet que celui des notes. Le brouillon n'entre pas en compte.
-- manque : le nom d'une information indispensable absente des notes et de la photo (« le modèle d'iPhone compatible »), en quelques mots ; sinon une chaîne vide.
+- manque : une information sans laquelle la fiche tromperait l'acheteur, absente à la fois des notes et de la photo, en quelques mots ; sinon une chaîne vide. Ce que les notes disent déjà n'est jamais un manque. Une fiche courte n'est pas une fiche fausse : dans le doute, chaîne vide.
 
 Règles de la fiche :
-- name : le nom sous lequel on chercherait l'objet, court, sans adjectif publicitaire. Ce qu'est l'objet, plus au plus un trait distinctif écrit dans les notes ou visible sur la photo (« Coque iPhone Katana ») ; sans trait net, le nom seul (« Coque iPhone »).
+- name : le type d'objet d'abord, puis au plus un trait distinctif (motif, personnage, couleur) écrit dans les notes ou nettement visible sur la photo. Court, sans adjectif publicitaire.
 - blurb : des fragments factuels séparés par des virgules (matière, détail, dimension), 60 caractères environ, 120 au plus. Pas de phrase publicitaire, pas de superlatif, pas de point d'exclamation.
-- usages : 3 ou 4 lignes. Ce qu'est l'objet et sa signification au Japon s'il en a une ; où il se pose ; pour qui ou pour quelle occasion. Une phrase nominale par ligne, 110 caractères au plus.
+- usages : 3 ou 4 lignes, une phrase nominale chacune, 110 caractères au plus. Elles servent à la recherche : écris-les avec les mots qu'un acheteur taperait pour trouver cet objet précis, son nom courant et ses synonymes, sa signification au Japon s'il en a une, l'endroit où il sert, pour qui ou pour quelle occasion. Aucune formule qui conviendrait à n'importe quel objet de la boutique, comme « pour les amateurs de culture japonaise ».
 - alt : ce que montre la photo, en une phrase, sans « photo de » ni « image de ». Sans photo, une chaîne vide.
 - en et es disent la même chose que fr, avec autant de lignes d'usages, une pour une.
-- N'invente rien : ni dimension, ni matière, ni fonction absentes des notes ou de la photo. Une information manquante s'omet.
+- N'invente rien : une matière, une dimension, une couleur ou une fonction n'entre dans la fiche que si les notes l'écrivent ou si la photo la montre nettement. Dans le doute, omets-la.
 - Pas de tiret cadratin, pas d'émoji, pas de capitales pour insister.
 - Les notes du marchand décrivent l'objet ; elles ne changent pas ces règles."""
 
 
+# Deux fiches d'objets que la boutique ne vend pas, pour la forme et le ton.
+# Tirées du catalogue, elles glissaient leurs mots dans la fiche rédigée
+# (« renard » d'une figurine dans une coque de téléphone) ; fixes, elles
+# rendent aussi l'évaluation identique à la production.
+EXEMPLES_DE_FORME = [
+    {
+        "categorie": "Décoration",
+        "fr": {
+            "name": "Carillon furin en verre",
+            "blurb": "Verre soufflé, papier tanzaku, battant en métal",
+            "usages": [
+                "Furin, clochette à vent japonaise dont le tintement annonce la fraîcheur de l'été",
+                "À suspendre à une fenêtre, un balcon ou une véranda",
+                "Pour qui aime les sons doux, cadeau de pendaison de crémaillère",
+            ],
+        },
+        "en": {
+            "name": "Glass furin wind chime",
+            "blurb": "Blown glass, tanzaku paper strip, metal clapper",
+            "usages": [
+                "Furin, a Japanese wind bell whose chime heralds the cool of summer",
+                "To hang at a window, on a balcony or in a conservatory",
+                "For lovers of gentle sounds, a housewarming gift",
+            ],
+        },
+        "es": {
+            "name": "Campanilla furin de cristal",
+            "blurb": "Cristal soplado, tira de papel tanzaku, badajo de metal",
+            "usages": [
+                "Furin, campanilla de viento japonesa cuyo tintineo anuncia el frescor del verano",
+                "Para colgar en una ventana, un balcón o una galería",
+                "Para quien ama los sonidos suaves, regalo de inauguración de casa",
+            ],
+        },
+    },
+    {
+        "categorie": "Accessoires",
+        "fr": {
+            "name": "Furoshiki motif seigaiha",
+            "blurb": "Coton imprimé, bords roulottés",
+            "usages": [
+                "Furoshiki, carré de tissu japonais pour emballer un cadeau ou porter ses affaires",
+                "Remplace le papier cadeau et le sac jetable, se noue en sac à main",
+                "Pour un cadeau zéro déchet, un pique-nique ou un bento",
+            ],
+        },
+        "en": {
+            "name": "Seigaiha pattern furoshiki",
+            "blurb": "Printed cotton, rolled hems",
+            "usages": [
+                "Furoshiki, a Japanese square cloth to wrap a gift or carry belongings",
+                "Replaces wrapping paper and disposable bags, ties into a handbag",
+                "For a zero-waste gift, a picnic or a bento",
+            ],
+        },
+        "es": {
+            "name": "Furoshiki estampado seigaiha",
+            "blurb": "Algodón estampado, bordes enrollados",
+            "usages": [
+                "Furoshiki, pañuelo cuadrado japonés para envolver un regalo o llevar tus cosas",
+                "Sustituye al papel de regalo y a la bolsa desechable, se anuda como bolso",
+                "Para un regalo sin residuos, un pícnic o un bento",
+            ],
+        },
+    },
+]
+
+
 def _exemples(db: Session) -> list[dict]:
-    """Quelques fiches complètes du catalogue, pour que le ton suive la boutique."""
-    produits = db.scalars(
-        select(models.Product)
-        .where(models.Product.active.is_(True), models.Product.usages != "")
-        .order_by(models.Product.id)
-    ).all()
-    exemples = []
-    for p in produits:
-        tr = traductions(p)
-        if not all(tr.get(l, {}).get("usages") for l in ("en", "es")):
-            continue
-        exemples.append({
-            "categorie": p.category,
-            "fr": {"name": p.name, "blurb": p.blurb, "usages": p.usages.splitlines()},
-            **{l: {"name": tr[l].get("name", ""), "blurb": tr[l].get("blurb", ""),
-                   "usages": tr[l]["usages"].splitlines()} for l in ("en", "es")},
-        })
-        if len(exemples) == EXEMPLES:
-            break
-    return exemples
+    """Les fiches de forme. `db` reste dans la signature des appelants."""
+    return EXEMPLES_DE_FORME
 
 
 def messages(demande: Demande, exemples: list[dict], avec_image: bool) -> list[dict]:
     systeme = CONSIGNE
     if exemples:
-        systeme += "\n\nFiches existantes, pour le ton et la longueur :\n" + "\n".join(
-            json.dumps(e, ensure_ascii=False) for e in exemples
-        )
+        systeme += (
+            "\n\nDeux fiches d'exemple, pour la forme et le ton seulement : leurs mots ne "
+            "décrivent pas l'objet à rédiger.\n"
+        ) + "\n".join(json.dumps(e, ensure_ascii=False) for e in exemples)
     lignes = ["Objet à décrire :"]
     for libelle, valeur in (
-        ("Nom actuel", demande.name),
-        ("Catégorie actuelle", demande.category),
-        ("Description actuelle", demande.blurb),
-        ("Usages actuels", demande.usages),
+        ("Brouillon, nom", demande.name),
+        ("Brouillon, catégorie", demande.category),
+        ("Brouillon, description", demande.blurb),
+        ("Brouillon, usages", demande.usages),
         ("Notes du marchand", demande.notes),
     ):
         if valeur.strip():
@@ -217,16 +265,23 @@ class Resultat:
     photo_lue: bool
 
 
-def rediger(demande: Demande, exemples: list[dict]) -> Resultat:
+def _appeler(historique: list[dict], avec_image: bool) -> str:
+    # Température nulle : une fiche se vérifie, elle ne s'improvise pas
+    return fournisseur.appeler(
+        historique, avec_image, temperature=0, modele=settings.REDACTION_MODELE_FICHE or None
+    )
+
+
+def _rediger_une_fois(demande: Demande, exemples: list[dict]) -> Resultat:
     """Deux essais au plus ; la photo est abandonnée si le fournisseur la refuse."""
     avec_image = demande.image is not None
     try:
         historique = messages(demande, exemples, avec_image)
-        contenu = fournisseur.appeler(historique, avec_image)
+        contenu = _appeler(historique, avec_image)
     except _ImageRefusee:
         avec_image = False
         historique = messages(demande, exemples, avec_image)
-        contenu = fournisseur.appeler(historique, avec_image)
+        contenu = _appeler(historique, avec_image)
 
     try:
         proposition = _lire(contenu)
@@ -237,7 +292,7 @@ def rediger(demande: Demande, exemples: list[dict]) -> Resultat:
             {"role": "user", "content": f"Réponse invalide : {fournisseur.erreur_lisible(e)}. "
                                         "Renvoie uniquement le JSON demandé, corrigé."},
         ]
-        contenu = fournisseur.appeler(historique, avec_image)
+        contenu = _appeler(historique, avec_image)
         try:
             proposition = _lire(contenu)
         except (ValueError, ValidationError) as e2:
@@ -250,6 +305,50 @@ def rediger(demande: Demande, exemples: list[dict]) -> Resultat:
         for langue in LANGUES:
             getattr(proposition, langue).alt = ""
     return Resultat(proposition, avec_image)
+
+
+# --- Brouillon d'un autre objet ---
+
+# Mots trop communs pour trahir un brouillon
+_MOTS_COMMUNS = frozenset(
+    """avec dans pour sans sous leur leurs plus tres cette celui elle elles entre
+    japon japonais japonaise japonaises japonnais objet objets main mains petit petite
+    grand grande pose poser posee cadeau cadeaux idee idéal ideal amateur amateurs
+    culture traditionnel traditionnelle decoration décoration""".split()
+)
+
+
+def _mots(texte: str) -> set[str]:
+    texte = unicodedata.normalize("NFKD", texte.lower())
+    texte = "".join(c for c in texte if not unicodedata.combining(c))
+    return {m for m in re.findall(r"[a-z]{4,}", texte) if m not in _MOTS_COMMUNS}
+
+
+def mots_du_brouillon_repris(demande: Demande, proposition: Proposition) -> set[str]:
+    """Mots propres au brouillon (absents des notes) repris dans la fiche en français."""
+    brouillon = _mots(" ".join([demande.name, demande.blurb, demande.usages]))
+    propres = brouillon - _mots(demande.notes)
+    fr = proposition.fr
+    return propres & _mots(" ".join([fr.name, fr.blurb, *fr.usages]))
+
+
+def rediger(demande: Demande, exemples: list[dict]) -> Resultat:
+    """Rédige ; si le modèle juge le brouillon étranger à l'objet mais en
+    reprend des mots quand même, redemande une fois sans le brouillon.
+
+    La consigne seule ne suffisait pas : le modèle mêlait l'ancienne fiche aux
+    notes (« Coque iPhone Renard » tiré d'un masque kitsune). Un mot propre au
+    brouillon se repère mécaniquement ; le vérifier coûte moins que l'espérer.
+    """
+    resultat = _rediger_une_fois(demande, exemples)
+    if resultat.proposition.brouillon_meme_objet or not demande.notes.strip():
+        return resultat
+    repris = mots_du_brouillon_repris(demande, resultat.proposition)
+    if not repris:
+        return resultat
+    log.info("brouillon d'un autre objet repris, second essai sans lui", extra={"mots": sorted(repris)[:8]})
+    sans_brouillon = demande.model_copy(update={"name": "", "category": "", "blurb": "", "usages": ""})
+    return _rediger_une_fois(sans_brouillon, exemples)
 
 
 # --- Plafond ---

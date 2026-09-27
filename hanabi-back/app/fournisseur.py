@@ -85,13 +85,23 @@ def _motif(e: urllib.error.HTTPError) -> str:
         return ""
 
 
-def appeler(historique: list[dict], avec_image: bool = False, max_tokens: int = 2000) -> str:
-    """Le texte de la réponse, ou une ErreurFournisseur qui dit quoi faire."""
+def appeler(
+    historique: list[dict],
+    avec_image: bool = False,
+    max_tokens: int = 2000,
+    temperature: float = 0.3,
+    modele: str | None = None,
+) -> str:
+    """Le texte de la réponse, ou une ErreurFournisseur qui dit quoi faire.
+
+    `temperature` à 0 pour ce qui se vérifie (fiche, classement) : une même
+    entrée rend la même sortie, et un écart mesuré n'est pas du hasard.
+    """
     corps = {
-        "model": settings.REDACTION_MODELE,
+        "model": modele or settings.REDACTION_MODELE,
         "messages": historique,
         "response_format": {"type": "json_object"},
-        "temperature": 0.3,
+        "temperature": temperature,
         "max_tokens": max_tokens,
     }
     try:

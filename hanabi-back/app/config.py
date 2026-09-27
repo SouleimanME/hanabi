@@ -70,6 +70,9 @@ class Settings(BaseSettings):
     REDACTION_URL: str = ""
     REDACTION_CLE: str = ""
     REDACTION_MODELE: str = ""
+    # Facultatif : un modèle qui lit mieux les photos, pour l'assistant de fiche
+    # seulement. Vide, l'assistant prend REDACTION_MODELE.
+    REDACTION_MODELE_FICHE: str = ""
     REDACTION_DELAI_SECONDES: int = 45
     # Demandes par jour (UTC), pour tout le back-office, puis pour la démonstration
     # publique, à part : un visiteur ne peut pas épuiser le quota du marchand

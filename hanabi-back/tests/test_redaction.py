@@ -118,17 +118,6 @@ def test_les_notes_du_marchand_partent_avec_la_demande(client, admin, fournisseu
     assert "socle en bois de cerisier" in texte
 
 
-def test_le_catalogue_donne_le_ton(client, admin, fournisseur, db_session):
-    from app.seed import seed
-
-    seed(db_session)
-    faux = fournisseur(VALIDE)
-    _demander(client, admin)
-    consigne = faux.recus[0]["messages"][0]["content"]
-    assert "Fiches existantes" in consigne
-    assert "Kitsune Figure" in consigne
-
-
 def test_une_reponse_entouree_de_texte_est_lue(client, admin, fournisseur):
     fournisseur("Voici la fiche :\n```json\n" + json.dumps(VALIDE) + "\n```")
     assert _demander(client, admin).status_code == 200
@@ -143,6 +132,59 @@ def test_les_tirets_cadratins_sont_remplaces(client, admin, fournisseur):
 def test_sans_remarque_la_reponse_en_porte_une_vide(client, admin, fournisseur):
     fournisseur(VALIDE)
     assert _demander(client, admin).json()["remarque"] == ""
+
+
+def _texte_envoye(corps) -> str:
+    return corps["messages"][1]["content"][0]["text"]
+
+
+def test_un_brouillon_d_un_autre_objet_qui_deteint_est_ecarte(client, admin, fournisseur):
+    """Le modèle juge le brouillon étranger mais en garde « renard » : on redemande sans lui."""
+    contaminee = dict(
+        VALIDE, brouillon_meme_objet=False, categorie="Accessoires",
+        fr=_fiche("Coque iPhone Renard"), en=_fiche("Fox iPhone Case"), es=_fiche("Funda iPhone Zorro"),
+    )
+    propre = dict(
+        VALIDE, brouillon_meme_objet=True, categorie="Accessoires",
+        fr=_fiche("Coque iPhone"), en=_fiche("iPhone Case"), es=_fiche("Funda iPhone"),
+    )
+    faux = fournisseur(contaminee, propre)
+    corps = _demander(
+        client, admin, name="Masque Kitsune", usages="Masque de renard des fêtes japonaises",
+        notes="Coque iPhone 15 en silicone noir",
+    ).json()
+    assert corps["fr"]["name"] == "Coque iPhone"
+    assert len(faux.recus) == 2
+    assert "Brouillon" in _texte_envoye(faux.recus[0])
+    assert "Brouillon" not in _texte_envoye(faux.recus[1])
+    assert "silicone noir" in _texte_envoye(faux.recus[1])
+
+
+def test_un_brouillon_du_meme_objet_ne_coute_pas_d_appel_de_plus(client, admin, fournisseur):
+    faux = fournisseur(dict(VALIDE, brouillon_meme_objet=True))
+    _demander(client, admin, name="Kitsune", usages="Esprit renard", notes="Résine, 18 cm")
+    assert len(faux.recus) == 1
+
+
+def test_les_exemples_de_forme_ne_viennent_pas_du_catalogue(client, admin, fournisseur, db_session):
+    from app.seed import seed
+
+    seed(db_session)
+    faux = fournisseur(VALIDE)
+    _demander(client, admin)
+    consigne = faux.recus[0]["messages"][0]["content"]
+    assert "furin" in consigne.lower()
+    # Aucun objet de la boutique ne sert d'exemple : ses mots déteindraient
+    for nom in ("Kitsune", "Torii", "Daruma", "Maneki"):
+        assert nom not in consigne
+
+
+def test_une_fiche_se_redige_a_temperature_nulle(client, admin, fournisseur, monkeypatch):
+    monkeypatch.setattr(settings, "REDACTION_MODELE_FICHE", "modele-qui-voit-mieux")
+    faux = fournisseur(VALIDE)
+    _demander(client, admin)
+    assert faux.recus[0]["temperature"] == 0
+    assert faux.recus[0]["model"] == "modele-qui-voit-mieux"
 
 
 def test_une_photo_qui_contredit_les_notes_se_signale(client, admin, fournisseur):
@@ -172,7 +214,8 @@ def test_les_notes_passent_devant_la_fiche_actuelle(client, admin, fournisseur):
     faux = fournisseur(VALIDE)
     _demander(client, admin)
     consigne = faux.recus[0]["messages"][0]["content"]
-    assert "Les notes du marchand d'abord, puis la photo" in consigne
+    assert "Les notes du marchand, puis la photo" in consigne
+    assert "brouillon_meme_objet, décidé avant tout le reste" in consigne
     assert "Accessoires" in consigne
 
 
