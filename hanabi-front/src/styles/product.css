@@ -22,6 +22,11 @@
   overflow: hidden;
   background: var(--lacquer);
 }
+/* Sur la fiche, la photo se montre entière : un portrait garde son haut et son
+   bas, posé sur la laque plutôt que rogné */
+.gallery-main .art-photo {
+  object-fit: contain;
+}
 
 .thumbs {
   display: flex;

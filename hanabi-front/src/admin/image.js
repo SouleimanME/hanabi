@@ -36,21 +36,62 @@ function makeCanvas(width, height) {
   return { canvas, ctx };
 }
 
-/** Recadre une photo sur un carre de `MAIN_SIZE`, centre, sans deformation.
+const mediane = (valeurs) => valeurs.sort((a, b) => a - b)[valeurs.length >> 1];
+
+/** Couleur des bords qui toucheront les bandes, en `rgb()` : gauche et droit
+ *  pour un portrait, haut et bas pour un paysage. Médiane et non moyenne : un
+ *  logo posé au bord ne teinte pas le fond. */
+export function couleurDuBord(img, cote = 48) {
+  const { canvas, ctx } = makeCanvas(cote, cote);
+  ctx.drawImage(img, 0, 0, cote, cote);
+  const { data } = ctx.getImageData(0, 0, cote, cote);
+  const portrait = img.naturalHeight > img.naturalWidth;
+  const canaux = [[], [], []];
+  for (let k = 0; k < cote; k += 1) {
+    const points = portrait
+      ? [
+          [0, k],
+          [cote - 1, k],
+        ]
+      : [
+          [k, 0],
+          [k, cote - 1],
+        ];
+    for (const [x, y] of points) {
+      const i = (y * cote + x) * 4;
+      for (let c = 0; c < 3; c += 1) canaux[c].push(data[i + c]);
+    }
+  }
+  canvas.width = 0;
+  const [r, v, b] = canaux.map(mediane);
+  return `rgb(${r}, ${v}, ${b})`;
+}
+
+/** Pose une photo entière dans un carré de `MAIN_SIZE`, sans la rogner ni la
+ *  déformer. Un portrait ou un paysage est complété sur les côtés par la
+ *  couleur de son propre bord : sur un fond uni, la jointure ne se voit pas.
  * @param {string} src URL ou data URI
  * @returns {Promise<string>} data URI JPEG de MAIN_SIZE x MAIN_SIZE
  */
 export async function toCanonicalMain(src) {
   const img = await loadImage(src);
   const { canvas, ctx } = makeCanvas(MAIN_SIZE, MAIN_SIZE);
+  const { naturalWidth: w, naturalHeight: h } = img;
 
-  // Cote de la zone carree prelevee dans la source : le plus petit des deux,
-  // afin de rester a l'interieur de la photo.
-  const side = Math.min(img.naturalWidth, img.naturalHeight);
-  const sx = (img.naturalWidth - side) / 2;
-  const sy = (img.naturalHeight - side) / 2;
-
-  ctx.drawImage(img, sx, sy, side, side, 0, 0, MAIN_SIZE, MAIN_SIZE);
+  if (w !== h) {
+    ctx.fillStyle = couleurDuBord(img);
+    ctx.fillRect(0, 0, MAIN_SIZE, MAIN_SIZE);
+  }
+  const echelle = Math.min(MAIN_SIZE / w, MAIN_SIZE / h);
+  const largeur = Math.round(w * echelle);
+  const hauteur = Math.round(h * echelle);
+  ctx.drawImage(
+    img,
+    Math.round((MAIN_SIZE - largeur) / 2),
+    Math.round((MAIN_SIZE - hauteur) / 2),
+    largeur,
+    hauteur,
+  );
   return canvas.toDataURL("image/jpeg", QUALITY);
 }
 

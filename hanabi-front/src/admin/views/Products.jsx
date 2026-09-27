@@ -414,7 +414,7 @@ function ProductForm({ item, onSave, onCancel, saving, readonly }) {
     }
   };
 
-  /* La premiere image devient le visuel principal ; une photo est recadree sur
+  /* La premiere image devient le visuel principal ; une photo est posee entiere dans
      un carre fixe pour que toutes les fiches aient la meme resolution. */
   const enregistrer = async () => {
     const principaleImage = f.images[0];
@@ -608,8 +608,9 @@ function ProductForm({ item, onSave, onCancel, saving, readonly }) {
           <div className="adm-field">
             <span>Galerie</span>
             <p className="img-hint">
-              La première image est le visuel principal. Une photo y est recadrée sur un carré de{" "}
-              {MAIN_SIZE} px ; les suivantes gardent leur cadrage.
+              La première image est le visuel principal : posée entière dans un carré de {MAIN_SIZE}{" "}
+              px, complétée sur les côtés par la couleur de son bord. Les suivantes gardent leur
+              cadrage.
             </p>
             <label className="img-upload-zone">
               <input
