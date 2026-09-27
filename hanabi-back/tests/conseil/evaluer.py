@@ -53,8 +53,10 @@ def main() -> None:
             resultat = conseil.conseiller(db, d["demande"], d["lang"], encodeur)
         except fournisseur.ErreurFournisseur as e:
             echecs += 1
-            lignes.append({"demande": d["demande"], "erreur": e.message})
-            print(f"échec   {d['demande'][:60]} : {e.message}")
+            # La réponse refusée dit pourquoi : code inventé, prix cité, champ trop long
+            cause = fournisseur.erreur_lisible(e.__cause__) if e.__cause__ else ""
+            lignes.append({"demande": d["demande"], "erreur": e.message, "cause": cause})
+            print(f"échec   {d['demande'][:60]} : {e.message} {cause}")
             continue
         durees.append(time.monotonic() - debut)
         codes = [p.code for p, _ in resultat.choix]

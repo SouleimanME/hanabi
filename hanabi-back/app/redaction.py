@@ -129,7 +129,7 @@ Ce qui fait foi :
   Décoration : ce qui orne un intérieur sans être une figurine (estampe, éventail, masque, tapis) ;
   Luminaires : ce qui éclaire (lampe, lanterne, veilleuse) ;
   Accessoires : ce qui se porte ou s'emporte (coque de téléphone, porte-clés, sac, bijou).
-- remarque : une phrase pour le marchand quand les notes et la photo ne montrent pas le même objet, ou quand il manque une information pour une fiche honnête ; sinon une chaîne vide. Un brouillon qui décrit un autre objet que les notes ne se signale pas : c'est une fiche réutilisée, et les notes font foi.
+- remarque : une phrase pour le marchand dans deux cas seulement : la photo montre un autre objet que les notes, ou il manque une information pour une fiche honnête. Sinon une chaîne vide. Ne signale jamais que le brouillon (nom, description, usages actuels) décrivait un autre objet : c'est une fiche réutilisée, le marchand le sait.
 
 Règles de la fiche :
 - name : le nom sous lequel on chercherait l'objet, court, sans adjectif publicitaire. Ce qu'est l'objet, plus au plus un trait distinctif écrit dans les notes ou visible sur la photo (« Coque iPhone Katana ») ; sans trait net, le nom seul (« Coque iPhone »).
