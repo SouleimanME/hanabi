@@ -9,7 +9,7 @@ la langue de cette page ; ceux du compte et de la commande, en français.
 """
 from html import escape
 
-from . import abonnement, models
+from . import abonnement, models, variantes
 from .config import settings
 
 VERMILLON = "#d8452b"
@@ -274,7 +274,7 @@ def confirmation_commande(commande: models.Order, lignes: list[models.OrderItem]
     sujet = f"Commande {commande.number} confirmée"
 
     articles = "\n".join(
-        f"  {ligne.name} × {ligne.qty}   {_euros(ligne.unit_price_cents * ligne.qty)}"
+        f"  {variantes.nom_de_ligne(ligne)} × {ligne.qty}   {_euros(ligne.unit_price_cents * ligne.qty)}"
         for ligne in lignes
     )
     adresse = [
@@ -310,7 +310,7 @@ Hanabi
 
     rangs = "".join(
         f"""<tr>
-              <td style="padding:8px 0;border-bottom:1px solid #ddd2bc">{escape(ligne.name)}
+              <td style="padding:8px 0;border-bottom:1px solid #ddd2bc">{escape(variantes.nom_de_ligne(ligne))}
                 <span style="color:{DISCRET}"> × {ligne.qty}</span></td>
               <td style="padding:8px 0;border-bottom:1px solid #ddd2bc;text-align:right">
                 {_euros(ligne.unit_price_cents * ligne.qty)}</td>

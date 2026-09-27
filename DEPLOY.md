@@ -232,6 +232,47 @@ Le fournisseur reçoit le texte de chaque avis approuvé, une seule fois, sans
 l'auteur ni l'objet. 400 textes au plus par construction ; ensuite, seuls les
 nouveaux avis. Sans ces secrets, l'entrepôt se construit sans les thèmes.
 
+### Vidéos des fiches (Cloudflare R2)
+
+Les vidéos ne passent ni par la base (trop lourdes pour l'offre de Neon) ni par
+l'API : le back-office obtient une autorisation signée, valable quinze minutes,
+et le navigateur dépose le fichier directement dans un seau R2. Sans les cinq
+variables ci-dessous, le bouton « Ajouter une vidéo » n'apparaît pas.
+
+1. **Créer le seau** : tableau de bord Cloudflare, **R2 Object Storage**,
+   **Create bucket**, nom `hanabi-videos`.
+2. **Le rendre lisible** : dans le seau, **Settings**, **Public access**,
+   **R2.dev subdomain**, **Allow**. Noter l'adresse `https://pub-….r2.dev`.
+   L'adresse r2.dev est bridée par Cloudflare : pour du vrai trafic, brancher
+   plutôt un domaine à soi (même écran, **Custom Domains**).
+3. **Autoriser le dépôt depuis le back-office** : **Settings**, **CORS policy**,
+   **Add CORS policy** :
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://hanabi-6x9.pages.dev"],
+       "AllowedMethods": ["PUT"],
+       "AllowedHeaders": ["Content-Type"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+4. **Créer une clé** : page **R2 Object Storage**, **Manage API tokens**,
+   **Create API token**, permission **Object Read & Write**, limitée au seau
+   `hanabi-videos`. Cloudflare affiche une fois l'Access Key ID et le Secret.
+5. **Sur Render**, cinq variables :
+
+   | Variable | Valeur |
+   | --- | --- |
+   | `R2_ACCOUNT_ID` | l'identifiant du compte, affiché sur la page R2 |
+   | `R2_ACCESS_KEY_ID` | l'Access Key ID de l'étape 4 |
+   | `R2_SECRET_ACCESS_KEY` | le Secret de l'étape 4 |
+   | `R2_BUCKET` | `hanabi-videos` |
+   | `R2_PUBLIC_URL` | l'adresse de l'étape 2, sans barre finale |
+
+MP4, WebM ou MOV, 200 Mo au plus. L'offre gratuite de R2 couvre 10 Go stockés
+et ne facture pas la bande passante.
+
 ### Garder l'API éveillée
 
 Render endort l'offre gratuite après quinze minutes sans requête ; le visiteur

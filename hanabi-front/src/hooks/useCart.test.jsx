@@ -166,6 +166,61 @@ describe("persistance", () => {
   });
 });
 
+describe("déclinaisons", () => {
+  const GOURDE = {
+    id: 7,
+    name: "Gourde isotherme",
+    price_cents: 1180,
+    stock: 7,
+    art: "art-gourde",
+    variantes: [
+      { id: 71, libelle: "Noir", price_cents: 1180, stock: 5, image: "" },
+      { id: 72, libelle: "Blanc", price_cents: 1274, stock: 2, image: "photo-blanche" },
+    ],
+  };
+  const avecGourde = { ...CATALOGUE, 7: GOURDE };
+
+  it("sans couleur choisie, il faut ouvrir la fiche", () => {
+    const { result } = monter(avecGourde);
+    act(() => expect(result.current.add(7)).toBe(ADD_RESULT.CHOOSE));
+    expect(result.current.count).toBe(0);
+  });
+
+  it("deux couleurs font deux lignes, chacune à son prix", () => {
+    const { result } = monter(avecGourde);
+    act(() => result.current.add(7, 1, 71));
+    act(() => result.current.add(7, 2, 72));
+    expect(result.current.lines.map((l) => [l.cle, l.prix])).toEqual([
+      ["7:71", 1180],
+      ["7:72", 1274],
+    ]);
+    expect(result.current.subtotalCents).toBe(1180 + 2 * 1274);
+    // La photo de la couleur, quand elle en a une
+    expect(result.current.lines[1].art).toBe("photo-blanche");
+  });
+
+  it("plafonne au stock de la couleur, pas à celui de l'objet", () => {
+    const { result } = monter(avecGourde);
+    act(() => result.current.add(7, 5, 72));
+    expect(result.current.count).toBe(2);
+    act(() => expect(result.current.add(7, 1, 72)).toBe(ADD_RESULT.MAX_STOCK));
+  });
+
+  it("une couleur retirée de la vente quitte le panier", () => {
+    const premier = monter(avecGourde);
+    act(() => premier.result.current.add(7, 1, 72));
+    premier.unmount();
+    const sansBlanc = { ...avecGourde, 7: { ...GOURDE, variantes: [GOURDE.variantes[0]] } };
+    expect(monter(sansBlanc).result.current.lines).toHaveLength(0);
+  });
+
+  it("l'API reçoit la déclinaison", () => {
+    const { result } = monter(avecGourde);
+    act(() => result.current.add(7, 1, 71));
+    expect(result.current.toPayload()).toEqual([{ product_id: 7, variante_id: 71, qty: 1 }]);
+  });
+});
+
 describe("toPayload", () => {
   it("rend le format attendu par l'API", () => {
     const { result } = monter();

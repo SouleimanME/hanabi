@@ -131,6 +131,7 @@ app.include_router(promos.router)
 app.include_router(newsletter.router)
 app.include_router(orders.router)
 app.include_router(medias.router)
+app.include_router(medias.admin_router)
 # admin, warehouse, exploitation et redaction partagent le préfixe /admin, sur des chemins disjoints
 app.include_router(admin.router)
 app.include_router(warehouse.router)

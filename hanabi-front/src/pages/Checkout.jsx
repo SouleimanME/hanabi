@@ -546,18 +546,21 @@ export function Checkout({
           <h2 id="recap-titre">{t("recap")}</h2>
           <ul className="lines">
             {lines.map((l) => (
-              <li className="line line-compact" key={l.id}>
+              <li className="line line-compact" key={l.cle}>
                 <span className="line-art">
-                  <ProductArt art={l.product.art} />
+                  <ProductArt art={l.art} />
                   <span className="line-qty" aria-label={t("qtyN", { n: l.qty })}>
                     {l.qty}
                   </span>
                 </span>
                 <div className="line-main">
                   <p className="line-name">{l.product.name}</p>
-                  <span className="code">{l.product.code}</span>
+                  <span className="code">
+                    {l.product.code}
+                    {l.variante && ` · ${l.variante.libelle}`}
+                  </span>
                 </div>
-                <span className="price">{eur(l.product.price_cents * l.qty)}</span>
+                <span className="price">{eur(l.prix * l.qty)}</span>
               </li>
             ))}
           </ul>

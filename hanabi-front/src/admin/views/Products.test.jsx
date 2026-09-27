@@ -112,6 +112,34 @@ describe("Enregistrement", () => {
   });
 });
 
+describe("Déclinaisons", () => {
+  it("une couleur à son prix part avec la fiche, et le prix de l'objet se fige", async () => {
+    routes["PATCH /admin/products/1"] = { statut: 200, corps: KITSUNE };
+    const util = userEvent.setup();
+    render(<Products items={[KITSUNE]} flash={vi.fn()} reload={vi.fn()} />);
+    await util.click(screen.getByRole("button", { name: "Modifier" }));
+    await util.click(await screen.findByRole("button", { name: /ajouter une déclinaison/i }));
+
+    await util.type(screen.getByPlaceholderText("Noir"), "Noir");
+    const prix = document.querySelector(".declinaison-ligne input[inputmode=decimal]");
+    await util.clear(prix);
+    await util.type(prix, "11,80");
+    await util.tab();
+    await util.type(screen.getByPlaceholderText("Black"), "Black");
+    // Avec une déclinaison, prix et stock de l'objet en sont tirés
+    expect(screen.getByLabelText(/prix en centimes/i)).toBeDisabled();
+
+    await util.click(screen.getByRole("button", { name: /enregistrer les modifications/i }));
+    expect(envoye.variantes).toEqual([
+      expect.objectContaining({
+        libelle: "Noir",
+        price_cents: 1180,
+        traductions: { en: "Black" },
+      }),
+    ]);
+  });
+});
+
 describe("Assistant de fiche", () => {
   it("n'apparaît pas quand le serveur n'en a pas", async () => {
     routes["GET /admin/redaction/etat"].corps = { actif: false, plafond: 0, restant: 0 };

@@ -10,11 +10,11 @@ from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import exists, func, literal_column, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from .. import analytics, demandes, medias, models, restock
+from .. import analytics, demandes, medias, models, restock, variantes
 from ..analytics import REVENUE_STATUSES
 from ..database import get_db
 from ..deps import get_admin_user, get_admin_writer, is_readonly_admin
@@ -79,6 +79,30 @@ class TraductionIn(BaseModel):
 Traductions = dict[Literal["en", "es"], TraductionIn]
 
 
+class VarianteIn(BaseModel):
+    """Une déclinaison telle que le formulaire l'envoie. Sans `id`, elle est créée."""
+
+    id: int | None = None
+    libelle: str = Field(min_length=1, max_length=60)
+    couleur: str = Field("", pattern=r"^(#[0-9a-fA-F]{6})?$")
+    price_cents: int = Field(ge=0)
+    stock: int = Field(ge=0)
+    image: str = Field("", max_length=ART_MAX_LENGTH)
+    traductions: dict[Literal["en", "es"], str] = {}
+
+    @field_validator("libelle")
+    @classmethod
+    def _sans_blanc(cls, v: str) -> str:
+        v = " ".join(v.split())
+        if not v:
+            raise ValueError("un libellé est requis")
+        return v
+
+
+# Au-delà, ce n'est plus une couleur à choisir mais un second catalogue
+VARIANTES_MAX = 20
+
+
 class ProductIn(BaseModel):
     code: str = Field(pattern=r"^[A-Z0-9][A-Z0-9-]{1,19}$")
     name: str = Field(min_length=2, max_length=160)
@@ -95,6 +119,7 @@ class ProductIn(BaseModel):
     usages: str = Field(default="", max_length=USAGES_MAX)
     alt: str = Field(default="", max_length=ALT_MAX)
     traductions: Traductions = {}
+    variantes: list[VarianteIn] = Field(default=[], max_length=VARIANTES_MAX)
 
 
 class ProductPatch(BaseModel):
@@ -113,6 +138,8 @@ class ProductPatch(BaseModel):
     alt: str | None = Field(None, max_length=ALT_MAX)
     # Par langue : une langue envoyée remplace la sienne, les autres restent
     traductions: Traductions | None = None
+    # Liste complète : une déclinaison absente est retirée de la vente
+    variantes: list[VarianteIn] | None = Field(None, max_length=VARIANTES_MAX)
 
 
 class PromoIn(BaseModel):
@@ -368,7 +395,9 @@ def create_product(data: ProductIn, db: Session = Depends(get_db), _=Depends(get
         art=art, images=json.dumps(images), usages=data.usages, alt=data.alt,
         traductions=_traductions_json({}, data.traductions),
     )
-    db.add(p); db.commit(); db.refresh(p)
+    db.add(p)
+    _poser_variantes(db, p, data.variantes)
+    db.commit(); db.refresh(p)
     return _prod_dict(p)
 
 
@@ -387,6 +416,12 @@ def update_product(product_id: int, data: ProductPatch, db: Session = Depends(ge
         raise HTTPException(404, "Produit introuvable.")
     etait_indisponible = p.stock <= 0 or not p.active
     changes = data.model_dump(exclude_none=True)
+    if changes.pop("variantes", None) is not None:
+        _poser_variantes(db, p, data.variantes)
+        # Prix et stock viennent alors des déclinaisons : ceux du formulaire ne comptent pas
+        if variantes.actives(p):
+            changes.pop("price_cents", None)
+            changes.pop("stock", None)
     if "art" in changes or "images" in changes:
         changes["art"], changes["images"] = _ranger_photos(
             db, changes.get("art", p.art), changes.get("images", json.loads(p.images or "[]"))
@@ -437,6 +472,50 @@ def delete_product(product_id: int, db: Session = Depends(get_db), _=Depends(get
     return {"action": action}
 
 
+def _poser_variantes(db: Session, p: models.Product, liste: list[VarianteIn]) -> None:
+    """Applique la liste complète des déclinaisons envoyée par le formulaire.
+
+    Une déclinaison absente de la liste est supprimée si personne ne l'a
+    commandée, retirée de la vente sinon : l'historique des commandes la
+    désigne. Prix et stock de l'objet sont ensuite recalculés.
+    """
+    libelles = [v.libelle.lower() for v in liste]
+    if len(set(libelles)) != len(libelles):
+        raise HTTPException(422, "Deux déclinaisons portent le même libellé.")
+
+    existantes = {v.id: v for v in p.variantes}
+    gardees: set[int] = set()
+    for ordre, entree in enumerate(liste):
+        try:
+            image = medias.ranger(db, entree.image) if entree.image else ""
+        except medias.PhotoInvalide as e:
+            raise HTTPException(422, f"{entree.libelle} : {e}") from e
+        valeurs = dict(
+            libelle=entree.libelle, couleur=entree.couleur.lower(), price_cents=entree.price_cents,
+            stock=entree.stock, image=image, ordre=ordre, active=True,
+            traductions=json.dumps({k: v.strip() for k, v in entree.traductions.items() if v.strip()},
+                                   ensure_ascii=False),
+        )
+        v = existantes.get(entree.id) if entree.id is not None else None
+        if v is None:
+            p.variantes.append(models.Variante(**valeurs))
+        else:
+            for champ, valeur in valeurs.items():
+                setattr(v, champ, valeur)
+            gardees.add(v.id)
+
+    for vid, v in existantes.items():
+        if vid in gardees:
+            continue
+        commandee = db.scalar(select(exists().where(models.OrderItem.variante_id == vid)))
+        if commandee:
+            v.active = False
+        else:
+            p.variantes.remove(v)
+
+    variantes.synchroniser(p)
+
+
 def _ranger_photos(db: Session, art: str, images: list[str]) -> tuple[str, list[str]]:
     """Photos envoyées en `data:` rangées à part ; la fiche ne garde que leur adresse."""
     try:
@@ -464,6 +543,15 @@ def _prod_dict(p: models.Product) -> dict:
         "art": medias.publique(p.art), "images": [medias.publique(i) for i in imgs],
         "usages": p.usages or "", "alt": p.alt or "",
         "traductions": traductions(p),
+        "variantes": [
+            {
+                "id": v.id, "libelle": v.libelle, "couleur": v.couleur,
+                "price_cents": v.price_cents, "stock": v.stock,
+                "image": medias.publique(v.image) if v.image else "",
+                "traductions": json.loads(v.traductions or "{}"),
+            }
+            for v in variantes.actives(p)
+        ],
     }
 
 
@@ -552,7 +640,7 @@ def list_orders(
                 "ship_cp": o.ship_cp, "ship_city": o.ship_city,
                 "next": sorted(TRANSITIONS.get(o.status, ())),
                 "items": [
-                    {"name": i.name, "qty": i.qty, "unit_price_cents": i.unit_price_cents}
+                    {"name": variantes.nom_de_ligne(i), "qty": i.qty, "unit_price_cents": i.unit_price_cents}
                     for i in o.items
                 ],
             })
@@ -622,7 +710,7 @@ def export_orders_csv(
                 order.created_at.isoformat(timespec="seconds"),
                 _cellule_csv(order.status),
                 _cellule_csv(masquer_email(order.email) if bride else order.email),
-                _cellule_csv(item.name),
+                _cellule_csv(variantes.nom_de_ligne(item)),
                 item.qty,
                 eur(item.unit_price_cents),
                 eur(item.unit_price_cents * item.qty),
@@ -678,6 +766,11 @@ def update_order_status(
                 continue
             etait_epuise = produit.stock <= 0
             produit.stock += article.qty
+            # La couleur annulée retrouve son stock, même retirée de la vente depuis
+            if article.variante_id is not None:
+                variante = db.get(models.Variante, article.variante_id)
+                if variante is not None:
+                    variante.stock += article.qty
             remis += article.qty
             if etait_epuise:
                 restock.signaler_retour(db, produit)

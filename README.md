@@ -518,13 +518,13 @@ source.
 | Données | Médaillon dbt sur PostgreSQL, 30 modèles, 133 tests, orchestration Dagster par partitions, avis lus par thème et par ton, console SQL bridée, questions en français traduites en SQL sur gold |
 | Interface | Charte laque et vermillon, photos produit et blasons SVG en repli, thème clair et sombre, 3 langues, menu en tiroir |
 | Recherche | Par le sens dans les trois langues, modèle embarqué sans service externe, banc de 73 requêtes dont 37 de contrôle, conseiller cadeau qui ne propose que des objets en stock et dans le budget |
-| Achat | Panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
+| Achat | Déclinaisons (une couleur, son prix, son stock, sa photo), panier persistant, articles gardés, favoris, codes promo, livraison estimée, annulation d'un retrait |
 | Back-office | Tableau de bord, analytique (rentabilité, prévisions, cohortes, RFM, affinités), entrepôt, exploitation, assistant de fiche en trois langues |
 | Sécurité | Anti-robots (preuve de travail en Web Worker, pot de miel, délai de saisie), limitation par compte et par IP, en-têtes durcis |
 | Fiabilité | Commande idempotente, outbox transactionnelle, stock concurrent, journal structuré |
 | Conformité | Mentions légales, CGV versionnées et acceptées côté serveur, RGPD art. 17 et 20, bandeau de consentement, polices hébergées sur le site |
 | Accessibilité | Focus piégé dans les fenêtres, clavier, contraste mesuré, `prefers-reduced-motion` |
-| Qualité | 650 tests API sur SQLite et PostgreSQL, 284 tests d'interface, 18 parcours e2e, 133 assertions dbt, 35 tests de l'orchestration, budget de poids |
+| Qualité | 676 tests API sur SQLite et PostgreSQL, 297 tests d'interface, 18 parcours e2e, 133 assertions dbt, 35 tests de l'orchestration, budget de poids |
 
 ---
 

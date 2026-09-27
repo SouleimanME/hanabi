@@ -205,7 +205,7 @@ export function Orders({ flash, readonly }) {
                             <h3>Articles</h3>
                             <ul>
                               {o.items.map((i) => (
-                                <li key={i.name}>
+                                <li key={`${i.name}-${i.qty}-${i.unit_price_cents}`}>
                                   {i.name} <span className="muted">× {i.qty}</span>
                                   <span className="num"> {eur(i.unit_price_cents * i.qty)}</span>
                                 </li>

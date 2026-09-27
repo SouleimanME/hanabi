@@ -94,6 +94,39 @@ class Product(Base):
     traductions: Mapped[str] = mapped_column(Text, default="{}")
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="product")
+    # Déclinaisons (une couleur, son prix, son stock). Avec au moins une
+    # déclinaison active, prix et stock de l'objet en sont tirés : le prix le
+    # plus bas, la somme des stocks (voir app/variantes.py).
+    variantes: Mapped[list["Variante"]] = relationship(
+        back_populates="product", order_by="Variante.ordre", cascade="all, delete-orphan"
+    )
+
+
+class Variante(Base):
+    """Une déclinaison vendable d'un objet : « Noir » à 11,80 €, « Blanc » à 12,74 €.
+
+    Jamais supprimée une fois commandée : retirée de la vente, elle reste pour
+    l'historique des commandes (`active` à faux).
+    """
+
+    __tablename__ = "variantes"
+    __table_args__ = (CheckConstraint("stock >= 0", name="ck_variante_stock_non_negatif"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), index=True)
+    libelle: Mapped[str] = mapped_column(String(60))
+    # Pastille affichée sur la fiche, #RRGGBB ; vide pour une déclinaison sans couleur
+    couleur: Mapped[str] = mapped_column(String(7), default="")
+    price_cents: Mapped[int] = mapped_column(Integer)
+    stock: Mapped[int] = mapped_column(Integer, default=0)
+    # Photo propre à la déclinaison (chemin /media/ ou adresse) ; vide : celle de l'objet
+    image: Mapped[str] = mapped_column(Text, default="")
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # {"en": "Black", "es": "Negro"}
+    traductions: Mapped[str] = mapped_column(Text, default="{}")
+
+    product: Mapped["Product"] = relationship(back_populates="variantes")
 
 
 class Promo(Base):
@@ -168,6 +201,9 @@ class OrderItem(Base):
     unit_price_cents: Mapped[int] = mapped_column(Integer)
     unit_cost_cents: Mapped[int] = mapped_column(Integer, default=0)
     qty: Mapped[int] = mapped_column(Integer)
+    # Déclinaison achetée, et son libellé figé comme le nom et le prix
+    variante_id: Mapped[int | None] = mapped_column(ForeignKey("variantes.id"), nullable=True)
+    variante_libelle: Mapped[str | None] = mapped_column(String(60), nullable=True)
 
     order: Mapped["Order"] = relationship(back_populates="items")
 

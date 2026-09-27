@@ -153,6 +153,21 @@ class MoyenPaiementOut(BaseModel):
 
 
 # ---------- Produits ----------
+class VarianteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    libelle: str
+    couleur: str = ""
+    price_cents: int
+    stock: int
+    image: str = ""
+
+    @field_validator("image", mode="before")
+    @classmethod
+    def _image_publique(cls, v):
+        return medias.publique(v or "")
+
+
 class ProductOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -170,6 +185,13 @@ class ProductOut(BaseModel):
     alt: str = ""
     rating_avg: float = 0.0
     rating_count: int = 0
+    # Déclinaisons en vente, dans l'ordre de la fiche ; vide pour un objet simple
+    variantes: list[VarianteOut] = []
+
+    @field_validator("variantes", mode="before")
+    @classmethod
+    def _variantes_en_vente(cls, v):
+        return [x for x in (v or []) if getattr(x, "active", True)]
 
     @computed_field
     @property
@@ -253,6 +275,8 @@ class PromoOut(BaseModel):
 # ---------- Panier / Checkout ----------
 class CartLineIn(BaseModel):
     product_id: int
+    # Obligatoire pour un objet à déclinaisons, interdit pour un objet simple
+    variante_id: int | None = None
     qty: int = Field(ge=1, le=99)
 
 
@@ -268,6 +292,8 @@ class QuoteIn(BaseModel):
 
 class QuoteLineOut(BaseModel):
     product_id: int
+    variante_id: int | None = None
+    variante_libelle: str | None = None
     name: str
     unit_price_cents: int
     qty: int
@@ -326,6 +352,7 @@ class OrderItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     product_id: int
     name: str
+    variante_libelle: str | None = None
     art: str
     unit_price_cents: int
     qty: int

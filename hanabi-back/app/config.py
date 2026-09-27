@@ -74,6 +74,15 @@ class Settings(BaseSettings):
     # seulement. Vide, l'assistant prend REDACTION_MODELE.
     REDACTION_MODELE_FICHE: str = ""
     REDACTION_DELAI_SECONDES: int = 45
+
+    # --- Vidéos des fiches, sur Cloudflare R2 (voir app/videos.py) ---
+    # Sans ces cinq valeurs, le back-office ne propose pas d'envoyer de vidéo.
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET: str = ""
+    # Adresse publique du seau, sans barre finale : https://pub-xxxx.r2.dev ou un domaine à soi
+    R2_PUBLIC_URL: str = ""
     # Demandes par jour (UTC), pour tout le back-office, puis pour la démonstration
     # publique, à part : un visiteur ne peut pas épuiser le quota du marchand
     REDACTION_PLAFOND_JOUR: int = 200

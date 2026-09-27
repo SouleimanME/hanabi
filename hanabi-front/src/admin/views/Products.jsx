@@ -1,17 +1,24 @@
 /** Produits : liste, creation, modification, galerie. */
-import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Upload, X } from "lucide-react";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, Film, Plus, Upload, X } from "lucide-react";
 
 import { api } from "../api.js";
 import { eur, LECTURE_SEULE, pluriel } from "../format.js";
 import { MAIN_SIZE, toCanonicalMain, toGalleryImage } from "../image.js";
 import { ProductArt } from "../../components/brand/ProductArt.jsx";
 import { FORMES, MATIERES, NOMS_FORMES } from "../../components/brand/formes.js";
+import { estVideo } from "../../lib/images.js";
+
+// Utiles seulement en édition d'une fiche : chargés à son ouverture
+const Declinaisons = lazy(() => import("./Declinaisons.jsx"));
+const EnvoiVideo = lazy(() => import("./EnvoiVideo.jsx"));
 
 const CATS = ["Figurines", "Décoration", "Luminaires", "Accessoires"];
 const ART_DEFAUT = "torii,#E0452A,#0A0605";
 
-const estPhoto = (v) => Boolean(v) && (v.startsWith("http") || v.startsWith("data:"));
+const estPhoto = (v) =>
+  Boolean(v) && !estVideo(v) && (v.startsWith("http") || v.startsWith("data:"));
+const premiereVue = (liste) => (liste || []).find((v) => !estVideo(v));
 
 export function Products({ items, flash, reload, readonly }) {
   const [editing, setEditing] = useState(null); // null | "new" | produit
@@ -323,6 +330,7 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
     blurb: item?.blurb || "",
     price_cents: item?.price_cents ?? 0,
     stock: item?.stock ?? 0,
+    variantes: item?.variantes || [],
     is_new: item?.is_new ?? false,
     active: item?.active ?? true,
     featured: item?.featured ?? false,
@@ -415,14 +423,17 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
     }
   };
 
+  // Une vidéo ne peut pas être le visuel principal : la première vue qui n'en est pas une
+  const vuePrincipale = premiereVue(f.images);
+
   /* La premiere image devient le visuel principal ; une photo est posee entiere dans
      un carre fixe pour que toutes les fiches aient la meme resolution. */
   const enregistrer = async () => {
-    const principaleImage = f.images[0];
+    const principaleImage = vuePrincipale;
     // Même photo principale qu'à l'ouverture, visuel déjà recadré : rien à
     // refaire. Un changement de prix ne dépend plus d'une photo à relire.
     const inchangee =
-      principaleImage === item?.images?.[0] && estPhoto(item?.art) && f.art === item.art;
+      principaleImage === premiereVue(item?.images) && estPhoto(item?.art) && f.art === item.art;
     if (!estPhoto(principaleImage) || inchangee) {
       onSave(f);
       return;
@@ -448,7 +459,7 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
       </div>
       <Assistant
         f={f}
-        image={estPhoto(f.images[0]) ? f.images[0] : null}
+        image={estPhoto(vuePrincipale) ? vuePrincipale : null}
         appliquer={appliquerProposition}
         annuler={annulerProposition}
         peutAnnuler={avantProposition !== null}
@@ -521,14 +532,36 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
           <div className="adm-row2">
             <label className="adm-field">
               <span>Prix en centimes</span>
-              <input type="number" value={f.price_cents} onChange={setNum("price_cents")} min={0} />
-              <small className="num">{eur(f.price_cents)}</small>
+              <input
+                type="number"
+                value={f.price_cents}
+                onChange={setNum("price_cents")}
+                min={0}
+                disabled={f.variantes.length > 0}
+              />
+              <small className="num">
+                {f.variantes.length > 0 ? "Tiré des déclinaisons" : eur(f.price_cents)}
+              </small>
             </label>
             <label className="adm-field">
               <span>Stock</span>
-              <input type="number" value={f.stock} onChange={setNum("stock")} min={0} />
+              <input
+                type="number"
+                value={f.stock}
+                onChange={setNum("stock")}
+                min={0}
+                disabled={f.variantes.length > 0}
+              />
             </label>
           </div>
+          <Suspense fallback={null}>
+            <Declinaisons
+              valeur={f.variantes}
+              onChange={(variantes) => setF((s) => ({ ...s, variantes }))}
+              images={f.images}
+              prixObjet={f.price_cents}
+            />
+          </Suspense>
           <div className="adm-checks">
             <label>
               <input type="checkbox" checked={f.is_new} onChange={set("is_new")} /> Marqué « Nouveau
@@ -642,6 +675,9 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
                 )}
               </span>
             </label>
+            <Suspense fallback={null}>
+              <EnvoiVideo onAjout={(url) => setF((s) => ({ ...s, images: [...s.images, url] }))} />
+            </Suspense>
             {uploadErr && (
               <div className="adm-err" role="alert">
                 {uploadErr}
@@ -651,16 +687,24 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
               {f.images.map((img, i) => (
                 <li key={i} className={"img-item" + (i === 0 ? " is-main" : "")}>
                   <span className="adm-vignette">
-                    <ProductArt art={img} />
+                    {estVideo(img) ? (
+                      <span className="adm-vignette-video" aria-hidden="true">
+                        <Film size={18} />
+                      </span>
+                    ) : (
+                      <ProductArt art={img} />
+                    )}
                   </span>
                   <span className="img-libelle">
-                    {i === 0 && <span className="adm-tag ok">Principale</span>}
+                    {img === vuePrincipale && <span className="adm-tag ok">Principale</span>}
                     <span className="code">
-                      {estPhoto(img)
-                        ? img.startsWith("data:") || img.includes("/media/")
-                          ? "Photo téléversée"
-                          : img.slice(0, 30) + "…"
-                        : img}
+                      {estVideo(img)
+                        ? "Vidéo"
+                        : estPhoto(img)
+                          ? img.startsWith("data:") || img.includes("/media/")
+                            ? "Photo téléversée"
+                            : img.slice(0, 30) + "…"
+                          : img}
                     </span>
                   </span>
                   <span className="img-actions">

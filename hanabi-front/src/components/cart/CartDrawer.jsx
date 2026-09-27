@@ -74,16 +74,21 @@ export function CartDrawer({
             <div className="sheet-body">
               <ul className="lines">
                 {lines.map((l) => (
-                  <li className="line" key={l.id}>
+                  <li className="line" key={l.cle}>
                     <span className="line-art">
-                      <ProductArt art={l.product.art} />
+                      <ProductArt art={l.art} />
                     </span>
                     <div className="line-main">
                       <div className="line-top">
                         <p className="line-name">{l.product.name}</p>
-                        <span className="price">{eur(l.product.price_cents * l.qty)}</span>
+                        <span className="price">{eur(l.prix * l.qty)}</span>
                       </div>
-                      <span className="code">{l.product.code}</span>
+                      <span className="code">
+                        {l.product.code}
+                        {l.variante && (
+                          <span className="line-variante"> · {l.variante.libelle}</span>
+                        )}
+                      </span>
                       <div className="line-actions">
                         <div
                           className="stepper"
@@ -91,7 +96,7 @@ export function CartDrawer({
                           aria-label={t("qtyOf", { name: l.product.name })}
                         >
                           <button
-                            onClick={() => onQty(l.id, l.qty - 1)}
+                            onClick={() => onQty(l.cle, l.qty - 1)}
                             aria-label={t("qtyLess")}
                             disabled={l.qty <= 1}
                           >
@@ -99,17 +104,17 @@ export function CartDrawer({
                           </button>
                           <output aria-live="polite">{l.qty}</output>
                           <button
-                            onClick={() => onQty(l.id, l.qty + 1)}
+                            onClick={() => onQty(l.cle, l.qty + 1)}
                             aria-label={t("qtyMore")}
-                            disabled={l.qty >= l.product.stock}
+                            disabled={l.qty >= l.stock}
                           >
                             <Plus size={16} />
                           </button>
                         </div>
-                        <button className="link" onClick={() => onSaveForLater(l.id)}>
+                        <button className="link" onClick={() => onSaveForLater(l.cle)}>
                           {t("saveForLater")}
                         </button>
-                        <button className="link" onClick={() => onRemove(l.id)}>
+                        <button className="link" onClick={() => onRemove(l.cle)}>
                           {t("removeC")}
                         </button>
                       </div>

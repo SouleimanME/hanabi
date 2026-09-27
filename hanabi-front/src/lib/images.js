@@ -5,6 +5,10 @@
 // Les deux dernières servent au zoom de la fiche : agrandie, la photo reste nette
 export const LARGEURS = [160, 320, 480, 720, 960, 1200, 1800, 2400];
 
+/** Une vue de galerie est une vidéo : fichier MP4, WebM ou MOV (déposé sur R2). */
+export const estVideo = (url) =>
+  typeof url === "string" && /^https?:\/\/.+\.(mp4|webm|mov)(\?.*)?$/i.test(url);
+
 /** `srcset` d'une photo Unsplash, proportions conservées ; `null` pour une autre source. */
 export function sourcesAdaptees(url) {
   let u;

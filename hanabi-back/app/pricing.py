@@ -8,7 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+from . import models, schemas, variantes
 
 FREE_SHIPPING_THRESHOLD_CENTS = 8000  # 80 euros
 SHIPPING_CENTS = 690                   # 6,90 euros
@@ -37,6 +37,25 @@ def validate_promo(db: Session, code: str, subtotal_cents: int) -> models.Promo:
     return promo
 
 
+def choisir_variante(p: models.Product, variante_id: int | None) -> models.Variante | None:
+    """La déclinaison demandée, vérifiée ; None pour un objet simple.
+
+    Le prix vient toujours d'ici, jamais du panier : une déclinaison d'un
+    autre objet ou retirée de la vente est refusée.
+    """
+    en_vente = variantes.actives(p)
+    if not en_vente:
+        if variante_id is not None:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{p.name} ne se décline pas.")
+        return None
+    if variante_id is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Choisis une déclinaison de {p.name}.")
+    variante = next((v for v in en_vente if v.id == variante_id), None)
+    if variante is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Cette déclinaison de {p.name} n'est plus en vente.")
+    return variante
+
+
 def quote(db: Session, items: list[schemas.CartLineIn], promo_code: str | None) -> dict:
     if not items:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Panier vide.")
@@ -56,10 +75,14 @@ def quote(db: Session, items: list[schemas.CartLineIn], promo_code: str | None) 
         p = catalogue.get(it.product_id)
         if p is None or not p.active:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f"Produit {it.product_id} introuvable.")
-        line_total = p.price_cents * it.qty
+        variante = choisir_variante(p, it.variante_id)
+        prix = variante.price_cents if variante else p.price_cents
+        line_total = prix * it.qty
         subtotal += line_total
         lines.append(schemas.QuoteLineOut(
-            product_id=p.id, name=p.name, unit_price_cents=p.price_cents,
+            product_id=p.id, name=p.name, unit_price_cents=prix,
+            variante_id=variante.id if variante else None,
+            variante_libelle=variante.libelle if variante else None,
             qty=it.qty, line_total_cents=line_total,
         ))
 

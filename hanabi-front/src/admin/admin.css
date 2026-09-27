@@ -2173,3 +2173,54 @@ th[aria-sort] .th-sort {
 .dm-vide {
   color: var(--muted);
 }
+
+/* --- Déclinaisons et vidéos d'une fiche --- */
+.declinaisons-admin {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+/* Libellé, pastille, prix, stock ; puis photo, anglais, espagnol et retrait */
+.declinaison-ligne {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  padding-block-end: 10px;
+  border-block-end: 1px solid var(--line);
+}
+@media (max-width: 40rem) {
+  .declinaison-ligne {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.declinaison-ligne > .icone {
+  justify-self: end;
+}
+.declinaison-teinte {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.declinaison-teinte input[type="color"] {
+  inline-size: 44px;
+  block-size: 36px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--surface);
+}
+.adm-vignette-video {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  background: #0a0605;
+  color: #f7ebe6;
+}
+.video-progression {
+  inline-size: 100%;
+  accent-color: var(--accent);
+}

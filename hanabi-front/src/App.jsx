@@ -271,10 +271,15 @@ export default function App() {
   }, [lang]);
 
   // Identité fixe : ajouter un article ne fait pas re-rendre toute la grille
-  const addToCart = useFonctionStable((id, qty = 1) => {
-    const result = cart.add(id, qty);
+  const addToCart = useFonctionStable((id, qty = 1, v = null) => {
+    const result = cart.add(id, qty, v);
     if (result === ADD_RESULT.ADDED) flash(t("tAdded"));
     else if (result === ADD_RESULT.MAX_STOCK) flash(t("tMaxStock"));
+    else if (result === ADD_RESULT.CHOOSE) {
+      // Depuis la grille, un objet à déclinaisons se choisit sur sa fiche
+      openProductById(id);
+      flash(t("tChooseVariant"));
+    }
   });
 
   const submitReview = useCallback(
@@ -315,23 +320,26 @@ export default function App() {
 
   /** Retirer se defait depuis la notification : pas de confirmation. */
   const removeFromCart = useCallback(
-    (id) => {
-      const ligne = cart.lines.find((l) => l.id === id);
-      cart.remove(id);
+    (cle) => {
+      const ligne = cart.lines.find((l) => l.cle === cle);
+      cart.remove(cle);
       if (ligne) {
         flash(t("tRemoved", { name: ligne.product.name }), {
           label: t("undo"),
-          run: () => cart.add(id, ligne.qty),
+          run: () => cart.add(ligne.id, ligne.qty, ligne.v ?? null),
         });
       }
     },
     [cart, flash, t],
   );
 
+  // Garde l'objet, pas la couleur : au retour dans le panier, la fiche la redemande
   const saveForLater = useCallback(
-    (id) => {
-      cart.remove(id);
-      saved.save(id);
+    (cle) => {
+      const ligne = cart.lines.find((l) => l.cle === cle);
+      if (!ligne) return;
+      cart.remove(cle);
+      saved.save(ligne.id);
       flash(t("tSaved"));
     },
     [cart, saved, flash, t],
@@ -342,6 +350,12 @@ export default function App() {
       // On ne retire des enregistres que si le panier a accepte l'article : un
       // produit epuise entre-temps ne doit se retrouver nulle part.
       const result = cart.add(id);
+      if (result === ADD_RESULT.CHOOSE) {
+        saved.remove(id);
+        openProductById(id);
+        flash(t("tChooseVariant"));
+        return;
+      }
       if (result !== ADD_RESULT.ADDED) {
         flash(result === ADD_RESULT.MAX_STOCK ? t("tMaxStock") : t("soldNow"));
         return;
@@ -349,7 +363,7 @@ export default function App() {
       saved.remove(id);
       flash(t("tAdded"));
     },
-    [cart, saved, flash, t],
+    [cart, saved, flash, t, openProductById],
   );
 
   const toggleWish = useCallback(

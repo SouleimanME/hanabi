@@ -20,7 +20,11 @@ export function usePricing(items, promoCode, localSubtotalCents, onPromoRejected
     // Le drapeau evite qu'une reponse tardive n'ecrase un devis plus recent.
     let cancelled = false;
     (async () => {
-      const payload = items.map((line) => ({ product_id: line.id, qty: line.qty }));
+      const payload = items.map((line) =>
+        line.v
+          ? { product_id: line.id, variante_id: line.v, qty: line.qty }
+          : { product_id: line.id, qty: line.qty },
+      );
       try {
         const result = await Orders.quote(payload, promoCode);
         if (!cancelled) setQuote(result);

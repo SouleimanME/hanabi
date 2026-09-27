@@ -3,7 +3,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from .. import demandes, models, plongement, recherche, schemas
+from .. import demandes, models, plongement, recherche, schemas, variantes
 from ..config import settings
 from ..antibot import verify as verify_antibot
 from ..database import get_db
@@ -28,6 +28,9 @@ def _ratings_map(db: Session, product_ids: list[int]) -> dict[int, tuple[float, 
 def _to_out(p: models.Product, rating: tuple[float, int], lang: str | None) -> schemas.ProductOut:
     out = schemas.ProductOut.model_validate(p)
     out.name, out.blurb, out.alt = localize(p, lang)
+    par_id = {v.id: v for v in p.variantes}
+    for v in out.variantes:
+        v.libelle = variantes.libelle(par_id[v.id], lang)
     if not out.images:
         out.images = [p.art]
     out.rating_avg = round(rating[0], 2)

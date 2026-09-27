@@ -13,6 +13,9 @@ export const ProductCard = memo(function ProductCard({ p, onOpen, onAdd, wished,
   const [ajoute, setAjoute] = useState(false);
   const minuteur = useRef(null);
   const epuise = p.stock === 0;
+  const declinaisons = p.variantes || [];
+  // « À partir de » seulement si les couleurs n'ont pas toutes le même prix
+  const prixVariables = new Set(declinaisons.map((v) => v.price_cents)).size > 1;
 
   useEffect(() => () => clearTimeout(minuteur.current), []);
 
@@ -52,16 +55,40 @@ export const ProductCard = memo(function ProductCard({ p, onOpen, onAdd, wished,
             {p.name}
           </button>
         </h3>
+        {declinaisons.length > 1 && (
+          <ul className="case-teintes" aria-label={t("variantsN", { n: declinaisons.length })}>
+            {declinaisons.slice(0, 6).map((v) => (
+              <li
+                key={v.id}
+                title={v.libelle}
+                style={v.couleur ? { background: v.couleur } : undefined}
+                className={v.couleur ? undefined : "sans-teinte"}
+              >
+                <span className="sr-only">{v.libelle}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="case-foot">
-          <span className="price">{eur(p.price_cents)}</span>
+          <span className="price">
+            {prixVariables ? t("fromPrice", { price: eur(p.price_cents) }) : eur(p.price_cents)}
+          </span>
           <button
             className="btn btn-quiet btn-sm case-add"
-            onClick={ajouter}
+            onClick={declinaisons.length ? () => onOpen(p) : ajouter}
             disabled={epuise}
-            aria-label={epuise ? undefined : t("addNamed", { name: p.name })}
+            aria-label={
+              epuise
+                ? undefined
+                : declinaisons.length
+                  ? t("chooseNamed", { name: p.name })
+                  : t("addNamed", { name: p.name })
+            }
           >
             {epuise ? (
               t("sold")
+            ) : declinaisons.length ? (
+              t("choose")
             ) : (
               <span className="swap" data-state={ajoute ? "done" : "idle"}>
                 <span className="swap-idle">

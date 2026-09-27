@@ -1,6 +1,6 @@
 /** Fiche produit : vues, achat, avis, suggestions. */
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Check, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Check, Minus, Play, Plus } from "lucide-react";
 import { PictoFavori, PictoPanier } from "../components/brand/Pictos.jsx";
 import { useT } from "../i18n/context.jsx";
 import { Stars } from "../components/ui/Stars.jsx";
@@ -12,7 +12,7 @@ import { ZoomPhoto } from "../components/catalog/ZoomPhoto.jsx";
 import { DeliveryNote } from "../components/ui/DeliveryNote.jsx";
 import { Products } from "../lib/api.js";
 import { audienceAcceptee } from "../lib/consentement.js";
-import { sourcesAdaptees } from "../lib/images.js";
+import { estVideo, sourcesAdaptees } from "../lib/images.js";
 import { SHIPPING_CENTS, FREE_SHIPPING_CENTS } from "../lib/constants.js";
 import { useAntiBot } from "../hooks/useAntiBot.js";
 
@@ -43,6 +43,16 @@ export function ProductPage({
   const notifyBot = useAntiBot("notify");
   const [qty, setQty] = useState(1);
   const [vue, setVue] = useState(0);
+  // Déclinaison choisie : la première en stock, sinon la première
+  const declinaisons = p.variantes || [];
+  const [choixId, setChoixId] = useState(null);
+  const variante =
+    declinaisons.find((v) => v.id === choixId) ??
+    declinaisons.find((v) => v.stock > 0) ??
+    declinaisons[0] ??
+    null;
+  const prix = variante ? variante.price_cents : p.price_cents;
+  const stock = variante ? variante.stock : p.stock;
   const [formOuvert, setFormOuvert] = useState(false);
   const [note, setNote] = useState(5);
   const [texte, setTexte] = useState("");
@@ -55,8 +65,12 @@ export function ProductPage({
   // n'existe pas : la section ne s'affiche alors pas.
   const [ensemble, setEnsemble] = useState([]);
 
-  const vues = p.images && p.images.length ? p.images : [p.art];
-  const max = Math.max(1, p.stock);
+  const galerie = p.images && p.images.length ? p.images : [p.art];
+  // La photo de la couleur choisie passe en tête de la galerie
+  const vues = variante?.image
+    ? [variante.image, ...galerie.filter((v) => v !== variante.image)]
+    : galerie;
+  const max = Math.max(1, stock);
   const moisAnnee = new Intl.DateTimeFormat(lang, { month: "long", year: "numeric" });
   // « 4,3 » en français, « 4.3 » en anglais : toFixed ignorait la langue
   const uneDecimale = new Intl.NumberFormat(lang, {
@@ -83,14 +97,21 @@ export function ProductPage({
     );
     observateur.observe(bloc);
     return () => observateur.disconnect();
-  }, [p.id, p.stock]);
+  }, [p.id, stock]);
 
   useEffect(() => {
     setVue(0);
     setQty(1);
+    setChoixId(null);
     setNotifyDone(false);
     setTousLesAvis(false);
   }, [p.id]);
+
+  const choisirDeclinaison = (id) => {
+    setChoixId(id);
+    setVue(0);
+    setQty(1);
+  };
 
   // Les autres vues se chargent pendant que la fiche est au repos, à la taille
   // affichée et déjà décodées : changer de vue devient immédiat.
@@ -99,7 +120,7 @@ export function ProductPage({
     const autres = cleVues
       .split("|")
       .slice(1)
-      .filter((v) => sourcesAdaptees(v));
+      .filter((v) => !estVideo(v) && sourcesAdaptees(v));
     if (!autres.length) return undefined;
     const precharger = () =>
       autres.forEach((v) => {
@@ -204,24 +225,39 @@ export function ProductPage({
 
           <div className="gallery">
             <div className="gallery-main">
-              {/* Clé : le zoom repart du plein cadre à chaque objet et à chaque vue */}
-              <ZoomPhoto
-                key={`${p.id}-${vue}`}
-                libelle={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
-                aide="zoom-aide"
-              >
-                <ProductArt
-                  art={vues[vue]}
-                  alt={vue === 0 ? p.alt : ""}
-                  scene={vue === 0}
-                  taille={TAILLE_VUE}
-                  priorite
+              {estVideo(vues[vue]) ? (
+                // Lecture à la demande, sans son imposé ; `metadata` pour la première image
+                <video
+                  key={`${p.id}-${vue}`}
+                  className="art art-video"
+                  src={vues[vue]}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  aria-label={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
                 />
-              </ZoomPhoto>
+              ) : (
+                // Clé : le zoom repart du plein cadre à chaque objet et à chaque vue
+                <ZoomPhoto
+                  key={`${p.id}-${vue}`}
+                  libelle={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
+                  aide="zoom-aide"
+                >
+                  <ProductArt
+                    art={vues[vue]}
+                    alt={vue === 0 ? p.alt : ""}
+                    scene={vue === 0}
+                    taille={TAILLE_VUE}
+                    priorite
+                  />
+                </ZoomPhoto>
+              )}
             </div>
-            <p className="zoom-aide" id="zoom-aide">
-              {t("zoomHint")}
-            </p>
+            {!estVideo(vues[vue]) && (
+              <p className="zoom-aide" id="zoom-aide">
+                {t("zoomHint")}
+              </p>
+            )}
             {vues.length > 1 && (
               <div
                 className="thumbs"
@@ -236,10 +272,20 @@ export function ProductPage({
                     role="radio"
                     aria-checked={i === vue}
                     tabIndex={i === vue ? 0 : -1}
-                    aria-label={t("viewN", { n: i + 1, total: vues.length })}
+                    aria-label={
+                      estVideo(v)
+                        ? t("videoN", { n: i + 1, total: vues.length })
+                        : t("viewN", { n: i + 1, total: vues.length })
+                    }
                     onClick={() => setVue(i)}
                   >
-                    <ProductArt art={v} scene={i === 0} taille="72px" />
+                    {estVideo(v) ? (
+                      <span className="thumb-video" aria-hidden="true">
+                        <Play size={22} />
+                      </span>
+                    ) : (
+                      <ProductArt art={v} scene={i === 0} taille="72px" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -270,8 +316,8 @@ export function ProductPage({
       <div className="wrap product-grid">
         <div className="product-info">
           <div className="product-price">
-            <span className="price">{eur(p.price_cents)}</span>
-            <StockBadge stock={p.stock} />
+            <span className="price">{eur(prix)}</span>
+            <StockBadge stock={stock} />
           </div>
           <p className="product-desc">
             {p.blurb}. {t("descSuffix")}
@@ -282,7 +328,43 @@ export function ProductPage({
         </div>
 
         <div className="product-buy">
-          {p.stock === 0 ? (
+          {declinaisons.length > 0 && (
+            <fieldset className="declinaisons">
+              <legend>
+                {t("variantLabel")} <strong>{variante?.libelle}</strong>
+              </legend>
+              <div className="pastilles">
+                {declinaisons.map((v) => (
+                  <label
+                    key={v.id}
+                    className={"pastille" + (v.stock === 0 ? " is-out" : "")}
+                    title={v.libelle}
+                  >
+                    <input
+                      type="radio"
+                      name={`declinaison-${p.id}`}
+                      className="sr-only"
+                      checked={v.id === variante?.id}
+                      onChange={() => choisirDeclinaison(v.id)}
+                    />
+                    {v.couleur ? (
+                      <span className="pastille-teinte" style={{ background: v.couleur }} />
+                    ) : (
+                      <span className="pastille-texte">{v.libelle}</span>
+                    )}
+                    <span className="sr-only">
+                      {`${v.libelle}, ${eur(v.price_cents)}${v.stock === 0 ? `, ${t("sold")}` : ""}`}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+          {stock === 0 && p.stock > 0 ? (
+            // Cette couleur seule manque : l'alerte de retour vaut pour l'objet
+            // entier et ne partirait pas, on ne la propose donc pas
+            <p className="buy-epuise">{t("sold")}</p>
+          ) : stock === 0 ? (
             <form className="notify" onSubmit={demanderAlerte} noValidate>
               <h2>{t("notifyTitle")}</h2>
               {notifyDone ? (
@@ -345,12 +427,12 @@ export function ProductPage({
               <button
                 className="btn btn-primary buy-add"
                 onClick={() => {
-                  onAddItem(p.id, qty);
+                  onAddItem(p.id, qty, variante?.id ?? null);
                   onOpenCart();
                 }}
               >
                 <PictoPanier taille={18} /> {t("add")}
-                <span className="price">{eur(p.price_cents * qty)}</span>
+                <span className="price">{eur(prix * qty)}</span>
               </button>
               <button
                 className="icon-btn icon-btn-framed"
@@ -524,22 +606,25 @@ export function ProductPage({
         )}
       </div>
 
-      {p.stock > 0 && (
+      {stock > 0 && (
         <div
           className="buy-bar"
           data-visible={barreVisible || undefined}
           {...(barreVisible ? {} : { inert: "", "aria-hidden": true })}
         >
-          <span className="buy-bar-name">{p.name}</span>
+          <span className="buy-bar-name">
+            {p.name}
+            {variante && ` · ${variante.libelle}`}
+          </span>
           <button
             className="btn btn-primary"
             onClick={() => {
-              onAddItem(p.id, qty);
+              onAddItem(p.id, qty, variante?.id ?? null);
               onOpenCart();
             }}
           >
             <PictoPanier taille={18} /> {t("add")}
-            <span className="price">{eur(p.price_cents * qty)}</span>
+            <span className="price">{eur(prix * qty)}</span>
           </button>
         </div>
       )}

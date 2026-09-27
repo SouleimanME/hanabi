@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from . import models
+from . import models, variantes
 
 log = logging.getLogger("hanabi.rgpd")
 
@@ -112,7 +112,7 @@ def exporter(db: Session, user: models.User) -> dict:
                 },
                 "articles": [
                     {
-                        "produit": a.name,
+                        "produit": variantes.nom_de_ligne(a),
                         "quantite": a.qty,
                         "prix_unitaire_cents": a.unit_price_cents,
                     }

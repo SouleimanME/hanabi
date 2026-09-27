@@ -668,3 +668,24 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 420px;
 }
+
+/* Couleurs d'un objet à déclinaisons, en petits carrés sous son nom */
+.case-teintes {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.case-teintes li {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.2);
+}
+.case-teintes .sans-teinte {
+  background: var(--line-strong);
+}
+.line-variante {
+  color: var(--ink);
+}

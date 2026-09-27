@@ -99,6 +99,20 @@ def checkout(
         # `UPDATE ... WHERE stock >= qty` : rowcount 0 = stock insuffisant, sûr en
         # concurrence sur les deux moteurs. CHECK (stock >= 0) en dernier recours.
         for line in pricing["lines"]:
+            # Déclinaison d'abord : son stock est celui qui compte. Celui de
+            # l'objet, leur somme, suit dans la même transaction.
+            if line.variante_id is not None:
+                res = db.execute(
+                    update(models.Variante)
+                    .where(models.Variante.id == line.variante_id, models.Variante.stock >= line.qty)
+                    .values(stock=models.Variante.stock - line.qty)
+                )
+                if res.rowcount == 0:
+                    db.rollback()
+                    raise HTTPException(
+                        status.HTTP_409_CONFLICT,
+                        f"Stock insuffisant pour {line.name} ({line.variante_libelle}).",
+                    )
             res = db.execute(
                 update(models.Product)
                 .where(models.Product.id == line.product_id, models.Product.stock >= line.qty)
@@ -132,12 +146,17 @@ def checkout(
         lignes = []
         for line in pricing["lines"]:
             p = db.get(models.Product, line.product_id)
+            variante = db.get(models.Variante, line.variante_id) if line.variante_id else None
             article = models.OrderItem(
-                order_id=order.id, product_id=p.id, name=p.name, art=p.art,
+                order_id=order.id, product_id=p.id, name=p.name,
+                # La photo de la couleur achetée, si elle en a une
+                art=(variante.image if variante and variante.image else p.art),
                 category=p.category,
                 unit_price_cents=line.unit_price_cents,
                 unit_cost_cents=p.cost_cents,
                 qty=line.qty,
+                variante_id=line.variante_id,
+                variante_libelle=line.variante_libelle,
             )
             db.add(article)
             lignes.append(article)

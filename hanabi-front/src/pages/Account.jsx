@@ -31,7 +31,10 @@ function Commande({ order, eur }) {
             <span className="order-art">
               <ProductArt art={line.art} />
             </span>
-            <span className="order-name">{line.name}</span>
+            <span className="order-name">
+              {line.name}
+              {line.variante_libelle && ` (${line.variante_libelle})`}
+            </span>
             <span className="muted tabular">× {line.qty}</span>
             <span className="price">{eur(line.unit_price_cents * line.qty)}</span>
           </li>
