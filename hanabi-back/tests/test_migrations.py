@@ -447,3 +447,39 @@ class TestFichesMultilingues:
             command.upgrade(_config(cx), "head")
             command.downgrade(_config(cx), self.AVANT)
             command.upgrade(_config(cx), "head")
+
+
+class TestPhotosHorsDuCatalogue:
+    """Les photos `data:` des fiches passent dans `medias`, et en reviennent."""
+
+    AVANT = "a7d3e9c2f5b1"
+    PHOTO = "data:image/png;base64,iVBORw0KGgo="
+
+    def _peupler(self, cx):
+        with Session(bind=cx) as db:
+            db.add(models.Product(
+                code="TST-701", name="Coque", category="Accessoires", blurb="Silicone",
+                price_cents=2500, stock=3, art=self.PHOTO,
+                images=json.dumps([self.PHOTO, "https://images.example/b.jpg"]),
+            ))
+            db.commit()
+
+    def test_la_photo_sort_de_la_fiche_puis_y_revient(self, moteur):
+        with moteur.begin() as cx:
+            command.upgrade(_config(cx), self.AVANT)
+            self._peupler(cx)
+            command.upgrade(_config(cx), "head")
+        with Session(bind=moteur) as db:
+            produit = db.scalars(select(models.Product).where(models.Product.code == "TST-701")).one()
+            assert produit.art.startswith("/media/")
+            assert json.loads(produit.images) == [produit.art, "https://images.example/b.jpg"]
+            # Deux mentions de la même photo : une seule ligne
+            assert db.query(models.Media).count() == 1
+
+        with moteur.begin() as cx:
+            command.downgrade(_config(cx), self.AVANT)
+            art, images = cx.execute(
+                text("select art, images from products where code = 'TST-701'")
+            ).one()
+        assert art == self.PHOTO
+        assert json.loads(images)[0] == self.PHOTO

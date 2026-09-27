@@ -17,6 +17,7 @@ from .config import settings
 from .database import SessionLocal, get_db
 from .demo_data import ensure_demo_dataset
 from .idempotency import purger as purger_idempotence
+from .medias import OrigineDesMedias
 from .migrate import run_migrations
 from .tokens import purger as purger_jetons
 from .observability import RequestContextMiddleware, configurer_journaux
@@ -24,7 +25,7 @@ from .seed import seed, ensure_admin, ensure_public_admin
 from .ratelimit import limiter, SecurityHeadersMiddleware, BodySizeLimitMiddleware
 from .routers import (
     auth, products, orders, reviews, promos, admin, security, newsletter, warehouse,
-    exploitation, compte, redaction, conseil,
+    exploitation, compte, redaction, conseil, medias,
 )
 
 log = logging.getLogger("hanabi.demarrage")
@@ -105,6 +106,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Ajouté après les protections, donc exécuté avant elles : les requêtes
 # qu'elles refusent sont journalisées aussi.
 app.add_middleware(RequestContextMiddleware)
+app.add_middleware(OrigineDesMedias)
 
 # Le plus extérieur : toute réponse, même d'erreur, porte les en-têtes CORS
 app.add_middleware(
@@ -124,6 +126,7 @@ app.include_router(reviews.router)
 app.include_router(promos.router)
 app.include_router(newsletter.router)
 app.include_router(orders.router)
+app.include_router(medias.router)
 # admin, warehouse, exploitation et redaction partagent le préfixe /admin, sur des chemins disjoints
 app.include_router(admin.router)
 app.include_router(warehouse.router)

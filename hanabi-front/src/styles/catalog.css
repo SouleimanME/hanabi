@@ -216,9 +216,11 @@
 
 /* Chaque case trace son propre filet : une ligne incomplete ne laisse pas de
    compartiment vide colore. */
+/* Un objet se choisit sur sa photo : une par ligne sur un téléphone, deux sur
+   une tablette, trois au plus sur un grand écran. */
 .tray {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 1px;
   padding: 1px;
   transition: opacity var(--dur-feedback) var(--ease-out);
@@ -226,15 +228,21 @@
 .tray[data-refreshing] {
   opacity: 0.6;
 }
-@media (min-width: 40rem) {
+@media (min-width: 34rem) {
+  .tray {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 60rem) {
   .tray {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@media (min-width: 72rem) {
-  .tray {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+/* Les suggestions en bas de fiche restent des vignettes : des pistes, pas le catalogue */
+.tray-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 60rem) {
   .tray-compact {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

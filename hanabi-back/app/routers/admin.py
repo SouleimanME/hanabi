@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import exists, func, literal_column, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from .. import analytics, models, restock
+from .. import analytics, medias, models, restock
 from ..analytics import REVENUE_STATUSES
 from ..database import get_db
 from ..deps import get_admin_user, get_admin_writer, is_readonly_admin
@@ -349,11 +349,12 @@ def list_products(
 def create_product(data: ProductIn, db: Session = Depends(get_db), _=Depends(get_admin_writer)):
     if db.query(models.Product).filter(models.Product.code == data.code).first():
         raise HTTPException(409, f"Code produit '{data.code}' déjà utilisé.")
+    art, images = _ranger_photos(db, data.art, data.images)
     p = models.Product(
         code=data.code, name=data.name, category=data.category, blurb=data.blurb,
         price_cents=data.price_cents, stock=data.stock, is_new=data.is_new,
         active=data.active, featured=data.featured, featured_order=data.featured_order,
-        art=data.art, images=json.dumps(data.images), usages=data.usages, alt=data.alt,
+        art=art, images=json.dumps(images), usages=data.usages, alt=data.alt,
         traductions=_traductions_json({}, data.traductions),
     )
     db.add(p); db.commit(); db.refresh(p)
@@ -374,7 +375,12 @@ def update_product(product_id: int, data: ProductPatch, db: Session = Depends(ge
     if not p:
         raise HTTPException(404, "Produit introuvable.")
     etait_indisponible = p.stock <= 0 or not p.active
-    for field, val in data.model_dump(exclude_none=True).items():
+    changes = data.model_dump(exclude_none=True)
+    if "art" in changes or "images" in changes:
+        changes["art"], changes["images"] = _ranger_photos(
+            db, changes.get("art", p.art), changes.get("images", json.loads(p.images or "[]"))
+        )
+    for field, val in changes.items():
         if field == "images":
             setattr(p, "images", json.dumps(val))
         elif field == "traductions":
@@ -420,6 +426,14 @@ def delete_product(product_id: int, db: Session = Depends(get_db), _=Depends(get
     return {"action": action}
 
 
+def _ranger_photos(db: Session, art: str, images: list[str]) -> tuple[str, list[str]]:
+    """Photos envoyées en `data:` rangées à part ; la fiche ne garde que leur adresse."""
+    try:
+        return medias.ranger(db, art), [medias.ranger(db, i) for i in images]
+    except medias.PhotoInvalide as e:
+        raise HTTPException(422, str(e)) from e
+
+
 def _traductions_json(existantes: dict, nouvelles: Traductions) -> str:
     fusion = {**existantes, **{langue: t.model_dump() for langue, t in nouvelles.items()}}
     return json.dumps(fusion, ensure_ascii=False)
@@ -436,7 +450,8 @@ def _prod_dict(p: models.Product) -> dict:
         "blurb": p.blurb, "price_cents": p.price_cents, "stock": p.stock,
         "is_new": p.is_new, "active": p.active,
         "featured": p.featured, "featured_order": p.featured_order,
-        "art": p.art, "images": imgs, "usages": p.usages or "", "alt": p.alt or "",
+        "art": medias.publique(p.art), "images": [medias.publique(i) for i in imgs],
+        "usages": p.usages or "", "alt": p.alt or "",
         "traductions": traductions(p),
     }
 

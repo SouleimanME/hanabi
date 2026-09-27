@@ -34,7 +34,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         h["Content-Security-Policy"] = (
             "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
         )
-        h["Cross-Origin-Resource-Policy"] = "same-site"
+        # Les photos s'affichent sur le site de la boutique, hébergé ailleurs
+        photo = request.url.path.startswith("/media/")
+        h["Cross-Origin-Resource-Policy"] = "cross-origin" if photo else "same-site"
         return response
 
 

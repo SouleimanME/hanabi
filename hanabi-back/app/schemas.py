@@ -6,6 +6,7 @@ from pydantic import (
     AfterValidator, BaseModel, EmailStr, Field, computed_field, ConfigDict, field_validator,
 )
 
+from . import medias
 from .antibot import AntiBotFields
 
 # Adresse ramenée en minuscules à l'entrée : un téléphone met une capitale en tête
@@ -181,10 +182,15 @@ class ProductOut(BaseModel):
         # Stocké en chaîne JSON
         if isinstance(v, str):
             try:
-                return json.loads(v) if v else []
+                v = json.loads(v) if v else []
             except (ValueError, TypeError):
                 return []
-        return v or []
+        return [medias.publique(i) for i in v or []]
+
+    @field_validator("art", mode="before")
+    @classmethod
+    def _art_public(cls, v):
+        return medias.publique(v)
 
 
 # ---------- Avis ----------
@@ -323,6 +329,11 @@ class OrderItemOut(BaseModel):
     art: str
     unit_price_cents: int
     qty: int
+
+    @field_validator("art", mode="before")
+    @classmethod
+    def _art_public(cls, v):
+        return medias.publique(v)
 
 
 class OrderOut(BaseModel):

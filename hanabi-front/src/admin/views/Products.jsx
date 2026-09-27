@@ -648,7 +648,7 @@ function ProductForm({ item, onSave, onCancel, saving, readonly }) {
                     {i === 0 && <span className="adm-tag ok">Principale</span>}
                     <span className="code">
                       {estPhoto(img)
-                        ? img.startsWith("data:")
+                        ? img.startsWith("data:") || img.includes("/media/")
                           ? "Photo téléversée"
                           : img.slice(0, 30) + "…"
                         : img}

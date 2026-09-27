@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     String, Integer, Boolean, ForeignKey, Text, DateTime, CheckConstraint, UniqueConstraint,
-    Index,
+    Index, LargeBinary,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -351,6 +351,18 @@ class PaymentMethod(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
     user: Mapped["User"] = relationship()
+
+
+class Media(Base):
+    """Une photo téléversée, rangée sous l'empreinte SHA-256 de son contenu et
+    servie par /media/<empreinte> (voir app/medias.py)."""
+
+    __tablename__ = "medias"
+
+    empreinte: Mapped[str] = mapped_column(String(64), primary_key=True)
+    type: Mapped[str] = mapped_column(String(20))
+    octets: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 
 class Redaction(Base):
