@@ -1,5 +1,5 @@
 {
-  "description": "Écrits avant la consigne qui fait passer les notes et la photo devant la fiche actuelle. Chaque cas part d'une fiche existante et d'autres indices. « nom » : expression que le nom français proposé doit contenir (sans casse). « remarque » : vrai si l'assistant doit signaler une contradiction ou un manque, faux s'il ne doit rien signaler.",
+  "description": "Écrits avant la consigne qui fait passer les notes et la photo devant la fiche actuelle. Chaque cas part d'une fiche existante et d'autres indices. « nom » : expression que le nom français proposé doit contenir (sans casse). « interdit » : expression que le nom et la description ne doivent pas contenir. « remarque » : vrai si l'assistant doit signaler une contradiction ou un manque, faux s'il ne doit rien signaler.",
   "cas": [
     {
       "titre": "Des notes qui décrivent un autre objet, sans photo",
@@ -33,7 +33,7 @@
       "fiche": null,
       "notes": "",
       "photo_de": "HNB-021",
-      "nom": "torii|lampe|veilleuse",
+      "nom": "torii|lampe|veilleuse|lanterne",
       "categorie": "Luminaires",
       "remarque": false
     },
@@ -43,6 +43,34 @@
       "notes": "Porte-clés daruma en bois peint, 4 cm",
       "photo": false,
       "nom": "porte-cl",
+      "categorie": "Accessoires",
+      "remarque": false
+    },
+    {
+      "titre": "Ajouté après la première mesure : une fiche d'estampe réutilisée pour un sac",
+      "fiche": "HNB-078",
+      "notes": "Sac en toile de coton, imprimé Grande Vague, anses longues",
+      "photo": false,
+      "nom": "sac",
+      "categorie": "Accessoires",
+      "remarque": false
+    },
+    {
+      "titre": "Ajouté après la première mesure : une figurine en photo seule",
+      "fiche": null,
+      "notes": "",
+      "photo_de": "HNB-052",
+      "nom": "kitsune|renard|fox",
+      "categorie": "Figurines",
+      "remarque": false
+    },
+    {
+      "titre": "Ajouté après ton retour : une fiche de masque réutilisée pour une coque, rien du masque ne doit rester",
+      "fiche": "HNB-061",
+      "notes": "Coque iPhone 15 en silicone noir",
+      "photo": false,
+      "nom": "coque",
+      "interdit": "kitsune|renard|masque|fox",
       "categorie": "Accessoires",
       "remarque": false
     }

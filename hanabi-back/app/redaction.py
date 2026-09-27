@@ -123,11 +123,16 @@ Rends uniquement un objet JSON de cette forme :
 
 Ce qui fait foi :
 - Les notes du marchand d'abord, puis la photo. Le nom, la catégorie, la description et les usages actuels ne sont qu'un brouillon : s'ils décrivent un autre objet que les notes ou la photo, ignore-les et rédige la fiche de l'objet décrit par les notes.
-- categorie : la famille la plus proche. Accessoires pour ce qui se porte ou s'emporte (coque de téléphone, porte-clés, sac, bijou) ; Décoration pour ce qui se pose ou s'accroche.
-- remarque : une phrase pour le marchand quand les notes et la photo ne montrent pas le même objet, ou quand il manque une information pour une fiche honnête ; sinon une chaîne vide.
+- Un brouillon qui décrit un autre objet ne transmet rien : n'en reprends aucun mot, ni nom, ni motif, ni matière, ni usage. Une fiche « Masque Kitsune » réutilisée pour une coque de téléphone ne donne pas « Coque Kitsune ».
+- categorie, la famille la plus proche :
+  Figurines : statuettes et personnages, porte-bonheur compris (daruma, maneki-neko, kokeshi, yokai en résine) ;
+  Décoration : ce qui orne un intérieur sans être une figurine (estampe, éventail, masque, tapis) ;
+  Luminaires : ce qui éclaire (lampe, lanterne, veilleuse) ;
+  Accessoires : ce qui se porte ou s'emporte (coque de téléphone, porte-clés, sac, bijou).
+- remarque : une phrase pour le marchand quand les notes et la photo ne montrent pas le même objet, ou quand il manque une information pour une fiche honnête ; sinon une chaîne vide. Un brouillon qui décrit un autre objet que les notes ne se signale pas : c'est une fiche réutilisée, et les notes font foi.
 
 Règles de la fiche :
-- name : le nom sous lequel on chercherait l'objet, court, sans adjectif publicitaire.
+- name : le nom sous lequel on chercherait l'objet, court, sans adjectif publicitaire. Ce qu'est l'objet, plus au plus un trait distinctif écrit dans les notes ou visible sur la photo (« Coque iPhone Katana ») ; sans trait net, le nom seul (« Coque iPhone »).
 - blurb : des fragments factuels séparés par des virgules (matière, détail, dimension), 60 caractères environ, 120 au plus. Pas de phrase publicitaire, pas de superlatif, pas de point d'exclamation.
 - usages : 3 ou 4 lignes. Ce qu'est l'objet et sa signification au Japon s'il en a une ; où il se pose ; pour qui ou pour quelle occasion. Une phrase nominale par ligne, 110 caractères au plus.
 - alt : ce que montre la photo, en une phrase, sans « photo de » ni « image de ». Sans photo, une chaîne vide.

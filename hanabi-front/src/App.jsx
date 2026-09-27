@@ -36,7 +36,6 @@ import Home from "./pages/Home.jsx";
 import ProductPage from "./pages/ProductPage.jsx";
 import Wishlist from "./pages/Wishlist.jsx";
 import Saved from "./pages/Saved.jsx";
-import Account from "./pages/Account.jsx";
 import Confirmation from "./pages/Confirmation.jsx";
 import ConfirmerAdresse from "./pages/ConfirmerAdresse.jsx";
 import NouveauMotDePasse from "./pages/NouveauMotDePasse.jsx";
@@ -46,6 +45,8 @@ import Desinscription from "./pages/Desinscription.jsx";
 // l'accueil : il se charge à l'ouverture du panier, avant le clic qui y mène
 const chargerPaiement = () => import("./pages/Checkout.jsx");
 const Checkout = lazy(chargerPaiement);
+// L'espace client ne sert qu'aux comptes connectés : pas au premier affichage
+const Account = lazy(() => import("./pages/Account.jsx"));
 
 import "./styles/index.css";
 
@@ -620,21 +621,23 @@ export default function App() {
 
           {view === "account" &&
             (user ? (
-              <Account
-                user={user}
-                orders={orders}
-                section={accountSection}
-                onLogout={handleLogout}
-                onBack={goHome}
-                eur={eur}
-                onProfil={poserProfil}
-                onEfface={(resultat) => {
-                  // Le compte n'existe plus, la session non plus
-                  handleLogout();
-                  flash(resultat?.message || t("rgpdDeleteDone"));
-                }}
-                flash={flash}
-              />
+              <Suspense fallback={<main id="contenu" className="wrap page" aria-busy="true" />}>
+                <Account
+                  user={user}
+                  orders={orders}
+                  section={accountSection}
+                  onLogout={handleLogout}
+                  onBack={goHome}
+                  eur={eur}
+                  onProfil={poserProfil}
+                  onEfface={(resultat) => {
+                    // Le compte n'existe plus, la session non plus
+                    handleLogout();
+                    flash(resultat?.message || t("rgpdDeleteDone"));
+                  }}
+                  flash={flash}
+                />
+              </Suspense>
             ) : (
               <main id="contenu" className="wrap page">
                 <div className="empty">

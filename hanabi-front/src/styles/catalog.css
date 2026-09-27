@@ -187,6 +187,19 @@
 .segments button:focus-visible {
   outline-offset: -2px;
 }
+/* Sur un téléphone, une rangée qui défile cachait des familles sans le dire :
+   les filtres passent sur deux lignes, tous visibles */
+@media (max-width: 30rem) {
+  .segments {
+    display: flex;
+    flex-wrap: wrap;
+    inline-size: 100%;
+    overflow-x: visible;
+  }
+  .segments button {
+    flex: 1 1 auto;
+  }
+}
 @media (hover: hover) {
   .segments button[aria-checked="false"]:hover {
     color: var(--ink);

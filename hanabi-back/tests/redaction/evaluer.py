@@ -104,6 +104,8 @@ def reecritures() -> int:
         ecarts = []
         if not re.search(c["nom"], p.fr.name, re.I):
             ecarts.append(f"nom « {p.fr.name} »")
+        if c.get("interdit") and re.search(c["interdit"], f"{p.fr.name} {p.fr.blurb}", re.I):
+            ecarts.append(f"reste du brouillon : « {p.fr.name} », « {p.fr.blurb} »")
         if p.categorie != c["categorie"]:
             ecarts.append(f"catégorie {p.categorie}")
         if bool(p.remarque) != c["remarque"]:

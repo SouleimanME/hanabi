@@ -16,6 +16,8 @@
     {"demande": "Pour protéger mon téléphone", "lang": "fr", "acceptables": []},
     {"demande": "Des écouteurs sans fil pour mon frère", "lang": "fr", "acceptables": []},
     {"demande": "A case for my phone", "lang": "en", "acceptables": []},
+    {"demande": "Un chargeur pour mon ordinateur portable", "lang": "fr", "acceptables": []},
+    {"demande": "Des chaussures de randonnée pour ma mère", "lang": "fr", "acceptables": []},
 
     {"demande": "Something for a teenager who loves anime, under 45 euros", "lang": "en", "budget": 4500, "acceptables": ["HNB-061", "HNB-018"]},
     {"demande": "A wedding gift, something to hang on the wall", "lang": "en", "acceptables": ["HNB-078", "HNB-037", "HNB-064"]},
