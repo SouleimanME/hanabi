@@ -116,6 +116,9 @@ def reecritures(repetitions: int) -> int:
     tests/redaction/reecritures.json. Chaque cas est joué plusieurs fois : un
     passage unique ne distingue pas un défaut d'un tirage malchanceux."""
     cas = json.loads((Path(__file__).parent / "reecritures.json").read_text(encoding="utf-8"))["cas"]
+    # EVAL_CAS="contredisent" rejoue les seuls cas dont le titre contient ce texte
+    filtre = os.environ.get("EVAL_CAS", "").lower()
+    cas = [c for c in cas if filtre in c["titre"].lower()]
     par_code = {p[0]: p for p in PRODUCTS}
     stables, instables, rates = 0, 0, 0
     premier = True
@@ -139,7 +142,13 @@ def reecritures(repetitions: int) -> int:
                 continue
             ecarts = _juger(c, resultat.proposition, redaction.remarque_pour(resultat.proposition, resultat.photo_lue))
             passes += not ecarts
-            vus.append(", ".join(ecarts) or resultat.proposition.fr.name)
+            p = resultat.proposition
+            # Un écart montre la décision du modèle, pas seulement son effet
+            vus.append(
+                f"{', '.join(ecarts)}  [photo : « {p.objet_sur_la_photo} », contredit={p.photo_contredit}, "
+                f"brouillon_meme_objet={p.brouillon_meme_objet}, photo_lue={resultat.photo_lue}]"
+                if ecarts else p.fr.name
+            )
         if passes == repetitions:
             stables += 1
             etat = "ok      "

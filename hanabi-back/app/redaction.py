@@ -100,14 +100,16 @@ class Proposition(BaseModel):
 
 
 def remarque_pour(proposition: Proposition, photo_lue: bool) -> str:
-    """Ce que le marchand doit vérifier ; vide quand tout concorde."""
-    phrases = []
+    """Ce que le marchand doit vérifier ; vide quand tout concorde.
+
+    `manque` n'est pas montré : mesuré sur trois séries, il se trompait une
+    fois sur trois (« dimensions exactes » d'une coque pour iPhone 15), et une
+    alerte souvent fausse n'est plus lue. Il reste dans la réponse pour le banc.
+    """
     # Sans photo lue, le modèle n'a rien pu comparer
     if photo_lue and proposition.photo_contredit:
-        phrases.append("La photo ne montre pas l'objet décrit dans tes notes.")
-    if proposition.manque:
-        phrases.append(f"Information à compléter : {proposition.manque.rstrip('.')}.")
-    return " ".join(phrases)
+        return "La photo ne montre pas l'objet décrit dans tes notes."
+    return ""
 
 
 class Demande(BaseModel):

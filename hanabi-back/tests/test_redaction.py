@@ -192,11 +192,8 @@ def test_une_photo_qui_contredit_les_notes_se_signale(client, admin, fournisseur
                      manque="le modèle d'iPhone — compatible"))
     corps = _demander(client, admin, notes="Coque d'iPhone").json()
     assert corps["categorie"] == "Accessoires"
-    # Écrite par le serveur ; tiret cadratin remplacé, comme dans les autres champs
-    assert corps["remarque"] == (
-        "La photo ne montre pas l'objet décrit dans tes notes. "
-        "Information à compléter : le modèle d'iPhone, compatible."
-    )
+    # Écrite par le serveur ; `manque`, trop souvent faux, n'est pas montré
+    assert corps["remarque"] == "La photo ne montre pas l'objet décrit dans tes notes."
 
 
 def test_sans_photo_aucune_contradiction_ne_peut_se_signaler(client, admin, fournisseur):
