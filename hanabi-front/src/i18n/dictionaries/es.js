@@ -6,6 +6,7 @@ export default {
   cat_Figurines: "Figuras",
   cat_Décoration: "Decoración",
   cat_Luminaires: "Iluminación",
+  cat_Accessoires: "Accesorios",
   limited: "Pequeñas series",
   heroTitle: "Doce objetos japoneses, [elegidos uno a uno.]",
   heroSub:

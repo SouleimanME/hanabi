@@ -30,7 +30,7 @@ from .translations import traductions
 
 log = logging.getLogger("hanabi.redaction")
 
-CATEGORIES = ("Figurines", "Décoration", "Luminaires")
+CATEGORIES = ("Figurines", "Décoration", "Luminaires", "Accessoires")
 LANGUES = ("fr", "en", "es")
 # Fiches du catalogue montrées au modèle pour qu'il en reprenne le ton
 EXEMPLES = 3
@@ -77,10 +77,17 @@ class FicheLangue(BaseModel):
 
 
 class Proposition(BaseModel):
-    categorie: Literal["Figurines", "Décoration", "Luminaires"]
+    categorie: Literal["Figurines", "Décoration", "Luminaires", "Accessoires"]
     fr: FicheLangue
     en: FicheLangue
     es: FicheLangue
+    # Ce que le marchand doit savoir : notes et photo en désaccord, information manquante
+    remarque: str = Field("", max_length=300)
+
+    @field_validator("remarque", mode="before")
+    @classmethod
+    def _nettoyer(cls, v):
+        return _propre(v) if isinstance(v, str) else ""
 
     def lignes_paralleles(self) -> bool:
         return len(self.fr.usages) == len(self.en.usages) == len(self.es.usages)
@@ -105,15 +112,21 @@ class Demande(BaseModel):
 
 # --- Consigne ---
 
-CONSIGNE = """Tu rédiges la fiche d'un objet pour Hanabi, une boutique en ligne d'objets japonais choisis un par un : figurines, décoration, luminaires.
+CONSIGNE = """Tu rédiges la fiche d'un objet pour Hanabi, une boutique en ligne d'objets japonais choisis un par un : figurines, décoration, luminaires, accessoires.
 
 Rends uniquement un objet JSON de cette forme :
-{"categorie": "Figurines" | "Décoration" | "Luminaires",
+{"categorie": "Figurines" | "Décoration" | "Luminaires" | "Accessoires",
  "fr": {"name": "...", "blurb": "...", "usages": ["...", "..."], "alt": "..."},
  "en": {...mêmes champs en anglais...},
- "es": {...mêmes champs en espagnol...}}
+ "es": {...mêmes champs en espagnol...},
+ "remarque": "..."}
 
-Règles :
+Ce qui fait foi :
+- Les notes du marchand d'abord, puis la photo. Le nom, la catégorie, la description et les usages actuels ne sont qu'un brouillon : s'ils décrivent un autre objet que les notes ou la photo, ignore-les et rédige la fiche de l'objet décrit par les notes.
+- categorie : la famille la plus proche. Accessoires pour ce qui se porte ou s'emporte (coque de téléphone, porte-clés, sac, bijou) ; Décoration pour ce qui se pose ou s'accroche.
+- remarque : une phrase pour le marchand quand les notes et la photo ne montrent pas le même objet, ou quand il manque une information pour une fiche honnête ; sinon une chaîne vide.
+
+Règles de la fiche :
 - name : le nom sous lequel on chercherait l'objet, court, sans adjectif publicitaire.
 - blurb : des fragments factuels séparés par des virgules (matière, détail, dimension), 60 caractères environ, 120 au plus. Pas de phrase publicitaire, pas de superlatif, pas de point d'exclamation.
 - usages : 3 ou 4 lignes. Ce qu'est l'objet et sa signification au Japon s'il en a une ; où il se pose ; pour qui ou pour quelle occasion. Une phrase nominale par ligne, 110 caractères au plus.

@@ -1319,6 +1319,16 @@ th[aria-sort] .th-sort {
 .adm-assistant-statut {
   font-size: 13px;
 }
+/* Ce que l'assistant n'a pas pu trancher : arête vermillon, texte à l'encre */
+.adm-assistant-remarque {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 2px;
+}
 .adm-langues {
   display: grid;
   gap: 8px;

@@ -45,6 +45,7 @@ CATEGORIES = {
     "Figurines": ("Figurines", "Figures", "Figuras"),
     "Décoration": ("Décoration", "Decoration", "Decoración"),
     "Luminaires": ("Luminaires", "Lighting", "Iluminación"),
+    "Accessoires": ("Accessoires", "Accessories", "Accesorios"),
 }
 
 # Mots sans contenu, dans les trois langues

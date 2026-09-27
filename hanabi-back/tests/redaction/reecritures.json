@@ -1,0 +1,50 @@
+{
+  "description": "Écrits avant la consigne qui fait passer les notes et la photo devant la fiche actuelle. Chaque cas part d'une fiche existante et d'autres indices. « nom » : expression que le nom français proposé doit contenir (sans casse). « remarque » : vrai si l'assistant doit signaler une contradiction ou un manque, faux s'il ne doit rien signaler.",
+  "cas": [
+    {
+      "titre": "Des notes qui décrivent un autre objet, sans photo",
+      "fiche": "HNB-061",
+      "notes": "Coque en silicone pour iPhone 15, motif kitsune imprimé",
+      "photo": false,
+      "nom": "coque",
+      "categorie": "Accessoires",
+      "remarque": false
+    },
+    {
+      "titre": "Des notes qui contredisent la photo",
+      "fiche": "HNB-061",
+      "notes": "Coque d'iPhone",
+      "photo": true,
+      "nom": "coque",
+      "categorie": "Accessoires",
+      "remarque": true
+    },
+    {
+      "titre": "Des notes qui précisent l'objet de la photo",
+      "fiche": "HNB-061",
+      "notes": "Résine peinte main, cordon de soie, fabriqué à Kyoto",
+      "photo": true,
+      "nom": "kitsune",
+      "categorie": "Décoration",
+      "remarque": false
+    },
+    {
+      "titre": "Une fiche vide et une photo seule",
+      "fiche": null,
+      "notes": "",
+      "photo_de": "HNB-021",
+      "nom": "torii|lampe|veilleuse",
+      "categorie": "Luminaires",
+      "remarque": false
+    },
+    {
+      "titre": "Un porte-clés décrit en quelques mots",
+      "fiche": null,
+      "notes": "Porte-clés daruma en bois peint, 4 cm",
+      "photo": false,
+      "nom": "porte-cl",
+      "categorie": "Accessoires",
+      "remarque": false
+    }
+  ]
+}

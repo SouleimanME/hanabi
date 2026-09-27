@@ -4,6 +4,7 @@ Hors de la suite de tests : elle coûte un appel par objet. Lancement, depuis
 hanabi-back, avec REDACTION_URL, REDACTION_CLE et REDACTION_MODELE posées :
 
     python tests/redaction/evaluer.py
+    python tests/redaction/evaluer.py --reecritures    notes et photo avant la fiche
 
 Pour chaque objet du catalogue de départ, l'assistant reçoit ce qu'un marchand
 lui donnerait : le nom, la catégorie, la photo et l'accroche en guise de notes.
@@ -79,9 +80,45 @@ def _banc(produits, encodeur) -> dict[str, int]:
     return scores
 
 
+def reecritures() -> int:
+    """Les notes et la photo passent-elles devant la fiche actuelle ? Cas de
+    tests/redaction/reecritures.json, écrits avant la consigne qui le demande."""
+    cas = json.loads((Path(__file__).parent / "reecritures.json").read_text(encoding="utf-8"))["cas"]
+    par_code = {p[0]: p for p in PRODUCTS}
+    reussis = 0
+    for i, c in enumerate(cas):
+        if i:
+            time.sleep(PAUSE)
+        fiche = par_code.get(c["fiche"]) if c["fiche"] else None
+        photo = PHOTOS[c["photo_de"]] if c.get("photo_de") else (PHOTOS[c["fiche"]] if c.get("photo") else None)
+        demande = redaction.Demande(
+            name=fiche[1] if fiche else "", category=fiche[2] if fiche else "",
+            blurb=fiche[3] if fiche else "", usages=USAGES.get(c["fiche"], "") if fiche else "",
+            notes=c["notes"], image=photo,
+        )
+        try:
+            p = redaction.rediger(demande, exemples=[]).proposition
+        except redaction.ErreurRedaction as e:
+            print(f"ÉCHEC  {c['titre']} : {e.message}")
+            continue
+        ecarts = []
+        if not re.search(c["nom"], p.fr.name, re.I):
+            ecarts.append(f"nom « {p.fr.name} »")
+        if p.categorie != c["categorie"]:
+            ecarts.append(f"catégorie {p.categorie}")
+        if bool(p.remarque) != c["remarque"]:
+            ecarts.append(f"remarque « {p.remarque} »" if p.remarque else "aucune remarque")
+        reussis += not ecarts
+        print(f"{'ok    ' if not ecarts else 'ÉCART '} {c['titre']} : {', '.join(ecarts) or p.fr.name}")
+    print(f"\n{reussis} cas sur {len(cas)}")
+    return 0 if reussis == len(cas) else 1
+
+
 def main() -> None:
     if not redaction.configure():
         sys.exit("REDACTION_URL, REDACTION_CLE et REDACTION_MODELE doivent être posées.")
+    if "--reecritures" in sys.argv:
+        sys.exit(reecritures())
     encodeur = plongement.encodeur(attendre=True)
     if encodeur is None:
         sys.exit("Modèle de recherche absent : python -m app.plongement")

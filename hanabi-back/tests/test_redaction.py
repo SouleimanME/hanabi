@@ -140,6 +140,36 @@ def test_les_tirets_cadratins_sont_remplaces(client, admin, fournisseur):
     assert _demander(client, admin).json()["fr"]["blurb"] == "Résine, peinte main"
 
 
+def test_sans_remarque_la_reponse_en_porte_une_vide(client, admin, fournisseur):
+    fournisseur(VALIDE)
+    assert _demander(client, admin).json()["remarque"] == ""
+
+
+def test_la_remarque_du_modele_parvient_au_marchand(client, admin, fournisseur):
+    fournisseur(dict(VALIDE, categorie="Accessoires",
+                     remarque="La photo montre un masque — les notes parlent d'une coque."))
+    corps = _demander(client, admin, notes="Coque d'iPhone").json()
+    assert corps["categorie"] == "Accessoires"
+    # Tiret cadratin remplacé, comme dans les autres champs
+    assert corps["remarque"] == "La photo montre un masque, les notes parlent d'une coque."
+
+
+def test_les_notes_passent_devant_la_fiche_actuelle(client, admin, fournisseur):
+    faux = fournisseur(VALIDE)
+    _demander(client, admin)
+    consigne = faux.recus[0]["messages"][0]["content"]
+    assert "Les notes du marchand d'abord, puis la photo" in consigne
+    assert "Accessoires" in consigne
+
+
+def test_un_accessoire_s_enregistre(client, admin):
+    reponse = client.post("/admin/products", json={
+        "code": "HNB-901", "name": "Coque Kitsune", "category": "Accessoires",
+        "blurb": "Silicone, motif imprimé", "price_cents": 2500, "stock": 3,
+    }, headers=admin)
+    assert reponse.status_code in (200, 201), reponse.text
+
+
 def test_une_reponse_invalide_est_redemandee_une_fois(client, admin, fournisseur):
     faux = fournisseur(dict(VALIDE, categorie="Vaisselle"), VALIDE)
     reponse = _demander(client, admin)

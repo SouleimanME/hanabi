@@ -46,6 +46,7 @@ def proposer_une_fiche(
             langue: {**fiche.model_dump(), "usages": "\n".join(fiche.usages)}
             for langue, fiche in (("fr", proposition.fr), ("en", proposition.en), ("es", proposition.es))
         },
+        "remarque": proposition.remarque,
         "photo_lue": resultat.photo_lue,
         "restant": restant,
     }

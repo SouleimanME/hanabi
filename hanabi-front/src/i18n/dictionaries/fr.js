@@ -7,6 +7,7 @@ export default {
   cat_Figurines: "Figurines",
   cat_Décoration: "Décoration",
   cat_Luminaires: "Luminaires",
+  cat_Accessoires: "Accessoires",
   limited: "Petites séries",
   // Les crochets marquent le bout de phrase posé sur la plaque de vermillon
   heroTitle: "Douze objets japonais, [choisis un par un.]",

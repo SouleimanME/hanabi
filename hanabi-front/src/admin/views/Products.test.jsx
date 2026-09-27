@@ -100,6 +100,31 @@ describe("Assistant de fiche", () => {
     expect(screen.queryByDisplayValue("Figurine Kitsune")).not.toBeInTheDocument();
   });
 
+  it("signale ce qu'il n'a pas pu trancher", async () => {
+    routes["POST /admin/redaction/fiche"].corps = {
+      ...PROPOSITION,
+      remarque: "La photo montre un masque, les notes parlent d'une coque.",
+    };
+    const util = userEvent.setup();
+    await ouvrir(util);
+    await util.click(await screen.findByRole("button", { name: /proposer la fiche/i }));
+    expect(await screen.findByText(/la photo montre un masque/i)).toBeInTheDocument();
+    expect(screen.getByText(/à vérifier/i)).toBeInTheDocument();
+  });
+
+  it("dit quand la proposition reprend la fiche telle quelle", async () => {
+    routes["POST /admin/redaction/fiche"].corps = {
+      ...PROPOSITION,
+      categorie: KITSUNE.category,
+      fr: { name: KITSUNE.name, blurb: KITSUNE.blurb, usages: KITSUNE.usages, alt: "" },
+    };
+    const util = userEvent.setup();
+    await ouvrir(util);
+    await util.click(await screen.findByRole("button", { name: /proposer la fiche/i }));
+    expect(await screen.findByRole("status")).toHaveTextContent(/telle quelle/i);
+    expect(screen.queryByText(/à vérifier/i)).not.toBeInTheDocument();
+  });
+
   it("dit pourquoi il n'a rien proposé", async () => {
     routes["POST /admin/redaction/fiche"] = {
       statut: 429,

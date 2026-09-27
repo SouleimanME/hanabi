@@ -8,7 +8,7 @@ import { MAIN_SIZE, toCanonicalMain, toGalleryImage } from "../image.js";
 import { ProductArt } from "../../components/brand/ProductArt.jsx";
 import { FORMES, MATIERES, NOMS_FORMES } from "../../components/brand/formes.js";
 
-const CATS = ["Figurines", "Décoration", "Luminaires"];
+const CATS = ["Figurines", "Décoration", "Luminaires", "Accessoires"];
 const ART_DEFAUT = "torii,#E0452A,#0A0605";
 
 const estPhoto = (v) => Boolean(v) && (v.startsWith("http") || v.startsWith("data:"));
@@ -204,6 +204,8 @@ function Assistant({ f, image, appliquer, annuler, peutAnnuler }) {
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState(null);
   const [photoLue, setPhotoLue] = useState(null);
+  const [remarque, setRemarque] = useState("");
+  const [inchangee, setInchangee] = useState(false);
 
   useEffect(() => {
     let actif = true;
@@ -234,6 +236,13 @@ function Assistant({ f, image, appliquer, annuler, peutAnnuler }) {
       });
       setEtat((e) => ({ ...e, restant: proposition.restant }));
       setPhotoLue(proposition.photo_lue);
+      setRemarque(proposition.remarque || "");
+      setInchangee(
+        proposition.categorie === f.category &&
+          proposition.fr.name === f.name &&
+          proposition.fr.blurb === f.blurb &&
+          proposition.fr.usages === f.usages,
+      );
       appliquer(proposition);
     } catch (e) {
       setErreur(e.message);
@@ -289,10 +298,17 @@ function Assistant({ f, image, appliquer, annuler, peutAnnuler }) {
       )}
       <p className="adm-assistant-statut" role="status">
         {peutAnnuler && !enCours
-          ? "Proposition appliquée : relisez chaque champ avant d'enregistrer." +
+          ? (inchangee
+              ? "La proposition reprend votre fiche telle quelle. Pour un autre objet, décrivez-le dans les notes ou changez la photo principale."
+              : "Proposition appliquée : relisez chaque champ avant d'enregistrer.") +
             (photoLue === false ? " La photo n'a pas été lue, le texte alternatif reste vide." : "")
           : ""}
       </p>
+      {peutAnnuler && !enCours && remarque && (
+        <p className="adm-assistant-remarque">
+          <strong>À vérifier :</strong> {remarque}
+        </p>
+      )}
     </section>
   );
 }

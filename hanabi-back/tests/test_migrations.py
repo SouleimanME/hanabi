@@ -302,7 +302,10 @@ class TestBasculeVersFigurinesEtDecoration:
 
         vitrine = self._vitrine(bascule)
         assert len(vitrine) == 12
-        assert {p.category for p in vitrine.values()} == set(CATEGORIES)
+        # Les familles de cette migration ; d'autres sont venues après
+        familles = {p.category for p in vitrine.values()}
+        assert familles == {"Figurines", "Décoration", "Luminaires"}
+        assert familles <= set(CATEGORIES)
 
     def test_les_series_retirees_restent_en_base_desactivees(self, bascule):
         retires = {"HNB-014", "HNB-008", "HNB-015", "HNB-009", "HNB-033", "HNB-041", "HNB-045"}

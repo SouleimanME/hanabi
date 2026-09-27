@@ -32,7 +32,7 @@ ART_MAX_LENGTH = 1_500_000
 
 # Familles du catalogue, filtrées par la boutique (hanabi-front/src/lib/constants.js).
 # Une autre valeur rendrait l'objet introuvable par le filtre.
-CATEGORIES = ("Figurines", "Décoration", "Luminaires")
+CATEGORIES = ("Figurines", "Décoration", "Luminaires", "Accessoires")
 MOTIF_CATEGORIE = "^(" + "|".join(CATEGORIES) + ")$"
 
 # Vues de la galerie d'un produit
