@@ -428,10 +428,9 @@
   .product-grid {
     padding-block-start: var(--space-m);
   }
-  /* Sur téléphone, le prix doit rester à portée de pouce */
+  /* Sur téléphone, la photo prend toute la largeur : c'est elle qui vend */
   .stage .gallery-main {
-    max-inline-size: 13rem;
-    margin-inline: auto;
+    max-inline-size: none;
   }
   .stage .thumbs {
     justify-content: center;
