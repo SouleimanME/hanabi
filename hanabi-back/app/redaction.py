@@ -81,16 +81,30 @@ class Proposition(BaseModel):
     fr: FicheLangue
     en: FicheLangue
     es: FicheLangue
-    # Ce que le marchand doit savoir : notes et photo en désaccord, information manquante
-    remarque: str = Field("", max_length=300)
+    # Deux constats fermés plutôt qu'une remarque libre : en texte libre, le
+    # modèle commentait chaque fiche réutilisée. La remarque montrée au
+    # marchand est écrite par le serveur (voir `remarque_pour`).
+    photo_contredit: bool = False
+    manque: str = Field("", max_length=160)
 
-    @field_validator("remarque", mode="before")
+    @field_validator("manque", mode="before")
     @classmethod
     def _nettoyer(cls, v):
-        return _propre(v) if isinstance(v, str) else ""
+        return _propre(v)[:160] if isinstance(v, str) else ""
 
     def lignes_paralleles(self) -> bool:
         return len(self.fr.usages) == len(self.en.usages) == len(self.es.usages)
+
+
+def remarque_pour(proposition: Proposition, photo_lue: bool) -> str:
+    """Ce que le marchand doit vérifier ; vide quand tout concorde."""
+    phrases = []
+    # Sans photo lue, le modèle n'a rien pu comparer
+    if photo_lue and proposition.photo_contredit:
+        phrases.append("La photo ne montre pas l'objet décrit dans tes notes.")
+    if proposition.manque:
+        phrases.append(f"Information à compléter : {proposition.manque.rstrip('.')}.")
+    return " ".join(phrases)
 
 
 class Demande(BaseModel):
@@ -119,7 +133,8 @@ Rends uniquement un objet JSON de cette forme :
  "fr": {"name": "...", "blurb": "...", "usages": ["...", "..."], "alt": "..."},
  "en": {...mêmes champs en anglais...},
  "es": {...mêmes champs en espagnol...},
- "remarque": "..."}
+ "photo_contredit": false,
+ "manque": ""}
 
 Ce qui fait foi :
 - Les notes du marchand d'abord, puis la photo. Le nom, la catégorie, la description et les usages actuels ne sont qu'un brouillon : s'ils décrivent un autre objet que les notes ou la photo, ignore-les et rédige la fiche de l'objet décrit par les notes.
@@ -129,7 +144,8 @@ Ce qui fait foi :
   Décoration : ce qui orne un intérieur sans être une figurine (estampe, éventail, masque, tapis) ;
   Luminaires : ce qui éclaire (lampe, lanterne, veilleuse) ;
   Accessoires : ce qui se porte ou s'emporte (coque de téléphone, porte-clés, sac, bijou).
-- remarque : une phrase pour le marchand dans deux cas seulement : la photo montre un autre objet que les notes, ou il manque une information pour une fiche honnête. Sinon une chaîne vide. Ne signale jamais que le brouillon (nom, description, usages actuels) décrivait un autre objet : c'est une fiche réutilisée, le marchand le sait.
+- photo_contredit : true seulement si une photo est jointe et montre un autre objet que celui des notes. Le brouillon n'entre pas en compte.
+- manque : le nom d'une information indispensable absente des notes et de la photo (« le modèle d'iPhone compatible »), en quelques mots ; sinon une chaîne vide.
 
 Règles de la fiche :
 - name : le nom sous lequel on chercherait l'objet, court, sans adjectif publicitaire. Ce qu'est l'objet, plus au plus un trait distinctif écrit dans les notes ou visible sur la photo (« Coque iPhone Katana ») ; sans trait net, le nom seul (« Coque iPhone »).

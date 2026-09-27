@@ -145,13 +145,27 @@ def test_sans_remarque_la_reponse_en_porte_une_vide(client, admin, fournisseur):
     assert _demander(client, admin).json()["remarque"] == ""
 
 
-def test_la_remarque_du_modele_parvient_au_marchand(client, admin, fournisseur):
-    fournisseur(dict(VALIDE, categorie="Accessoires",
-                     remarque="La photo montre un masque — les notes parlent d'une coque."))
+def test_une_photo_qui_contredit_les_notes_se_signale(client, admin, fournisseur):
+    fournisseur(dict(VALIDE, categorie="Accessoires", photo_contredit=True,
+                     manque="le modèle d'iPhone — compatible"))
     corps = _demander(client, admin, notes="Coque d'iPhone").json()
     assert corps["categorie"] == "Accessoires"
-    # Tiret cadratin remplacé, comme dans les autres champs
-    assert corps["remarque"] == "La photo montre un masque, les notes parlent d'une coque."
+    # Écrite par le serveur ; tiret cadratin remplacé, comme dans les autres champs
+    assert corps["remarque"] == (
+        "La photo ne montre pas l'objet décrit dans tes notes. "
+        "Information à compléter : le modèle d'iPhone, compatible."
+    )
+
+
+def test_sans_photo_aucune_contradiction_ne_peut_se_signaler(client, admin, fournisseur):
+    fournisseur(dict(VALIDE, photo_contredit=True))
+    assert _demander(client, admin, image=None).json()["remarque"] == ""
+
+
+def test_une_remarque_libre_du_modele_ne_passe_plus(client, admin, fournisseur):
+    """En texte libre, il commentait chaque fiche réutilisée."""
+    fournisseur(dict(VALIDE, remarque="La fiche initiale décrivait un masque."))
+    assert _demander(client, admin).json()["remarque"] == ""
 
 
 def test_les_notes_passent_devant_la_fiche_actuelle(client, admin, fournisseur):

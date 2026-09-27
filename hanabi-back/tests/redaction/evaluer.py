@@ -97,7 +97,9 @@ def reecritures() -> int:
             notes=c["notes"], image=photo,
         )
         try:
-            p = redaction.rediger(demande, exemples=[]).proposition
+            resultat = redaction.rediger(demande, exemples=[])
+            p = resultat.proposition
+            remarque = redaction.remarque_pour(p, resultat.photo_lue)
         except redaction.ErreurRedaction as e:
             print(f"ÉCHEC  {c['titre']} : {e.message}")
             continue
@@ -108,8 +110,8 @@ def reecritures() -> int:
             ecarts.append(f"reste du brouillon : « {p.fr.name} », « {p.fr.blurb} »")
         if p.categorie != c["categorie"]:
             ecarts.append(f"catégorie {p.categorie}")
-        if bool(p.remarque) != c["remarque"]:
-            ecarts.append(f"remarque « {p.remarque} »" if p.remarque else "aucune remarque")
+        if bool(remarque) != c["remarque"]:
+            ecarts.append(f"remarque « {remarque} »" if remarque else "aucune remarque")
         reussis += not ecarts
         print(f"{'ok    ' if not ecarts else 'ÉCART '} {c['titre']} : {', '.join(ecarts) or p.fr.name}")
     print(f"\n{reussis} cas sur {len(cas)}")
