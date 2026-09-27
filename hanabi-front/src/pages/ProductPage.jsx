@@ -1,5 +1,5 @@
 /** Fiche produit : vues, achat, avis, suggestions. */
-import { useState, useEffect, useRef } from "react";
+import { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { ArrowLeft, Check, Minus, Play, Plus } from "lucide-react";
 import { PictoFavori, PictoPanier } from "../components/brand/Pictos.jsx";
 import { useT } from "../i18n/context.jsx";
@@ -15,6 +15,9 @@ import { audienceAcceptee } from "../lib/consentement.js";
 import { estVideo, sourcesAdaptees } from "../lib/images.js";
 import { SHIPPING_CENTS, FREE_SHIPPING_CENTS } from "../lib/constants.js";
 import { useAntiBot } from "../hooks/useAntiBot.js";
+
+// Seulement sur une fiche qui a une vidéo
+const LecteurVideo = lazy(() => import("../components/catalog/LecteurVideo.jsx"));
 
 const AVIS_VISIBLES = 6;
 // Largeur affichée de la vue principale : 34rem sur la scène, 13rem sur téléphone
@@ -65,7 +68,12 @@ export function ProductPage({
   // n'existe pas : la section ne s'affiche alors pas.
   const [ensemble, setEnsemble] = useState([]);
 
-  const galerie = p.images && p.images.length ? p.images : [p.art];
+  const toutes = p.images && p.images.length ? p.images : [p.art];
+  // Au choix de la fiche : vidéos entre les photos, ou dans leur propre section
+  const videosAPart = p.videos_a_part ? toutes.filter(estVideo) : [];
+  const galerie = p.videos_a_part ? toutes.filter((v) => !estVideo(v)) : toutes;
+  // Vue choisie d'un clic : une vidéo démarre alors d'elle-même
+  const [lancee, setLancee] = useState(false);
   // La photo de la couleur choisie passe en tête de la galerie
   const vues = variante?.image
     ? [variante.image, ...galerie.filter((v) => v !== variante.image)]
@@ -103,6 +111,7 @@ export function ProductPage({
     setVue(0);
     setQty(1);
     setChoixId(null);
+    setLancee(false);
     setNotifyDone(false);
     setTousLesAvis(false);
   }, [p.id]);
@@ -226,16 +235,14 @@ export function ProductPage({
           <div className="gallery">
             <div className="gallery-main">
               {estVideo(vues[vue]) ? (
-                // Lecture à la demande, sans son imposé ; `metadata` pour la première image
-                <video
-                  key={`${p.id}-${vue}`}
-                  className="art art-video"
-                  src={vues[vue]}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  aria-label={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
-                />
+                <Suspense fallback={<div className="lecteur" />}>
+                  <LecteurVideo
+                    key={`${p.id}-${vue}`}
+                    src={vues[vue]}
+                    titre={t("viewOf", { name: p.name, n: vue + 1, total: vues.length })}
+                    autoLecture={lancee}
+                  />
+                </Suspense>
               ) : (
                 // Clé : le zoom repart du plein cadre à chaque objet et à chaque vue
                 <ZoomPhoto
@@ -277,7 +284,10 @@ export function ProductPage({
                         ? t("videoN", { n: i + 1, total: vues.length })
                         : t("viewN", { n: i + 1, total: vues.length })
                     }
-                    onClick={() => setVue(i)}
+                    onClick={() => {
+                      setVue(i);
+                      setLancee(true);
+                    }}
                   >
                     {estVideo(v) ? (
                       <span className="thumb-video" aria-hidden="true">
@@ -459,6 +469,25 @@ export function ProductPage({
           </ul>
         </div>
       </div>
+
+      {videosAPart.length > 0 && (
+        <section className="wrap videos-a-part" aria-labelledby="videos-titre">
+          <h2 id="videos-titre">{t("videosSection")}</h2>
+          <div className="videos-grille">
+            <Suspense fallback={null}>
+              {videosAPart.map((v, i) => (
+                <LecteurVideo
+                  key={v}
+                  src={v}
+                  titre={
+                    t("videoTitle", { name: p.name }) + (videosAPart.length > 1 ? ` ${i + 1}` : "")
+                  }
+                />
+              ))}
+            </Suspense>
+          </div>
+        </section>
+      )}
 
       <div className="wrap">
         <section className="reviews" aria-labelledby="avis-titre">

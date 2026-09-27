@@ -181,6 +181,7 @@ class ProductOut(BaseModel):
     featured: bool = False
     art: str
     images: list[str] = []
+    videos_a_part: bool = False
     # Texte alternatif de la photo principale, vide si la marchande ne l'a pas écrit
     alt: str = ""
     rating_avg: float = 0.0

@@ -116,6 +116,7 @@ class ProductIn(BaseModel):
     featured_order: int = 0
     art: str = Field(default="torii,#E0452A,#0A0605", max_length=ART_MAX_LENGTH)
     images: list[str] = Field(default=[], max_length=IMAGES_MAX)
+    videos_a_part: bool = False
     usages: str = Field(default="", max_length=USAGES_MAX)
     alt: str = Field(default="", max_length=ALT_MAX)
     traductions: Traductions = {}
@@ -134,6 +135,7 @@ class ProductPatch(BaseModel):
     featured_order: int | None = None
     art: str | None = Field(None, max_length=ART_MAX_LENGTH)
     images: list[str] | None = Field(None, max_length=IMAGES_MAX)
+    videos_a_part: bool | None = None
     usages: str | None = Field(None, max_length=USAGES_MAX)
     alt: str | None = Field(None, max_length=ALT_MAX)
     # Par langue : une langue envoyée remplace la sienne, les autres restent
@@ -393,6 +395,7 @@ def create_product(data: ProductIn, db: Session = Depends(get_db), _=Depends(get
         price_cents=data.price_cents, stock=data.stock, is_new=data.is_new,
         active=data.active, featured=data.featured, featured_order=data.featured_order,
         art=art, images=json.dumps(images), usages=data.usages, alt=data.alt,
+        videos_a_part=data.videos_a_part,
         traductions=_traductions_json({}, data.traductions),
     )
     db.add(p)
@@ -541,7 +544,7 @@ def _prod_dict(p: models.Product) -> dict:
         "is_new": p.is_new, "active": p.active,
         "featured": p.featured, "featured_order": p.featured_order,
         "art": medias.publique(p.art), "images": [medias.publique(i) for i in imgs],
-        "usages": p.usages or "", "alt": p.alt or "",
+        "usages": p.usages or "", "alt": p.alt or "", "videos_a_part": bool(p.videos_a_part),
         "traductions": traductions(p),
         "variantes": [
             {

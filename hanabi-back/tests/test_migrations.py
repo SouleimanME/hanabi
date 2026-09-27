@@ -456,13 +456,14 @@ class TestPhotosHorsDuCatalogue:
     PHOTO = "data:image/png;base64,iVBORw0KGgo="
 
     def _peupler(self, cx):
-        with Session(bind=cx) as db:
-            db.add(models.Product(
-                code="TST-701", name="Coque", category="Accessoires", blurb="Silicone",
-                price_cents=2500, stock=3, art=self.PHOTO,
-                images=json.dumps([self.PHOTO, "https://images.example/b.jpg"]),
-            ))
-            db.commit()
+        # Colonnes de la révision de départ : le modèle actuel en a d'autres
+        cx.execute(text(
+            "insert into products (code, name, category, blurb, price_cents, cost_cents, stock, "
+            "is_new, active, featured, featured_order, art, images, usages, alt, traductions) "
+            "values ('TST-701', 'Coque', 'Accessoires', 'Silicone', 2500, 0, 3, "
+            ":faux, :vrai, :faux, 0, :art, :images, '', '', '{}')"
+        ), {"faux": False, "vrai": True, "art": self.PHOTO,
+            "images": json.dumps([self.PHOTO, "https://images.example/b.jpg"])})
 
     def test_la_photo_sort_de_la_fiche_puis_y_revient(self, moteur):
         with moteur.begin() as cx:

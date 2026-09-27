@@ -99,14 +99,32 @@ describe("déclinaisons", () => {
 });
 
 describe("vidéos", () => {
-  it("une vidéo de la galerie se lit avec ses commandes", async () => {
+  it("choisie d'un clic, la vidéo démarre d'elle-même dans le lecteur maison", async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     const util = userEvent.setup();
     monter();
     await util.click(screen.getByRole("radio", { name: /Vidéo/ }));
-    const video = document.querySelector(".gallery-main video");
-    expect(video).not.toBeNull();
+    const video = await vi.waitFor(() => {
+      const v = document.querySelector(".gallery-main .lecteur video");
+      if (!v) throw new Error("lecteur pas encore chargé");
+      return v;
+    });
     expect(video.getAttribute("src")).toBe("https://pub.r2.dev/videos/gourde.mp4");
-    expect(video.hasAttribute("controls")).toBe(true);
-    expect(video.hasAttribute("autoplay")).toBe(false);
+    // Le lecteur maison remplace les commandes du navigateur
+    expect(video.hasAttribute("controls")).toBe(false);
+    expect(play).toHaveBeenCalled();
+    expect(screen.getByRole("slider", { name: /position/i })).toBeInTheDocument();
+    play.mockRestore();
+  });
+
+  it("à part, les vidéos quittent la galerie pour leur propre section", async () => {
+    monter({ p: { ...GOURDE, videos_a_part: true } });
+    expect(screen.queryByRole("radio", { name: /Vidéo/ })).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "En vidéo" })).toBeInTheDocument();
+    await vi.waitFor(() => {
+      if (!document.querySelector(".videos-grille .lecteur video")) throw new Error("pas encore");
+    });
+    // Pas de lecture sans geste de la personne
+    expect(document.querySelector(".videos-grille video").hasAttribute("autoplay")).toBe(false);
   });
 });

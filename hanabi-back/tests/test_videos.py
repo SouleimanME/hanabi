@@ -69,6 +69,18 @@ def test_reserve_au_back_office(client, auth_header, r2):
     assert client.post("/admin/medias/video", json={"type": "video/mp4", "taille": 10}, headers=headers).status_code == 403
 
 
+def test_les_videos_peuvent_avoir_leur_propre_section(client, patron):
+    res = client.post("/admin/products", json={
+        "code": "TST-VAP", "name": "Gourde", "category": "Accessoires", "blurb": "x",
+        "price_cents": 1000, "stock": 1, "videos_a_part": True,
+    }, headers=patron)
+    assert res.json()["videos_a_part"] is True
+    pid = res.json()["id"]
+    assert client.get(f"/products/{pid}").json()["videos_a_part"] is True
+    client.patch(f"/admin/products/{pid}", json={"videos_a_part": False}, headers=patron)
+    assert client.get(f"/products/{pid}").json()["videos_a_part"] is False
+
+
 def test_une_video_dans_la_galerie_reste_une_adresse(client, patron):
     video = "https://pub-hanabi.r2.dev/videos/abc.mp4"
     res = client.post("/admin/products", json={

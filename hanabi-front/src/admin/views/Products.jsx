@@ -331,6 +331,7 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
     price_cents: item?.price_cents ?? 0,
     stock: item?.stock ?? 0,
     variantes: item?.variantes || [],
+    videos_a_part: item?.videos_a_part ?? false,
     is_new: item?.is_new ?? false,
     active: item?.active ?? true,
     featured: item?.featured ?? false,
@@ -575,6 +576,12 @@ function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () =
               <input type="checkbox" checked={f.featured} onChange={set("featured")} /> Mis en avant
               (pièce du mois)
             </label>
+            {f.images.some(estVideo) && (
+              <label>
+                <input type="checkbox" checked={f.videos_a_part} onChange={set("videos_a_part")} />{" "}
+                Vidéos dans une section à part, sous le bloc d&apos;achat
+              </label>
+            )}
           </div>
           {f.featured && (
             <label className="adm-field adm-field-court">

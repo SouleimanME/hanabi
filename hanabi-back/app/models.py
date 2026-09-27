@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     String, Integer, Boolean, ForeignKey, Text, DateTime, CheckConstraint, UniqueConstraint,
-    Index, LargeBinary,
+    Index, LargeBinary, false,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -84,8 +84,10 @@ class Product(Base):
     # Blason "forme,tracé,fond" ou photo (URL, data URI). `Text` : PostgreSQL
     # applique les longueurs déclarées, et une photo en base64 dépasse vite.
     art: Mapped[str] = mapped_column(Text, default="torii,#E0452A,#0A0605")
-    # Galerie : liste JSON de blasons ou d'images
+    # Galerie : liste JSON de blasons, d'images et de vidéos
     images: Mapped[str] = mapped_column(Text, default="[]")
+    # Vidéos montrées dans leur propre section de la fiche plutôt qu'entre les photos
+    videos_a_part: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     # Une ligne par usage (pièce, occasion, public) : lu par la recherche, jamais affiché
     usages: Mapped[str] = mapped_column(Text, default="")
     # Ce que montre la photo principale, pour qui ne la voit pas

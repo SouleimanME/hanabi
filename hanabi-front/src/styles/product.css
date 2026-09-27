@@ -580,3 +580,114 @@
   background: var(--lacquer);
   color: var(--ivory);
 }
+
+/* --- Lecteur vidéo de la boutique --- */
+.lecteur {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  background: var(--lacquer);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.lecteur:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.lecteur video {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+.lecteur-grand {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  place-items: center;
+  inline-size: 72px;
+  block-size: 72px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--vermilion-bright);
+  color: #0a0605;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform var(--dur-feedback) var(--ease-out);
+}
+.lecteur-grand:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+/* Barre de commandes, sur un aplat de laque : elle se lit sur n'importe quelle image */
+.lecteur-barre {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgb(10 6 5 / 0.72);
+  color: #f7ebe6;
+  transition: opacity var(--dur-feedback) var(--ease-out);
+}
+@media (hover: hover) {
+  .lecteur[data-lecture] .lecteur-barre {
+    opacity: 0;
+  }
+  .lecteur[data-lecture]:hover .lecteur-barre,
+  .lecteur[data-lecture]:focus-within .lecteur-barre {
+    opacity: 1;
+  }
+}
+.lecteur-barre button {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.lecteur-barre button:focus-visible {
+  outline: 2px solid var(--vermilion-bright);
+  outline-offset: -2px;
+}
+.lecteur-barre input[type="range"] {
+  flex: 1;
+  min-inline-size: 0;
+  accent-color: var(--vermilion-bright);
+}
+.lecteur-temps {
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (max-width: 30rem) {
+  .lecteur-temps {
+    display: none;
+  }
+}
+
+/* Vidéos dans leur propre section */
+.videos-a-part {
+  padding-block: var(--space-l);
+}
+.videos-a-part h2 {
+  margin-block-end: var(--space-s);
+}
+.videos-grille {
+  display: grid;
+  gap: var(--space-s);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 56rem) {
+  .videos-grille {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.videos-grille .lecteur {
+  aspect-ratio: 16 / 9;
+}
