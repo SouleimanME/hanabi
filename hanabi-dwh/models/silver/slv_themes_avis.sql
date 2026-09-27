@@ -10,6 +10,6 @@ select
     element ->> 'theme'                     as theme,
     element ->> 'ton'                       as ton
 from {{ ref('brz_avis') }} as avis
-join {{ ref('brz_analyses_avis') }} as analyse
-    on analyse.empreinte = md5(btrim(avis.text))
-cross join lateral jsonb_array_elements(analyse.themes) as element
+join {{ ref('brz_analyses_avis') }} as lecture
+    on lecture.empreinte = md5(btrim(avis.text))
+cross join lateral jsonb_array_elements(lecture.themes) as element

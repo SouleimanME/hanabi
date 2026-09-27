@@ -5,8 +5,8 @@ with analyses as (
 
     select avis.product_id as produit_id, count(*) as avis_analyses
     from {{ ref('brz_avis') }} as avis
-    join {{ ref('brz_analyses_avis') }} as analyse
-        on analyse.empreinte = md5(btrim(avis.text))
+    join {{ ref('brz_analyses_avis') }} as lecture
+        on lecture.empreinte = md5(btrim(avis.text))
     where avis.approved
     group by avis.product_id
 
