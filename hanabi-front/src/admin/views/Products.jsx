@@ -65,6 +65,7 @@ export function Products({ items, flash, reload, readonly }) {
         onCancel={() => setEditing(null)}
         saving={saving}
         readonly={readonly}
+        onErreur={(message) => flash(message, "err")}
       />
     );
   }
@@ -313,7 +314,7 @@ function Assistant({ f, image, appliquer, annuler, peutAnnuler }) {
   );
 }
 
-function ProductForm({ item, onSave, onCancel, saving, readonly }) {
+function ProductForm({ item, onSave, onCancel, saving, readonly, onErreur = () => {} }) {
   const [f, setF] = useState({
     id: item?.id,
     code: item?.code || "",
@@ -418,7 +419,11 @@ function ProductForm({ item, onSave, onCancel, saving, readonly }) {
      un carre fixe pour que toutes les fiches aient la meme resolution. */
   const enregistrer = async () => {
     const principaleImage = f.images[0];
-    if (!estPhoto(principaleImage)) {
+    // Même photo principale qu'à l'ouverture, visuel déjà recadré : rien à
+    // refaire. Un changement de prix ne dépend plus d'une photo à relire.
+    const inchangee =
+      principaleImage === item?.images?.[0] && estPhoto(item?.art) && f.art === item.art;
+    if (!estPhoto(principaleImage) || inchangee) {
       onSave(f);
       return;
     }
@@ -426,7 +431,10 @@ function ProductForm({ item, onSave, onCancel, saving, readonly }) {
     try {
       onSave({ ...f, art: await toCanonicalMain(principaleImage) });
     } catch (error) {
-      setUploadErr(`Visuel principal : ${error.message}`);
+      const message = `Visuel principal : ${error.message} Rien n'a été enregistré.`;
+      setUploadErr(message);
+      // Le message sous la galerie pouvait passer inaperçu : l'échec se dit aussi en haut
+      onErreur(message);
     }
   };
 

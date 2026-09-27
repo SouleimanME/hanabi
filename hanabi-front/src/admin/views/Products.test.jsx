@@ -73,6 +73,45 @@ const ouvrir = async (util, props = {}) => {
   await util.click(screen.getByRole("button", { name: props.readonly ? "Voir" : "Modifier" }));
 };
 
+describe("Enregistrement", () => {
+  it("un changement de prix part sans relire la photo principale", async () => {
+    routes["PATCH /admin/products/1"] = { statut: 200, corps: { ...KITSUNE, price_cents: 1200 } };
+    const flash = vi.fn();
+    const util = userEvent.setup();
+    render(<Products items={[KITSUNE]} flash={flash} reload={vi.fn()} />);
+    await util.click(screen.getByRole("button", { name: "Modifier" }));
+    const prix = await screen.findByLabelText(/prix/i);
+    await util.clear(prix);
+    await util.type(prix, "1200");
+    await util.click(screen.getByRole("button", { name: /enregistrer les modifications/i }));
+
+    expect(flash).toHaveBeenCalledWith("Produit mis à jour");
+    expect(envoye.price_cents).toBe(1200);
+    // La photo n'a pas changé : son adresse repart telle quelle, sans recadrage
+    expect(envoye.art).toBe(KITSUNE.art);
+  });
+
+  it("une nouvelle photo principale illisible se dit en haut, et rien ne part", async () => {
+    const flash = vi.fn();
+    const util = userEvent.setup();
+    render(<Products items={[KITSUNE]} flash={flash} reload={vi.fn()} />);
+    await util.click(screen.getByRole("button", { name: "Modifier" }));
+    // Une autre photo de la galerie devient la principale
+    await util.type(
+      await screen.findByPlaceholderText(/URL d'image/i),
+      "https://images.example/autre.jpg",
+    );
+    await util.click(screen.getByRole("button", { name: "Ajouter" }));
+    await util.click(screen.getAllByRole("button", { name: "Monter" })[1]);
+    await util.click(screen.getByRole("button", { name: /enregistrer les modifications/i }));
+
+    await vi.waitFor(() =>
+      expect(flash).toHaveBeenCalledWith(expect.stringMatching(/Rien n'a été enregistré/), "err"),
+    );
+    expect(envoye).toBeNull();
+  });
+});
+
 describe("Assistant de fiche", () => {
   it("n'apparaît pas quand le serveur n'en a pas", async () => {
     routes["GET /admin/redaction/etat"].corps = { actif: false, plafond: 0, restant: 0 };

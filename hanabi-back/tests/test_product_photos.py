@@ -121,6 +121,18 @@ class TestServiceDesPhotos:
         # La boutique est servie par un autre site que l'API
         assert reponse.headers["cross-origin-resource-policy"] == "cross-origin"
 
+    def test_la_copie_mise_en_cache_par_une_balise_img_reste_relisable(self, client, patron):
+        """Une réponse sans en-tête CORS, gardée un an, bloquait le recadrage du
+        back-office : l'enregistrement de la fiche ne partait plus."""
+        adresse = client.post("/admin/products", json=fiche(art=PHOTO), headers=patron).json()["art"]
+        chemin = adresse.replace("http://testserver", "")
+
+        # Une balise <img> n'envoie pas d'en-tête Origin
+        reponse = client.get(chemin)
+        assert reponse.headers["access-control-allow-origin"] == "*"
+        deja_vue = client.get(chemin, headers={"If-None-Match": reponse.headers["etag"]})
+        assert deja_vue.headers["access-control-allow-origin"] == "*"
+
     def test_deja_en_cache_rien_ne_repart(self, client, patron):
         adresse = client.post("/admin/products", json=fiche(art=PHOTO), headers=patron).json()["art"]
         etag = _octets(client, adresse).headers["etag"]

@@ -9,16 +9,36 @@ export const GALLERY_MAX_SIDE = 1600;
 /** Compromis poids / qualite du JPEG produit. */
 const QUALITY = 0.82;
 
+/** Une photo distante, relue au réseau et non dans le cache : une copie
+ *  gardée d'un affichage sans CORS rendait le canvas illisible, et
+ *  l'enregistrement de la fiche échouait sur elle. */
+async function sourceLisible(src) {
+  if (!/^https?:/.test(src)) return { url: src, liberer() {} };
+  const reponse = await fetch(src, { mode: "cors", cache: "reload" });
+  if (!reponse.ok) throw new Error("Image illisible.");
+  const url = URL.createObjectURL(await reponse.blob());
+  return { url, liberer: () => URL.revokeObjectURL(url) };
+}
+
 /** Charge une source (URL ou data URI) en image decodee. */
-function loadImage(src) {
+async function loadImage(src) {
+  let source;
+  try {
+    source = await sourceLisible(src);
+  } catch {
+    throw new Error("Image illisible.");
+  }
   return new Promise((resolve, reject) => {
     const img = new Image();
-    // Necessaire si la source est distante : sans cela le canvas devient
-    // « souille » et toDataURL leve une erreur de securite.
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Image illisible."));
-    img.src = src;
+    img.onload = () => {
+      source.liberer();
+      resolve(img);
+    };
+    img.onerror = () => {
+      source.liberer();
+      reject(new Error("Image illisible."));
+    };
+    img.src = source.url;
   });
 }
 
