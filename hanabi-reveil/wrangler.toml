@@ -1,14 +1,16 @@
-# Réveil de l'API Hanabi, déclenché par Cloudflare toutes les cinq minutes.
-# Déploiement : voir DEPLOY.md, « Garder l'API éveillée ».
+# Réveil déclenché par Cloudflare toutes les cinq minutes.
+# Depuis le 2026-09-30, il garde éveillé le serveur de la boutique, plus l'API Hanabi.
+# Déploiement : voir DEPLOY.md, « Garder un serveur éveillé ».
 name = "hanabi-reveil"
 main = "worker.js"
 compatibility_date = "2026-09-01"
 
+# L'adresse à réveiller (API_URL) se règle dans le tableau de bord de Cloudflare, jamais ici :
+# ce dépôt est public. Un déploiement depuis le dépôt garde les variables posées là-bas.
+keep_vars = true
+
 [triggers]
 crons = ["*/5 * * * *"]
-
-[vars]
-API_URL = "https://hanabi-api-myk8.onrender.com"
 
 # Journaux du Worker conservés dans le tableau de bord : chaque réveil y laisse une ligne
 [observability]

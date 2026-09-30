@@ -1,18 +1,14 @@
-# Surveillance de /health, une fois par heure.
+# Surveillance de /health, à la demande seulement.
 #
-# Le Worker hanabi-reveil (Cloudflare) garde l'API éveillée. Cette sonde vérifie
-# la santé du service et surveille le réveil lui-même : une API trouvée endormie
-# veut dire que le Worker ne passe plus. Ce contrôle ne s'active qu'avec la
-# variable de dépôt REVEIL_ACTIF à true, une fois le Worker déployé.
-# Alerte : tâche en échec et courriel de GitHub. Les tâches planifiées de GitHub
-# prennent du retard et se désactivent après soixante jours sans activité : elles
-# surveillent, elles ne réveillent pas.
+# Depuis le 2026-09-30, l'API Hanabi n'est plus gardée éveillée : le Worker
+# hanabi-reveil réveille le serveur de la boutique. Une sonde horaire réveillerait
+# l'API à chaque passage et userait les heures gratuites de Render que la boutique
+# consomme : elle ne se lance plus qu'à la main (Actions, Surveillance, Run workflow).
+# Ce contrôle du réveil ne s'active qu'avec la variable de dépôt REVEIL_ACTIF à true.
 
 name: Surveillance
 
 on:
-  schedule:
-    - cron: "17 * * * *"
   workflow_dispatch:
 
 concurrency:

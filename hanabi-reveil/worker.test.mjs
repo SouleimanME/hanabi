@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import worker, { ESSAIS, reveiller } from "./worker.js";
+import worker, { ESSAIS, reveiller, sonde } from "./worker.js";
 
 const repond = (status) => async () => ({ ok: status < 400, status });
 const sansPause = async () => {};
@@ -64,4 +64,16 @@ test("le calendrier déclenche toutes les cinq minutes", async () => {
   const { readFile } = await import("node:fs/promises");
   const config = await readFile(new URL("./wrangler.toml", import.meta.url), "utf8");
   assert.match(config, /crons = \["\*\/5 \* \* \* \*"\]/);
+});
+
+test("l'adresse vient du tableau de bord : le dépôt public ne l'écrit pas, un déploiement la garde", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const config = await readFile(new URL("./wrangler.toml", import.meta.url), "utf8");
+  assert.doesNotMatch(config, /^\s*API_URL\s*=/m);
+  assert.match(config, /^keep_vars = true$/m);
+});
+
+test("sans adresse réglée, le Worker le dit clairement", () => {
+  assert.throws(() => sonde({}), /API_URL n'est pas réglée/);
+  assert.equal(sonde({ API_URL: "https://serveur.test/" }), "https://serveur.test/healthz");
 });

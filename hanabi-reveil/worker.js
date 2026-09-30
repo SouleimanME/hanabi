@@ -1,16 +1,15 @@
 /**
- * Réveil de l'API : Render endort l'offre gratuite après quinze minutes sans
+ * Réveil d'un serveur Render : l'offre gratuite s'endort après quinze minutes sans
  * requête, et le premier visiteur attendait jusqu'à une minute.
  *
  * Cloudflare déclenche ce Worker toutes les cinq minutes (wrangler.toml) : trois
  * occasions de passer avant l'endormissement, une panne passagère ne suffit pas
- * à le laisser partir. Il appelle /healthz, qui répond sans toucher à la base :
- * Neon peut ainsi se suspendre et ne consomme pas son quota.
+ * à le laisser partir. Il appelle API_URL + /healthz, une sonde qui ne touche à
+ * rien d'autre. Depuis le 2026-09-30, API_URL désigne le serveur de la boutique ;
+ * l'adresse se règle dans le tableau de bord de Cloudflare, pas dans ce dépôt.
  *
  * Un appel en échec est retenté trois fois ; le délai laisse le temps d'un
- * redémarrage de l'API. Un échec final lève une erreur, visible dans les
- * journaux du Worker, et la sonde horaire de GitHub (surveillance.yml) alerte
- * par courriel si l'API reste injoignable.
+ * redémarrage. Un échec final lève une erreur, visible dans les journaux du Worker.
  */
 
 export const ESSAIS = 3;
@@ -41,11 +40,17 @@ export async function reveiller(url, { appeler = fetch, pause = attendre } = {})
   throw new Error(`API injoignable après ${ESSAIS} essais : ${derniere}`);
 }
 
+// Sans adresse réglée, le Worker le dit au lieu d'appeler « undefined/healthz »
+export function sonde(env) {
+  if (!env.API_URL) throw new Error("API_URL n'est pas réglée dans les variables du Worker");
+  return env.API_URL.replace(/\/$/, "") + "/healthz";
+}
+
 export default {
   async scheduled(_evenement, env, ctx) {
     ctx.waitUntil(
-      reveiller(env.API_URL + "/healthz").then((r) =>
-        console.log(`API éveillée : essai ${r.essai}, ${r.duree_ms} ms`),
+      reveiller(sonde(env)).then((r) =>
+        console.log(`Serveur éveillé : essai ${r.essai}, ${r.duree_ms} ms`),
       ),
     );
   },
@@ -53,7 +58,7 @@ export default {
   // Vérification à la main : ouvrir l'adresse du Worker dans un navigateur
   async fetch(_requete, env) {
     try {
-      const r = await reveiller(env.API_URL + "/healthz");
+      const r = await reveiller(sonde(env));
       return Response.json({ api: "éveillée", ...r });
     } catch (e) {
       return Response.json({ api: "injoignable", erreur: e.message }, { status: 502 });

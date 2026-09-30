@@ -253,7 +253,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Le Worker qui garde l'API éveillée : essais, pauses, adresse visée
+      # Le Worker qui garde un serveur éveillé : essais, pauses, adresse visée
       - name: Tests du reveil
         working-directory: hanabi-reveil
         run: npm test

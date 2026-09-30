@@ -273,14 +273,21 @@ variables ci-dessous, le bouton « Ajouter une vidéo » n'apparaît pas.
 MP4, WebM ou MOV, 200 Mo au plus. L'offre gratuite de R2 couvre 10 Go stockés
 et ne facture pas la bande passante.
 
-### Garder l'API éveillée
+### Garder un serveur éveillé
 
 Render endort l'offre gratuite après quinze minutes sans requête ; le visiteur
 suivant attend jusqu'à une minute. Le Worker `hanabi-reveil/` appelle `/healthz`
 toutes les cinq minutes depuis Cloudflare, dont les tâches planifiées partent à
 l'heure (celles de GitHub prennent jusqu'à une demi-heure de retard). `/healthz`
-ne touche pas à la base : Neon continue de se suspendre et ne consomme pas son
-quota.
+ne touche à rien d'autre : pour l'API Hanabi, Neon continuait de se suspendre.
+
+**Depuis le 2026-09-30**, le Worker réveille le serveur de la boutique et non plus
+l'API Hanabi, mise en sommeil. Son adresse se règle dans le tableau de bord de
+Cloudflare (Settings, Variables and Secrets, `API_URL`) et n'est écrite nulle part
+dans ce dépôt public ; `keep_vars` la garde d'un déploiement à l'autre. La sonde
+horaire de GitHub ne tourne plus qu'à la main : elle réveillait l'API.
+
+Les étapes ci-dessous sont celles de la mise en place, pour l'API.
 
 **Déployer, sans rien installer :**
 
@@ -304,9 +311,11 @@ Avec Wrangler, `npx wrangler deploy` depuis `hanabi-reveil/` fait les étapes 1 
 
 **À surveiller :** l'offre gratuite de Render accorde 750 heures par mois et par
 espace de travail. Un service éveillé en permanence en consomme 744 au plus : il
-ne faut aucun autre service gratuit dans le même espace, sinon le quota s'épuise
-avant la fin du mois et Render suspend l'API jusqu'au mois suivant. L'offre
-Starter (7 $ par mois) supprime à la fois la mise en veille et ce plafond.
+ne faut aucun autre service gratuit actif dans le même espace, sinon le quota
+s'épuise avant la fin du mois et Render suspend tous les services gratuits
+jusqu'au mois suivant. L'API Hanabi reste donc suspendue (Render, Settings,
+Suspend Web Service) tant que le Worker réveille la boutique. L'offre Starter
+(7 $ par mois) supprime à la fois la mise en veille et ce plafond.
 
 ### Ce qu'implique l'offre gratuite de Render
 
